@@ -442,6 +442,8 @@ public class ScoresCalculatorHandler {
 				}	
 			}
 			
+			selectedPlayer.setReplacementInd(null);
+			
 			if(playerScore == null && playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
 				selectedPlayer.setDnp(true);
 				selectedPlayer.setScoreUsed(false);
@@ -496,89 +498,90 @@ public class ScoresCalculatorHandler {
 		
 		loggerUtils.log("info", "Bench positions={}", benchPositions);
 		
-		
-		if(emergencies.isEmpty()) {
-			loggerUtils.log("info", "No emergencies to replace DNPs");
-			for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
-				if(dnpPlayer.isEmergency() == 0) {
-					dnpPlayer.setScoreUsed(true);
-					played22.add(dnpPlayer);
-				} 
-				replacedDnpPlayers.add(dnpPlayer);
-			}
-			dnpPlayers.removeAll(replacedDnpPlayers);
-		} else {
-			loggerUtils.log("info", "Replacing DNPs by position");
-			for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
-				DflSelectedPlayer replacement = null;
-				
-				if(dnpPlayer.isEmergency() == 0) {
-					for(DflSelectedPlayer emergency : emergencies) {
-						String dnpPosition = playerPositions.get(dnpPlayer.getPlayerId());
-						String emgPosition = playerPositions.get(emergency.getPlayerId());
-						
-						if(dnpPosition.equals(emgPosition)) {
-							replacement = emergency;
-							break;
-						}
-					}
-					
-					if(replacement != null) {
-						emergencies.remove(replacement);
-						replacement.setScoreUsed(true);
-						if(replacement.isEmergency() == 1) {
-							replacement.setReplacementInd("*");
-							dnpPlayer.setReplacementInd("*");
-						} else {
-							replacement.setReplacementInd("**");
-							dnpPlayer.setReplacementInd("**");
-						}
-						played22.add(replacement);
-						replacedDnpPlayers.add(dnpPlayer);
-						loggerUtils.log("info", "Replacing DNP={} with Emergency={} based on position", dnpPlayer, replacement);
-					}
-				} else {
-					loggerUtils.log("info", "DNP is an emergency, no need to replace.  DNP={}", dnpPlayer);
+		if(dnpPlayers.isEmpty()) {
+			if(emergencies.isEmpty()) {
+				loggerUtils.log("info", "No emergencies to replace DNPs");
+				for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
+					if(dnpPlayer.isEmergency() == 0) {
+						dnpPlayer.setScoreUsed(true);
+						played22.add(dnpPlayer);
+					} 
 					replacedDnpPlayers.add(dnpPlayer);
 				}
-			}
-			dnpPlayers.removeAll(replacedDnpPlayers);
-			if(!dnpPlayers.isEmpty()) {
-				loggerUtils.log("info", "Replacing DNPs by promoting bench players");
-				
+				dnpPlayers.removeAll(replacedDnpPlayers);
+			} else {
+				loggerUtils.log("info", "Replacing DNPs by position");
 				for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
 					DflSelectedPlayer replacement = null;
 					
-					String dnpPosition = playerPositions.get(dnpPlayer.getPlayerId());
-					
-					for(DflSelectedPlayer emergency : emergencies) {
-						if(benchPositions.contains(dnpPosition)) {
-							replacement = emergency;
-							break;
+					if(dnpPlayer.isEmergency() == 0) {
+						for(DflSelectedPlayer emergency : emergencies) {
+							String dnpPosition = playerPositions.get(dnpPlayer.getPlayerId());
+							String emgPosition = playerPositions.get(emergency.getPlayerId());
+							
+							if(dnpPosition.equals(emgPosition)) {
+								replacement = emergency;
+								break;
+							}
 						}
-					}
-			
-					if(replacement != null) {
-						emergencies.remove(replacement);
-						replacement.setScoreUsed(true);
-						if(replacement.isEmergency() == 1) {
-							replacement.setReplacementInd("*");
-							dnpPlayer.setReplacementInd("*");
-						} else {
-							replacement.setReplacementInd("**");
-							dnpPlayer.setReplacementInd("**");
+						
+						if(replacement != null) {
+							emergencies.remove(replacement);
+							replacement.setScoreUsed(true);
+							if(replacement.isEmergency() == 1) {
+								replacement.setReplacementInd("*");
+								dnpPlayer.setReplacementInd("*");
+							} else {
+								replacement.setReplacementInd("**");
+								dnpPlayer.setReplacementInd("**");
+							}
+							played22.add(replacement);
+							replacedDnpPlayers.add(dnpPlayer);
+							loggerUtils.log("info", "Replacing DNP={} with Emergency={} based on position", dnpPlayer, replacement);
 						}
-						played22.add(replacement);
-						replacedDnpPlayers.add(dnpPlayer);
-						loggerUtils.log("info", "Bench can take the ground DNP={} with Emergency={}", dnpPlayer, replacement);
 					} else {
-						dnpPlayer.setScoreUsed(true);
-						played22.add(dnpPlayer);
-						loggerUtils.log("info", "Positional rules don't allow emergency DNP={} with Emergency={}", dnpPlayer, replacement);
+						loggerUtils.log("info", "DNP is an emergency, no need to replace.  DNP={}", dnpPlayer);
+						replacedDnpPlayers.add(dnpPlayer);
 					}
 				}
+				dnpPlayers.removeAll(replacedDnpPlayers);
+				if(!dnpPlayers.isEmpty()) {
+					loggerUtils.log("info", "Replacing DNPs by promoting bench players");
+					
+					for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
+						DflSelectedPlayer replacement = null;
+						
+						String dnpPosition = playerPositions.get(dnpPlayer.getPlayerId());
+						
+						for(DflSelectedPlayer emergency : emergencies) {
+							if(benchPositions.contains(dnpPosition)) {
+								replacement = emergency;
+								break;
+							}
+						}
+				
+						if(replacement != null) {
+							emergencies.remove(replacement);
+							replacement.setScoreUsed(true);
+							if(replacement.isEmergency() == 1) {
+								replacement.setReplacementInd("*");
+								dnpPlayer.setReplacementInd("*");
+							} else {
+								replacement.setReplacementInd("**");
+								dnpPlayer.setReplacementInd("**");
+							}
+							played22.add(replacement);
+							replacedDnpPlayers.add(dnpPlayer);
+							loggerUtils.log("info", "Bench can take the ground DNP={} with Emergency={}", dnpPlayer, replacement);
+						} else {
+							dnpPlayer.setScoreUsed(true);
+							played22.add(dnpPlayer);
+							loggerUtils.log("info", "Positional rules don't allow emergency DNP={} with Emergency={}", dnpPlayer, replacement);
+						}
+					}
+				}
+				dnpPlayers.removeAll(replacedDnpPlayers);
 			}
-			dnpPlayers.removeAll(replacedDnpPlayers);
 		}
 		
 		for(DflSelectedPlayer player : played22) {
