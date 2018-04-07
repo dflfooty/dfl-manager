@@ -498,7 +498,7 @@ public class ScoresCalculatorHandler {
 		
 		loggerUtils.log("info", "Bench positions={}", benchPositions);
 		
-		if(dnpPlayers.isEmpty()) {
+		if(!dnpPlayers.isEmpty()) {
 			if(emergencies.isEmpty()) {
 				loggerUtils.log("info", "No emergencies to replace DNPs");
 				for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
