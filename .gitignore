@@ -8,3 +8,4 @@ dflmngr.iml
 .classpath
 .factorypath
 reports
+/.apt_generated/

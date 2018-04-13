@@ -100,7 +100,7 @@ public class RawStatsReportJobGenerator {
 			
 			//startTimeCal = Calendar.getInstance();
 			//startTimeCal.setTime(game.getStart());
-			startTimeCal = GregorianCalendar.from(game.getStart());
+			startTimeCal = GregorianCalendar.from(game.getStartTime());
 			currentGameDay = startTimeCal.get(Calendar.DAY_OF_WEEK);
 			
 			loggerUtils.log("info", "Current Game Day={}; Previous Game Day={};", currentGameDay, previousGameDay);

@@ -102,7 +102,7 @@ public class ResultsJobGenerator {
 			
 			loggerUtils.log("info", "AFL Fixture={}", game);
 			
-			gameStart = game.getStart();
+			gameStart = game.getStartTime();
 			//startTimeCal = Calendar.getInstance();
 			//startTimeCal.setTime(game.getStart());
 			//currentGameDay = startTimeCal.get(Calendar.DAY_OF_WEEK);

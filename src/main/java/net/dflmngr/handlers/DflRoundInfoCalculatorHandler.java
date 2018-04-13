@@ -121,7 +121,7 @@ public class DflRoundInfoCalculatorHandler {
 					Map<Integer, ZonedDateTime> gameStartTimes = new HashMap<>();
 					
 					for(AflFixture fixture : aflRoundFixtures) {
-						gameStartTimes.put(fixture.getGame(), fixture.getStart());
+						gameStartTimes.put(fixture.getGame(), fixture.getStartTime());
 					}
 					
 					loggerUtils.log("info", "AFL game start times: {}", gameStartTimes);
@@ -266,7 +266,7 @@ public class DflRoundInfoCalculatorHandler {
 						
 						Integer gameStartTimeKey = Integer.parseInt(Integer.toString(aflFixture.getRound()) + Integer.toString(aflFixture.getGame()));
 						if(!gameStartTimes.containsKey(gameStartTimeKey)) {
-							gameStartTimes.put(gameStartTimeKey, aflFixture.getStart());
+							gameStartTimes.put(gameStartTimeKey, aflFixture.getStartTime());
 						}
 						
 						roundMappings.add(roundMapping);
@@ -619,14 +619,14 @@ public class DflRoundInfoCalculatorHandler {
 		
 		for(AflFixture game : gamesInRound) {
 			
-			if(game.getStart().isBefore(hardLockout)) {
+			if(game.getStartTime().isBefore(hardLockout)) {
 				loggerUtils.log("info", "Adding early game");
 				
 				DflRoundEarlyGames earlyGame = new DflRoundEarlyGames();
 				earlyGame.setRound(dflRound);
 				earlyGame.setAflRound(game.getRound());
 				earlyGame.setAflGame(game.getGame());
-				earlyGame.setStartTime(game.getStart());
+				earlyGame.setStartTime(game.getStartTime());
 				
 				earlyGames.add(earlyGame);
 			}

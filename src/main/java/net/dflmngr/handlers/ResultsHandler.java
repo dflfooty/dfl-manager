@@ -54,56 +54,33 @@ public class ResultsHandler {
 				this.emailOverride = emailOverride;
 			}
 			
-			//boolean statsLoaded = false;
-			
 			if(!skipStats) {
 				loggerUtils.log("info", "Getting stats");
 				RawPlayerStatsHandler statsHandler = new RawPlayerStatsHandler();
 				statsHandler.configureLogging(mdcKey, loggerName, logfile);
 				
-				/*
-				int tries = 1;
-				
-				while(!statsLoaded) {
-					loggerUtils.log("info", "Attempt: " + tries);
-					statsLoaded = statsHandler.execute(round, onHeroku);
-					if(tries > 5) {
-						break;
-					} else {
-						tries++;
-					}
-				}
-				if(statsLoaded) {
-					loggerUtils.log("info", "Stats Loaded");
-				}
-				*/
-				statsHandler.execute(round, onHeroku);
-			} //else {
-			//	statsLoaded = true;
-			//}
+				statsHandler.execute(round, isFinal, onHeroku);
+			}
+
+			loggerUtils.log("info", "Calculating scores");
+			ScoresCalculatorHandler scoresCalculator = new ScoresCalculatorHandler();
+			scoresCalculator.configureLogging(mdcKey, loggerName, logfile);
+			scoresCalculator.execute(round);
 			
-			//if(statsLoaded) {
-				loggerUtils.log("info", "Calculating scores");
-				ScoresCalculatorHandler scoresCalculator = new ScoresCalculatorHandler();
-				scoresCalculator.configureLogging(mdcKey, loggerName, logfile);
-				scoresCalculator.execute(round);
-				
-				if(isFinal) {
-					loggerUtils.log("info", "Calculating Ladder");
-					LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
-					ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
-					ladderCalculator.execute(round, false, null);
-				}
-				
-				loggerUtils.log("info", "Writing report");
-				ResultsReport resultsReport = new ResultsReport();
-				resultsReport.configureLogging(mdcKey, loggerName, logfile);
-				resultsReport.execute(round, isFinal, emailOverride);
-				
-				loggerUtils.log("info", "ResultsHandler complete");
-			//} else {
-			//	loggerUtils.log("info", "No stats loaded nothing to do.");
-			//}
+			if(isFinal) {
+				loggerUtils.log("info", "Calculating Ladder");
+				LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
+				ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
+				ladderCalculator.execute(round, false, null);
+			}
+			
+			loggerUtils.log("info", "Writing report");
+			ResultsReport resultsReport = new ResultsReport();
+			resultsReport.configureLogging(mdcKey, loggerName, logfile);
+			resultsReport.execute(round, isFinal, emailOverride);
+			
+			loggerUtils.log("info", "ResultsHandler complete");
+
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}

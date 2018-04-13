@@ -70,7 +70,7 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 			//startCal.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
 			//startCal.setTime(DflmngrUtils.dateDbFormat.parse(fixture.getStart()));
 			//startCal.add(Calendar.HOUR_OF_DAY, 3);
-			ZonedDateTime gameEndTime = fixture.getStart().plusHours(3);
+			ZonedDateTime gameEndTime = fixture.getStartTime().plusHours(3);
 						
 			//if(nowCal.after(startCal)) {
 			if(now.isAfter(gameEndTime)) {
@@ -103,7 +103,7 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		//startCal.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
 		//startCal.setTime(DflmngrUtils.dateDbFormat.parse(fixture.getStart()));
 		//startCal.add(Calendar.HOUR_OF_DAY, 3);
-		ZonedDateTime gameEndTime = fixture.getStart().plusHours(3);
+		ZonedDateTime gameEndTime = fixture.getStartTime().plusHours(3);
 		
 		//if(nowCal.after(startCal)) {
 		if(now.isAfter(gameEndTime)) {
@@ -124,5 +124,21 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		}
 		
 		return playedTeams;
+	}
+	
+	public List<AflFixture> getIncompleteFixtures() {
+		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
+		
+		List<AflFixture> incompleteFixtures = dao.findIncompleteAflFixtures(now);
+		
+		return incompleteFixtures;
+	}
+	
+	public List<AflFixture> getFixturesToScrape() {
+		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
+		
+		List<AflFixture> fixturesToScrape = dao.findIncompleteAflFixtures(now);
+		
+		return fixturesToScrape;
 	}
 }

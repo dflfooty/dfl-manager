@@ -4,10 +4,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-//import java.net.MalformedURLException;
 import java.net.URL;
-//import java.time.ZoneId;
-//import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,13 +29,10 @@ import net.dflmngr.model.service.AflFixtureService;
 import net.dflmngr.model.service.DflRoundInfoService;
 import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.ProcessService;
-//import net.dflmngr.model.service.RawPlayerStatsService;
 import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.model.service.impl.ProcessServiceImpl;
-//import net.dflmngr.model.service.impl.RawPlayerStatsServiceImpl;
-//import net.dflmngr.utils.DflmngrUtils;
 
 public class RawPlayerStatsHandler {
 	private LoggingUtils loggerUtils;
@@ -46,7 +40,6 @@ public class RawPlayerStatsHandler {
 	DflRoundInfoService dflRoundInfoService;
 	AflFixtureService aflFixtureService;
 	GlobalsService globalsService;
-	//RawPlayerStatsService rawPlayerStatsService;
 	ProcessService processService;
 	
 	boolean isExecutable;
@@ -63,14 +56,12 @@ public class RawPlayerStatsHandler {
 		dflRoundInfoService = new DflRoundInfoServiceImpl();
 		aflFixtureService = new AflFixtureServiceImpl();
 		globalsService = new GlobalsServiceImpl();
-		//rawPlayerStatsService = new RawPlayerStatsServiceImpl();
 		processService = new ProcessServiceImpl();
 		
 		isExecutable = false;
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -78,7 +69,7 @@ public class RawPlayerStatsHandler {
 		isExecutable = true;
 	}
 	
-	public void execute(int round, boolean onHeroku) {
+	public void execute(int round, boolean isFinal, boolean onHeroku) {
 				
 		try {
 			if(!isExecutable) {
@@ -91,50 +82,58 @@ public class RawPlayerStatsHandler {
 			DflRoundInfo dflRoundInfo = dflRoundInfoService.get(round);
 			
 			List<AflFixture> fixturesToProcess = new ArrayList<>();
-			//Set<String> teamsToProcess = new HashSet<>();
 			
 			Set<Integer> aflGames = new HashSet<>();
 			
 			loggerUtils.log("info", "Checking for AFL rounds to download");
-			for(DflRoundMapping roundMapping : dflRoundInfo.getRoundMapping()) {
-				int aflRound = roundMapping.getAflRound();
-				
-				loggerUtils.log("info", "DFL round includes AFL round={}", aflRound);
-				if(roundMapping.getAflGame() == 0) {
-					List<AflFixture> fixtures = aflFixtureService.getAflFixturesPlayedForRound(aflRound);
-					fixturesToProcess.addAll(fixtures);
-					//for(AflFixture fixture : fixtures) {
-					//	teamsToProcess.add(fixture.getHomeTeam());
-					//	teamsToProcess.add(fixture.getAwayTeam());
-					//}
-				} else {
-					int aflGame = roundMapping.getAflGame();
-					AflFixture fixture = aflFixtureService.getPlayedGame(aflRound, aflGame);
+			
+			if(isFinal) {
+				for(DflRoundMapping roundMapping : dflRoundInfo.getRoundMapping()) {
+					int aflRound = roundMapping.getAflRound();
 					
-					if(fixture != null) {
-						if(!aflGames.contains(aflGame)) {
-							aflGames.add(aflGame);
-							fixturesToProcess.add(fixture);
+					loggerUtils.log("info", "DFL round includes AFL round={}", aflRound);
+					if(roundMapping.getAflGame() == 0) {
+						List<AflFixture> fixtures = aflFixtureService.getAflFixturesPlayedForRound(aflRound);
+						fixturesToProcess.addAll(fixtures);
+					} else {
+						int aflGame = roundMapping.getAflGame();
+						AflFixture fixture = aflFixtureService.getPlayedGame(aflRound, aflGame);
+						
+						if(fixture != null) {
+							if(!aflGames.contains(aflGame)) {
+								aflGames.add(aflGame);
+								fixturesToProcess.add(fixture);
+							}
 						}
-						//if(roundMapping.getAflTeam() == null || roundMapping.getAflTeam().equals("")) {
-						//	teamsToProcess.add(fixture.getHomeTeam());
-						//	teamsToProcess.add(fixture.getAwayTeam());
-						//} else {
-						//	teamsToProcess.add(roundMapping.getAflTeam());
-						//}
+					}
+				}
+			} else {
+				fixturesToProcess.addAll(aflFixtureService.getFixturesToScrape());
+			}
+			
+			if(fixturesToProcess.isEmpty()) {
+				loggerUtils.log("info", "No AFL games to download stats from");
+			} else {
+				loggerUtils.log("info", "AFL games to download stats from: {}", fixturesToProcess);
+				processFixtures(round, fixturesToProcess, onHeroku);
+				
+				if(!isFinal) {
+					List<AflFixture> updateFixtures = new ArrayList<>();
+					for(AflFixture fixture : fixturesToProcess) {
+						if(fixture.getEndTime() != null) {
+							fixture.setStatsDownloaded(true);
+							updateFixtures.add(fixture);
+						}
+					}
+					if(!updateFixtures.isEmpty()) {
+						loggerUtils.log("info", "AFL games final download: {}", updateFixtures);
 					}
 				}
 			}
 			
-			loggerUtils.log("info", "AFL games to download stats from: {}", fixturesToProcess);
-			//loggerUtils.log("info", "Team to take stats from: {}", teamsToProcess);
-			
-			processFixtures(round, fixturesToProcess, onHeroku);
-			
 			dflRoundInfoService.close();
 			aflFixtureService.close();
 			globalsService.close();
-			//rawPlayerStatsService.close();
 			
 			loggerUtils.log("info", "Player stats downaloded");
 						
@@ -147,11 +146,6 @@ public class RawPlayerStatsHandler {
 		
 		String year = globalsService.getCurrentYear();
 		String statsUrl = globalsService.getAflStatsUrl();
-		
-
-		//List<String> dynoNames = new ArrayList<>();
-		
-		//ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
 
 		for (AflFixture fixture : fixturesToProcess) {
 			String homeTeam = fixture.getHomeTeam();
@@ -177,123 +171,7 @@ public class RawPlayerStatsHandler {
 				handler.configureLogging("RawPlayerDownloader");
 				handler.execute(round, homeTeam, awayTeam, fullStatsUrl);
 			}
-		}	
-			/*
-			String herokuApiEndpoint = "https://api.heroku.com/apps/" + System.getenv("APP_NAME") + "/dynos";
-			String apiToken = System.getenv("HEROKU_API_TOKEN");
-			URL obj = new URL(herokuApiEndpoint);
-			HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-			con.setRequestMethod("POST");
-			con.setRequestProperty("Authorization", "Bearer " + apiToken);
-			con.setRequestProperty("Content-Type", "application/json");
-			con.setRequestProperty("Accept", "application/vnd.heroku+json; version=3");
-
-			JsonObject postData = new JsonObject();
-			postData.put("attach", "false");
-			postData.put("command", "bin/run_raw_stats_downloader.sh " + round + " " + " " + homeTeam + " " + awayTeam + " " + fullStatsUrl);
-			postData.put("size", "hobby");
-			postData.put("type", "run");
-
-			con.setDoOutput(true);
-
-			DataOutputStream out = new DataOutputStream(con.getOutputStream());
-			out.writeBytes(postData.toJson());
-			out.flush();
-			out.close();
-
-			int responseCode = con.getResponseCode();
-
-			loggerUtils.log("info", "Spawning Dyno to process fixture: {}", postData.toJson());
-			loggerUtils.log("info", "Response Code: {}", responseCode);
-
-			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			String output;
-			StringBuffer response = new StringBuffer();
-
-			while ((output = in.readLine()) != null) {
-				response.append(output);
-			}
-			in.close();
-			
-			loggerUtils.log("info", "Response data: {}", response.toString());
-			
-			JsonObject responseData = Jsoner.deserialize(response.toString(), new JsonObject());
-			
-			String dynoName = responseData.getString("name");
-			
-			loggerUtils.log("info", "Dyno: {}", dynoName);
-			
-			dynoNames.add(dynoName);
-		}
-		
-		while(dynoNames.size() > 0) {
-			loggerUtils.log("info", "Wait for stats to download....");
-			Thread.sleep(30000);
-			List<String> completedDynos = new ArrayList<>();
-			for(String dynoName: dynoNames) {
-				/*
-				String herokuApiEndpoint = "https://api.heroku.com/apps/dfl-manager-dev/dynos/" + dynoName;
-				String apiToken = System.getenv("HEROKU_API_TOKEN");
-				URL obj = new URL(herokuApiEndpoint);
-				HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-				con.setRequestMethrasingod("GET");
-				con.setRequestProperty("Authorization", "Bearer " + apiToken);
-				con.setRequestProperty("Content-Type", "application/json");
-				con.setRequestProperty("Accept", "application/vnd.heroku+json; version=3");
-
-				int responseCode = con.getResponseCode();
-
-				loggerUtils.log("info", "Checking Dyno: {}", dynoName);
-				loggerUtils.log("info", "Response Code: {}", responseCode);
-
-				BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-				String output;
-				StringBuffer response = new StringBuffer();
-
-				while ((output = in.readLine()) != null) {
-					response.append(output);
-				}
-				in.close();
-				
-				loggerUtils.log("info", "Response data: {}", response.toString());
-				
-				JsonObject responseData = Jsoner.deserialize(response.toString(), new JsonObject());
-				
-				String state = responseData.getString("state");
-				
-				loggerUtils.log("info", "Dyno State: {}", state);
-				
-				if(state == null || !(state.equalsIgnoreCase("up") || state.equalsIgnoreCase("starting"))) {
-					completedDynos.add(dynoName);
-				}
-				*/
-
-				/*
-				//Process process = processService.getProcess(dynoName, now).get(0);
-				List<Process> processes = processService.getProcessById(dynoName);
-				String status = "";
-				String params = "";
-				for(Process process : processes) {
-					status = process.getStatus();
-					loggerUtils.log("info", "Dyno stauts: {} is {}", dynoName, status);
-					if(now.isBefore(process.getStartTime())) {
-						status = process.getStatus();
-						params = process.getParams();
-						break;
-					}
-				}
-				//if(!process.getStatus().equals("Running")) {
-				if(status.equals("Completed") || status.equals("Failed")) {
-					loggerUtils.log("info", "Completed: {} {}", dynoName, params);
-					completedDynos.add(dynoName);
-				}
-			}
-			dynoNames.removeAll(completedDynos);
-		}
-		*/
-			
+		}			
 	}
 	
 	private boolean spawnDyno(String command) throws Exception {
@@ -388,13 +266,16 @@ public class RawPlayerStatsHandler {
 		
 		Option roundOpt  = Option.builder("r").argName("round").hasArg().desc("round to run on").type(Number.class).required().build();
 		Option onHerokuOpt = new Option("h", "use Heroku one off dyno");
+		Option isFinalOpt = new Option("f", "final run");
 		
 		options.addOption(roundOpt);
 		options.addOption(onHerokuOpt);
+		options.addOption(isFinalOpt);
 		
 		try {
 			int round = 0;
 			boolean onHeroku = false;
+			boolean isFinal = false;
 						
 			CommandLineParser parser = new DefaultParser();
 			CommandLine cli = parser.parse(options, args);
@@ -404,10 +285,14 @@ public class RawPlayerStatsHandler {
 			if(cli.hasOption("h")) {
 				onHeroku = true;
 			}
+			
+			if(cli.hasOption("f")) {
+				isFinal = true;
+			}
 		
 			RawPlayerStatsHandler testing = new RawPlayerStatsHandler();
 			testing.configureLogging("batch.name", "batch-logger", "RawPlayerStatsHandlerTesting");
-			testing.execute(round, onHeroku);
+			testing.execute(round, isFinal, onHeroku);
 			System.exit(0);
 			
 		} catch (ParseException ex) {

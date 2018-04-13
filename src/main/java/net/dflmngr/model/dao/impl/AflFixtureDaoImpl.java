@@ -1,5 +1,6 @@
 package net.dflmngr.model.dao.impl;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import javax.persistence.criteria.Predicate;
@@ -24,6 +25,34 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 		Predicate roundEquals = criteriaBuilder.equal(entity.get(AflFixture_.round), round);
 		
 		criteriaQuery.where(criteriaBuilder.and(roundEquals));
+		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
+		
+		return entitys;
+	}
+	
+	public List<AflFixture> findIncompleteAflFixtures(ZonedDateTime time) {
+		criteriaBuilder = entityManager.getCriteriaBuilder();
+		criteriaQuery = criteriaBuilder.createQuery(entityClass);
+		entity = criteriaQuery.from(entityClass);
+		
+		Predicate startLess = criteriaBuilder.lessThan(entity.get(AflFixture_.startTime), time);
+		Predicate endNull = criteriaBuilder.isNull(entity.get(AflFixture_.endTime));
+		
+		criteriaQuery.where(criteriaBuilder.and(startLess, endNull));
+		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
+		
+		return entitys;
+	}
+	
+	public List<AflFixture> findFixturesToScrape(ZonedDateTime time) {
+		criteriaBuilder = entityManager.getCriteriaBuilder();
+		criteriaQuery = criteriaBuilder.createQuery(entityClass);
+		entity = criteriaQuery.from(entityClass);
+		
+		Predicate startLess = criteriaBuilder.lessThan(entity.get(AflFixture_.startTime), time);
+		Predicate statsDownloadedNull = criteriaBuilder.isNull(entity.get(AflFixture_.statsDownloaded));
+		
+		criteriaQuery.where(criteriaBuilder.and(startLess, statsDownloadedNull));
 		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
 		
 		return entitys;

@@ -13,4 +13,6 @@ public interface AflFixtureService extends GenericService<AflFixture, AflFixture
 	public List<AflFixture> getAflFixturesPlayedForRound(int round) throws Exception;
 	public AflFixture getPlayedGame(int round, int game) throws Exception;
 	public List<String> getAflTeamsPlayedForRound(int round) throws Exception;
+	public List<AflFixture> getIncompleteFixtures();
+	public List<AflFixture> getFixturesToScrape();
 }

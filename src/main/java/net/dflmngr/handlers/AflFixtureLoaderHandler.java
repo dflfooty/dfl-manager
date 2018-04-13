@@ -136,14 +136,14 @@ public class AflFixtureLoaderHandler {
 						if(timezone.equals(defaultTimezone)) {
 							//String dbDateStr = DflmngrUtils.dateDbFormat.format(localDate);
 							//fixture.setStart(dbDateStr);
-							fixture.setStart(localStart);
+							fixture.setStartTime(localStart);
 						} else {
 							//formatter.setTimeZone(TimeZone.getTimeZone(defaultTimezone));
 							//String defaultDateStr = formatter.format(localDate);
 							//Date defaultDate = formatter.parse(defaultDateStr);
 							//String dbDateStr = DflmngrUtils.dateDbFormat.format(defaultDate);
 							ZonedDateTime defualtStart = localStart.withZoneSameInstant(ZoneId.of(defaultTimezone));
-							fixture.setStart(defualtStart);
+							fixture.setStartTime(defualtStart);
 						}
 						
 						fixture.setTimezone(timezone);

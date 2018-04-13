@@ -31,12 +31,18 @@ public class AflFixture implements Comparator<AflFixture>, Comparable<AflFixture
 	@Column
 	private String ground;
 
-	@Column
-	private ZonedDateTime start;
+	@Column(name="start_time")
+	private ZonedDateTime startTime;
 	
 	@Column
 	private String timezone;
-
+	
+	@Column(name="end_time")
+	private ZonedDateTime endTime;
+	
+	@Column(name="stats_downloaded")
+	private boolean statsDownloaded;
+	
 	public String getAwayTeam() {
 		return this.awayTeam;
 	}
@@ -69,12 +75,12 @@ public class AflFixture implements Comparator<AflFixture>, Comparable<AflFixture
 		this.round = round;
 	}
 
-	public ZonedDateTime getStart() {
-		return this.start;
+	public ZonedDateTime getStartTime() {
+		return this.startTime;
 	}
 
-	public void setStart(ZonedDateTime start) {
-		this.start = start;
+	public void setStartTime(ZonedDateTime startTime) {
+		this.startTime = startTime;
 	}
 
 	public String getGround() {
@@ -92,11 +98,28 @@ public class AflFixture implements Comparator<AflFixture>, Comparable<AflFixture
 	public void setTimezone(String timezone) {
 		this.timezone = timezone;
 	}
+	
+	public ZonedDateTime getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(ZonedDateTime endTime) {
+		this.endTime = endTime;
+	}
+
+	public boolean isStatsDownloaded() {
+		return statsDownloaded;
+	}
+
+	public void setStatsDownloaded(boolean statsDownloaded) {
+		this.statsDownloaded = statsDownloaded;
+	}
 
 	@Override
 	public String toString() {
 		return "AflFixture [round=" + round + ", game=" + game + ", awayTeam=" + awayTeam + ", homeTeam=" + homeTeam
-				+ ", ground=" + ground + ", start=" + start + ", timezone=" + timezone + "]";
+				+ ", ground=" + ground + ", startTime=" + startTime + ", timezone=" + timezone + ", endTime=" + endTime
+				+ ", statsDownloaded=" + statsDownloaded + "]";
 	}
 
 	@Override
@@ -104,11 +127,13 @@ public class AflFixture implements Comparator<AflFixture>, Comparable<AflFixture
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((awayTeam == null) ? 0 : awayTeam.hashCode());
+		result = prime * result + ((endTime == null) ? 0 : endTime.hashCode());
 		result = prime * result + game;
 		result = prime * result + ((ground == null) ? 0 : ground.hashCode());
 		result = prime * result + ((homeTeam == null) ? 0 : homeTeam.hashCode());
 		result = prime * result + round;
-		result = prime * result + ((start == null) ? 0 : start.hashCode());
+		result = prime * result + ((startTime == null) ? 0 : startTime.hashCode());
+		result = prime * result + (statsDownloaded ? 1231 : 1237);
 		result = prime * result + ((timezone == null) ? 0 : timezone.hashCode());
 		return result;
 	}
@@ -127,6 +152,11 @@ public class AflFixture implements Comparator<AflFixture>, Comparable<AflFixture
 				return false;
 		} else if (!awayTeam.equals(other.awayTeam))
 			return false;
+		if (endTime == null) {
+			if (other.endTime != null)
+				return false;
+		} else if (!endTime.equals(other.endTime))
+			return false;
 		if (game != other.game)
 			return false;
 		if (ground == null) {
@@ -141,10 +171,12 @@ public class AflFixture implements Comparator<AflFixture>, Comparable<AflFixture
 			return false;
 		if (round != other.round)
 			return false;
-		if (start == null) {
-			if (other.start != null)
+		if (startTime == null) {
+			if (other.startTime != null)
 				return false;
-		} else if (!start.equals(other.start))
+		} else if (!startTime.equals(other.startTime))
+			return false;
+		if (statsDownloaded != other.statsDownloaded)
 			return false;
 		if (timezone == null) {
 			if (other.timezone != null)
