@@ -141,4 +141,17 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		
 		return fixturesToScrape;
 	}
+	
+	public List<Integer> getAflRoundsToScrape() {
+		List<AflFixture> fixtures = getFixturesToScrape();
+		
+		List<Integer> rounds = new ArrayList<>();
+		for(AflFixture fixture : fixtures) {
+			if(!rounds.contains(fixture.getRound())) {
+				rounds.add(fixture.getRound());
+			}
+		}
+		
+		return rounds;
+	}
 }

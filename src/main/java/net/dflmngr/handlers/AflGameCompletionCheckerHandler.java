@@ -130,7 +130,7 @@ public class AflGameCompletionCheckerHandler {
 		try {
 			driver.get(statsUrl);
 			
-			if(driver.findElements(By.cssSelector("a[href='#full-time-stats']")).isEmpty()) {
+			if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
 				gameCompleted = false;
 			} else {
 				gameCompleted = true;

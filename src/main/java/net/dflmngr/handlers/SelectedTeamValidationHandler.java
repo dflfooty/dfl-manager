@@ -196,13 +196,13 @@ public class SelectedTeamValidationHandler {
 					if(mappedTeam.equals(aflFixture.getHomeTeam()) || mappedTeam.equals(aflFixture.getAwayTeam())) {
 						boolean found = false;
 						for(DflEarlyInsAndOuts earlyInOrOut : earlyInsAndOuts) {
-							if(earlyInOrOut.getTeamPlayerId() == emg && (earlyInOrOut.getInOrOut().equals("E1") || earlyInOrOut.getInOrOut().equals("E2"))) {
+							if(earlyInOrOut.getTeamPlayerId() == emergency && (earlyInOrOut.getInOrOut().equals("E1") || earlyInOrOut.getInOrOut().equals("E2"))) {
 								found = true;
 								break;
 							}
 						}
 						if(!found) {
-							loggerUtils.log("info", "Emergency player has already played, teamPlayerId={}; teamCode={};", emg, teamCode);
+							loggerUtils.log("info", "Emergency player has already played, teamPlayerId={}; teamCode={};", emergency, teamCode);
 							playedSelections = true;
 							break;
 						}

@@ -87,29 +87,39 @@ public class RawPlayerStatsHandler {
 			
 			loggerUtils.log("info", "Checking for AFL rounds to download");
 			
-			if(isFinal) {
-				for(DflRoundMapping roundMapping : dflRoundInfo.getRoundMapping()) {
-					int aflRound = roundMapping.getAflRound();
-					
-					loggerUtils.log("info", "DFL round includes AFL round={}", aflRound);
-					if(roundMapping.getAflGame() == 0) {
+			
+			for(DflRoundMapping roundMapping : dflRoundInfo.getRoundMapping()) {
+				int aflRound = roundMapping.getAflRound();
+				
+				loggerUtils.log("info", "DFL round includes AFL round={}", aflRound);
+				if(roundMapping.getAflGame() == 0) {
+					if(isFinal) {
 						List<AflFixture> fixtures = aflFixtureService.getAflFixturesPlayedForRound(aflRound);
 						fixturesToProcess.addAll(fixtures);
 					} else {
-						int aflGame = roundMapping.getAflGame();
-						AflFixture fixture = aflFixtureService.getPlayedGame(aflRound, aflGame);
-						
-						if(fixture != null) {
-							if(!aflGames.contains(aflGame)) {
-								aflGames.add(aflGame);
-								fixturesToProcess.add(fixture);
-							}
+						fixturesToProcess.addAll(aflFixtureService.getFixturesToScrape());
+					}
+				} else {
+					int aflGame = roundMapping.getAflGame();
+					
+					List<AflFixture> completedFixtures = aflFixtureService.getFixturesToScrape();
+					AflFixture fixture = null;
+					
+					for(AflFixture aflFixture : completedFixtures) {
+						if(aflGame == aflFixture.getGame()) {
+							fixture = aflFixture;
+						}
+					}
+										
+					if(fixture != null) {
+						if(!aflGames.contains(aflGame)) {
+							aflGames.add(aflGame);
+							fixturesToProcess.add(fixture);
 						}
 					}
 				}
-			} else {
-				fixturesToProcess.addAll(aflFixtureService.getFixturesToScrape());
 			}
+
 			
 			if(fixturesToProcess.isEmpty()) {
 				loggerUtils.log("info", "No AFL games to download stats from");

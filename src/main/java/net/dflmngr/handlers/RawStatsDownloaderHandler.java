@@ -167,7 +167,8 @@ public class RawStatsDownloaderHandler {
 		try {
 			driver.get(statsUrl);
 		} catch (Exception ex) {
-			if(driver.findElements(By.cssSelector("a[href='#full-time-stats']")).isEmpty()) {
+			//if(driver.findElements(By.cssSelector("a[href='#full-time-stats']")).isEmpty()) {
+			if(driver.findElements(By.id("full-time-stats")).isEmpty() && driver.findElements(By.id("live-stats")).isEmpty()) {
 				driver.quit();
 				throw new Exception("Error Loading page, URL:" + statsUrl, ex);
 			}

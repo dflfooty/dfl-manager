@@ -13,6 +13,7 @@ public class ResultsJob implements Job {
 	
 	public static String ROUND = "ROUND";
 	public static String IS_FINAL = "IS_FINAL";
+	public static String ONGOING = "ONGOING";
 	
 	@Override
 	public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -26,20 +27,31 @@ public class ResultsJob implements Job {
 			
 			int round = data.getInt(ROUND);
 			boolean isFinal = data.getBoolean(IS_FINAL);
+			boolean ongoing = data.getBoolean(ONGOING);
 			
 			String logFile = "";
+			boolean onHeroku = false;
+			boolean sendReport = false;
+			boolean skipStats = false;
 			
-			if(isFinal) {
-				logFile = "ResultsRound_R" + round;
-			} else {
-				logFile = "ProgressRound_R" + round;
+			if(ongoing) {
+				logFile = "ResultsOngoing";
+			} else {			
+				if(isFinal) {
+					logFile = "ResultsRound_R" + round;
+					onHeroku = true;
+				} else {
+					logFile = "ProgressRound_R" + round;
+					skipStats = true;
+				}
+				sendReport = true;
 			}
 			
 			ResultsHandler resultsHandler = new ResultsHandler();
 			resultsHandler.configureLogging("online.name", "online-logger", logFile);
 
 			loggerUtils.log("info", "Running ProgressRound: round={};", round);
-			resultsHandler.execute(round, isFinal, null, false, true);
+			resultsHandler.execute(round, isFinal, null, skipStats, onHeroku, sendReport);
 			loggerUtils.log("info", "ProgressRoundJob completed");
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
