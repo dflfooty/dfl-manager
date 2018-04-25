@@ -150,6 +150,12 @@ public class ResultsJobGenerator {
 		
 		if(ongoing) {
 			loggerUtils.log("info", "Scheduling ongoing ResultsJob");
+			
+			Map<String, Object> jobParams = new HashMap<>();
+			jobParams.put("ROUND", round);
+			jobParams.put("IS_FINAL", isFinal);
+			jobParams.put("ONGOING", ongoing);
+			
 			String jobName = jobNameOngoingResults;
 			JobScheduler.schedule(jobName, jobGroup, jobClass, null, "0 10/15 * 1/1 * ? *", false);
 		} else {
@@ -164,6 +170,7 @@ public class ResultsJobGenerator {
 			Map<String, Object> jobParams = new HashMap<>();
 			jobParams.put("ROUND", round);
 			jobParams.put("IS_FINAL", isFinal);
+			jobParams.put("ONGOING", ongoing);
 			
 			String jobName = "";
 			
