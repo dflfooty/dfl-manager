@@ -174,9 +174,15 @@ public class RawStatsDownloaderHandler {
 			}
 		}
 		
+		boolean isLive = false;
+		if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
+			isLive = true;
+		}
+		
+		
 		try {
-			playerStats.addAll(getStats(round, homeTeam, "h", driver));
-			playerStats.addAll(getStats(round, awayTeam, "a", driver));
+			playerStats.addAll(getStats(round, homeTeam, "h", driver, isLive));
+			playerStats.addAll(getStats(round, awayTeam, "a", driver, isLive));
 		} catch (Exception ex) {
 			throw ex;
 		} finally {
@@ -186,9 +192,15 @@ public class RawStatsDownloaderHandler {
 		return playerStats;
 	}
 	
-	private List<RawPlayerStats> getStats(int round, String aflTeam, String homeORaway, WebDriver driver) throws Exception {
+	private List<RawPlayerStats> getStats(int round, String aflTeam, String homeORaway, WebDriver driver, boolean isLive) throws Exception {
 		
-		driver.findElement(By.cssSelector("a[href='#full-time-stats']")).click();
+		
+		if(isLive) {
+			driver.findElement(By.cssSelector("a[href='#live-stats']")).click();
+		} else {
+			driver.findElement(By.cssSelector("a[href='#full-time-stats']")).click();
+		}
+		
 		driver.findElement(By.cssSelector("a[href='#advanced-stats']")).click();
 		
 		List<WebElement> statsRecs;
