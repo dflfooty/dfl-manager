@@ -82,6 +82,8 @@ public class ResultsHandler {
 				List<Integer> aflRounds = aflFixtureService.getAflRoundsToScrape();
 				List<DflRoundInfo> dflRoundsInfo = dflRoundInfoService.findAll();
 				
+				loggerUtils.log("info", "Inprogress AFL rounds {}", aflRounds);
+				
 				for(DflRoundInfo roundInfo : dflRoundsInfo) {
 					for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
 						if(aflRounds.contains(roundMapping.getAflRound()) && !roundsToProcess.contains(roundMapping.getRound())) {
