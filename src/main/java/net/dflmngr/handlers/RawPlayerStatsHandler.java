@@ -137,6 +137,7 @@ public class RawPlayerStatsHandler {
 					}
 					if(!updateFixtures.isEmpty()) {
 						loggerUtils.log("info", "AFL games final download: {}", updateFixtures);
+						aflFixtureService.updateAll(updateFixtures, false);
 					}
 				}
 			}
