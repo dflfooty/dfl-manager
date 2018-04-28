@@ -137,7 +137,7 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 	public List<AflFixture> getFixturesToScrape() {
 		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
 		
-		List<AflFixture> fixturesToScrape = dao.findIncompleteAflFixtures(now);
+		List<AflFixture> fixturesToScrape = dao.findFixturesToScrape(now);
 		
 		return fixturesToScrape;
 	}
