@@ -83,8 +83,10 @@ public class TeamInsOutsLoaderHandler {
 					int eid = (int) e;
 					emg.setTeamPlayerId(eid);
 					
-					double e1e2 = Math.floor((e - eid) * 100) / 100;					
-					if(e1e2 == 0.1) {
+					int e1e2 = Integer.parseInt(Double.toString(e).split(".")[1].substring(0, 1));
+					//double e1e2 = Math.floor((e - eid) * 100) / 100;
+					//if(e1e2 == 0.1) {
+					if(e1e2 == 1) {
 						emg.setInOrOut(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.EMG1);
 					} else {
 						emg.setInOrOut(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.EMG2);
@@ -131,8 +133,11 @@ public class TeamInsOutsLoaderHandler {
 					int eid = (int) e;
 					emg.setTeamPlayerId(eid);
 					
-					double e1e2 = Math.floor((e - eid) * 100) / 100;
-					if(e1e2 == 0.1) {
+					
+					int e1e2 = Integer.parseInt(Double.toString(e).split(".")[1].substring(0, 1));
+					//double e1e2 = Math.floor((e - eid) * 100) / 100;
+					//if(e1e2 == 0.1) {
+					if(e1e2 == 1) {
 						emg.setInOrOut(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.EMG1);
 					} else {
 						emg.setInOrOut(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.EMG2);

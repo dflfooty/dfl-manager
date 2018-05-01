@@ -157,7 +157,7 @@ public class ResultsJobGenerator {
 			jobParams.put("ONGOING", ongoing);
 			
 			String jobName = jobNameOngoingResults;
-			JobScheduler.schedule(jobName, jobGroup, jobClass, jobParams, "0 10/15 * 1/1 * ? *", false);
+			JobScheduler.schedule(jobName, jobGroup, jobClass, jobParams, "0 3/5 * 1/1 * ? *", false);
 		} else {
 			loggerUtils.log("info", "Scheduling fixed ResultsJob, isFinal={}", isFinal);
 			

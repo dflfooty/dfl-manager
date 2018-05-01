@@ -245,7 +245,7 @@ public class StartRoundHandler {
 								selectedPlayer.setTeamPlayerId(inOrOut.getTeamPlayerId());
 								selectedPlayer.setEmergency(0);
 								selectedPlayer.setDnp(false);
-								selectedPlayer.setScoreUsed(false);
+								selectedPlayer.setScoreUsed(true);
 								
 								loggerUtils.log("info", "Adding player to selected team: player={}", selectedPlayer);
 								tmpSelectedTeam.add(selectedPlayer);
@@ -319,7 +319,7 @@ public class StartRoundHandler {
 							selectedPlayer.setTeamPlayerId(inOrOut.getTeamPlayerId());
 							selectedPlayer.setDnp(false);
 							selectedPlayer.setEmergency(0);
-							selectedPlayer.setScoreUsed(false);
+							selectedPlayer.setScoreUsed(true);
 							
 							loggerUtils.log("info", "Adding player to selected team: player={}", selectedPlayer);
 							tmpSelectedTeam.add(selectedPlayer);
