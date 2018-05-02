@@ -212,9 +212,9 @@ public class EndRoundHandler {
 				DflTeamPlayer teamPlayer = dflTeamPlayerService.get(best22Player.getPlayerId());
 				DflTeam team = dflTeamService.get(teamPlayer.getTeamCode());
 				if(best22Player.isBench()) {
-					bench.add(player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + team.getName() + " - " + best22Player.getScore());
+					bench.add(player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + ", " + team.getName() + " - " + best22Player.getScore());
 				} else {
-					String displayString = player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + team.getName() + " - " + best22Player.getScore();
+					String displayString = player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + ", " + team.getName() + " - " + best22Player.getScore();
 					switch(player.getPosition()) {
 						case "FF": ff.add(displayString); break;
 						case "Fwd": fwd.add(displayString); break;
