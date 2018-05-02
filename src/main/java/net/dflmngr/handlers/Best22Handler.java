@@ -185,7 +185,7 @@ public class Best22Handler {
 		}
 		
 		loggerUtils.log("info", "Saving best 22 to database");
-		dflBest22Service.insertAll(best22, false);
+		dflBest22Service.replaceAll(best22);
 	}
 	
 	private Map<Integer, Integer> selectPlayers(Map<Integer, Integer> players, String position) {
