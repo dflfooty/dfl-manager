@@ -230,27 +230,27 @@ public class EndRoundHandler {
 			for(String displayString : fb) {
 				body = body + displayString + "\n";
 			}
-			body = body + "Def:\n";
+			body = body + "\nDef:\n";
 			for(String displayString : def) {
 				body = body + displayString + "\n";
 			}
-			body = body + "Rck:\n";
+			body = body + "\nRck:\n";
 			for(String displayString : rck) {
 				body = body + displayString + "\n";
 			}
-			body = body + "Mid:\n";
+			body = body + "\nMid:\n";
 			for(String displayString : mid) {
 				body = body + displayString + "\n";
 			}
-			body = body + "Fwd:\n";
+			body = body + "\nFwd:\n";
 			for(String displayString : fwd) {
 				body = body + displayString + "\n";
 			}
-			body = body + "FB:\n";
-			for(String displayString : fb) {
+			body = body + "\nFF:\n";
+			for(String displayString : ff) {
 				body = body + displayString + "\n";
 			}
-			body = body + "Bench:\n";
+			body = body + "\nBench:\n";
 			for(String displayString : bench) {
 				body = body + displayString + "\n";
 			}
