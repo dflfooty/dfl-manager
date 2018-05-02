@@ -216,12 +216,12 @@ public class EndRoundHandler {
 				} else {
 					String displayString = player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + team.getName() + " - " + best22Player.getScore();
 					switch(player.getPosition()) {
-						case "FF": ff.add(displayString);
-						case "Fwd": fwd.add(displayString);
-						case "Rck": rck.add(displayString);
-						case "Mid": mid.add(displayString);
-						case "FB": fb.add(displayString);
-						case "Def": def.add(displayString);
+						case "FF": ff.add(displayString); break;
+						case "Fwd": fwd.add(displayString); break;
+						case "Rck": rck.add(displayString); break;
+						case "Mid": mid.add(displayString); break;
+						case "FB": fb.add(displayString); break;
+						case "Def": def.add(displayString); break;
 					}
 				}
 			}
