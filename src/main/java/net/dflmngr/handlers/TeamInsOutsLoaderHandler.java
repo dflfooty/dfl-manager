@@ -83,7 +83,7 @@ public class TeamInsOutsLoaderHandler {
 					int eid = (int) e;
 					emg.setTeamPlayerId(eid);
 					
-					int e1e2 = Integer.parseInt(Double.toString(e).split(".")[1].substring(0, 1));
+					int e1e2 = Integer.parseInt(Double.toString(e).split("\\.")[1].substring(0, 1));
 					//double e1e2 = Math.floor((e - eid) * 100) / 100;
 					//if(e1e2 == 0.1) {
 					if(e1e2 == 1) {
@@ -134,7 +134,7 @@ public class TeamInsOutsLoaderHandler {
 					emg.setTeamPlayerId(eid);
 					
 					
-					int e1e2 = Integer.parseInt(Double.toString(e).split(".")[1].substring(0, 1));
+					int e1e2 = Integer.parseInt(Double.toString(e).split("\\.")[1].substring(0, 1));
 					//double e1e2 = Math.floor((e - eid) * 100) / 100;
 					//if(e1e2 == 0.1) {
 					if(e1e2 == 1) {

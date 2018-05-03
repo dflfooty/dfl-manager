@@ -336,7 +336,7 @@ public class SelectedTeamValidationHandler {
 							selectedPlayer.setTeamCode(teamCode);
 							selectedPlayer.setTeamPlayerId(emergency);
 							
-							int e1e2 = Integer.parseInt(Double.toString(emg).split(".")[1].substring(0, 1));
+							int e1e2 = Integer.parseInt(Double.toString(emg).split("\\.")[1].substring(0, 1));
 							//double e1e2 = Math.floor((emg - emergency) * 100) / 100;
 							//if(e1e2 == 0.1) {
 							if(e1e2 == 1) {
@@ -483,8 +483,8 @@ public class SelectedTeamValidationHandler {
 								selectedPlayer.setRound(round);
 								selectedPlayer.setTeamCode(teamCode);
 								selectedPlayer.setTeamPlayerId(emergency);
-								
-								int e1e2 = Integer.parseInt(Double.toString(emg).split(".")[1].substring(0, 1));
+																
+								int e1e2 = Integer.parseInt(Double.toString(emg).split("\\.")[1].substring(0, 1));
 								//double e1e2 = Math.floor((emg - emergency) * 100) / 100;
 								//if(e1e2 == 0.1) {
 								if(e1e2 == 1) {
