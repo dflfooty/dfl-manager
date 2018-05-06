@@ -241,6 +241,10 @@ public class RawStatsDownloaderHandler {
 			loggerUtils.log("info", "Player stats: {}", playerStats);
 			
 			teamStats.add(playerStats);
+			
+			if(teamStats.size() == 22) {
+				break;
+			}
 		}
 		
 		return teamStats;
