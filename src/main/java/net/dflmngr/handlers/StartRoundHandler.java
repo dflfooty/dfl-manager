@@ -13,6 +13,7 @@ import java.util.Map;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.DomainDecodes;
 import net.dflmngr.model.entity.DflEarlyInsAndOuts;
+import net.dflmngr.model.entity.DflFixture;
 import net.dflmngr.model.entity.DflRoundEarlyGames;
 import net.dflmngr.model.entity.DflRoundInfo;
 import net.dflmngr.model.entity.DflSelectedPlayer;
@@ -20,16 +21,20 @@ import net.dflmngr.model.entity.DflTeam;
 import net.dflmngr.model.entity.DflTeamPlayer;
 import net.dflmngr.model.entity.InsAndOuts;
 import net.dflmngr.model.service.DflEarlyInsAndOutsService;
+import net.dflmngr.model.service.DflFixtureService;
 import net.dflmngr.model.service.DflRoundInfoService;
 import net.dflmngr.model.service.DflSelectedTeamService;
 import net.dflmngr.model.service.DflTeamPlayerService;
+import net.dflmngr.model.service.DflTeamPredictedScoresService;
 import net.dflmngr.model.service.DflTeamService;
 import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.InsAndOutsService;
 import net.dflmngr.model.service.impl.DflEarlyInsAndOutsServiceImpl;
+import net.dflmngr.model.service.impl.DflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
 import net.dflmngr.model.service.impl.DflSelectedTeamServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
+import net.dflmngr.model.service.impl.DflTeamPredictedScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.model.service.impl.InsAndOutsServiceImpl;
@@ -58,6 +63,8 @@ public class StartRoundHandler {
 	DflEarlyInsAndOutsService dflEarlyInsAndOutsService;
 	DflRoundInfoService dflRoundInfoService;
 	GlobalsService globalsService;
+	DflFixtureService dflFixtureService;
+	DflTeamPredictedScoresService dflTeamPredictedScoresService;
 	
 	String emailOverride;
 	
@@ -69,6 +76,8 @@ public class StartRoundHandler {
 		dflEarlyInsAndOutsService = new DflEarlyInsAndOutsServiceImpl();
 		dflRoundInfoService = new DflRoundInfoServiceImpl();
 		globalsService = new GlobalsServiceImpl();
+		dflFixtureService = new DflFixtureServiceImpl();
+		dflTeamPredictedScoresService = new DflTeamPredictedScoresServiceImpl();
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
@@ -80,7 +89,7 @@ public class StartRoundHandler {
 		isExecutable = true;
 	}
 	
-	public void execute(int round, String emailOveride) {
+	public void execute(int round, String emailOveride, boolean fromScoresCalculator) {
 		
 		try{
 			if(!isExecutable) {
@@ -105,21 +114,7 @@ public class StartRoundHandler {
 			if(earlyGames != null && dflRoundInfo.getEarlyGames().size() > 0) {
 				loggerUtils.log("info", "Early games exist");
 				earlyGamesExist = true;
-				//int completedCount = 0;
-				//for(DflRoundEarlyGames earlyGame : earlyGames) {
-					//Calendar startCal = Calendar.getInstance();
-					//startCal.setTime(earlyGame.getStartTime());
-					//startCal.add(Calendar.HOUR_OF_DAY, 3);
-					//ZonedDateTime gameEndTime = earlyGame.getStartTime().minusHours(3);
-					
-					//if(nowCal.after(startCal)) {
-					//if(now.isAfter(gameEndTime)) {
-					//	completedCount++;
-					//}
-					
-				//}
-				
-				//if(completedCount == earlyGames.size()) {
+
 				if(now.isAfter(dflRoundInfo.getHardLockoutTime())) {
 					earlyGamesCompleted = true;
 				}
@@ -144,6 +139,10 @@ public class StartRoundHandler {
 				InsAndOutsReport insAndOutsReport = new InsAndOutsReport();
 				insAndOutsReport.configureLogging(mdcKey, loggerName, logfile);
 				insAndOutsReport.execute(round, "Full", emailOveride);
+			} else {
+				if(!fromScoresCalculator) {
+					sendFirstGameEmail(round, emailOveride);
+				}
 			}
 			
 			if(earlyGamesExist && !earlyGamesCompleted) {
@@ -442,6 +441,59 @@ public class StartRoundHandler {
 		EmailUtils.sendTextEmail(to, dflMngrEmail, subject, messageBody, null);
 	}
 	
+	private void sendFirstGameEmail(int round, String emailOveride) throws Exception {
+		
+		String dflMngrEmail = globalsService.getEmailConfig().get("dflmngrEmailAddr");
+		
+		String subject = "DFL Manager - Early Games";
+		
+		List<DflFixture> roundFixtures = dflFixtureService.getFixturesForRound(round);
+		
+		String body = "<html>\n<body>\n";
+		body = "<p>This week in round " + round + "</p>\n";
+		body = body + "<p>DFL Manager has made the following predictions:</p>\n";
+		body = body + "<p><ul type=none>\n";
+						
+		for(DflFixture fixture : roundFixtures) {
+			DflTeam homeTeam = dflTeamService.get(fixture.getHomeTeam());
+			int homeTeamPredictedScore = dflTeamPredictedScoresService.getTeamPredictedScoreForRound(homeTeam.getTeamCode(), round).getPredictedScore();
+			
+			DflTeam awayTeam = dflTeamService.get(fixture.getAwayTeam());
+			int awayTeamPredictedScore = dflTeamPredictedScoresService.getTeamPredictedScoreForRound(awayTeam.getTeamCode(), round).getPredictedScore();
+			
+			String resultString = "";
+			if(homeTeamPredictedScore > awayTeamPredictedScore) {
+				resultString = " to defeat ";
+			} else {
+				resultString = " to be defeated by ";
+			}
+			
+			String gameUrl = globalsService.getOnlineBaseUrl() + "/results/" + fixture.getRound() + "/" + fixture.getGame();
+			
+			body = body + "<li>" + homeTeam.getName() + " " + resultString + awayTeam.getName() + ", " + homeTeamPredictedScore + " to " + awayTeamPredictedScore + 
+				   " - <a herf='" + gameUrl + "'>Match Report</a></li>\n";
+		}
+		
+		body = body + "</ul></p>\n";
+		
+		body = body + "<p>DFL Manager Admin</p>\n";
+		body = body + "</body>\n</html>";
+		
+		List<DflTeam> teams = dflTeamService.findAll();
+		List<String> to = new ArrayList<>();
+		
+		if(emailOverride != null && !emailOverride.equals("")) {
+			to.add(emailOverride);
+		} else {
+			for(DflTeam team : teams) {
+				to.add(team.getCoachEmail());
+			}
+		}
+
+		loggerUtils.log("info", "Emailing early games start round to={}", to);
+		EmailUtils.sendHtmlEmail(to, dflMngrEmail, subject, body, null);	
+	}
+	
 	public static void main(String[] args) {
 		
 		try {
@@ -462,7 +514,7 @@ public class StartRoundHandler {
 				
 				StartRoundHandler startRound = new StartRoundHandler();
 				startRound.configureLogging("batch.name", "batch-logger", "StartRound");
-				startRound.execute(round, email);
+				startRound.execute(round, email, false);
 			}
 			
 			System.exit(0);

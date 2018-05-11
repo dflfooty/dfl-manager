@@ -34,7 +34,7 @@ import net.dflmngr.model.service.impl.DflTeamPredictedScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.model.service.impl.InsAndOutsServiceImpl;
-import net.dflmngr.utils.AmazonS3Utils;
+//import net.dflmngr.utils.AmazonS3Utils;
 import net.dflmngr.utils.DflmngrUtils;
 import net.dflmngr.utils.EmailUtils;
 
@@ -180,9 +180,9 @@ public class InsAndOutsReport {
 		workbook.close();
 		out.close();
 		
-		String s3key = Paths.get("insAndOutsReport", reportName).toString();
+		//String s3key = Paths.get("insAndOutsReport", reportName).toString();
 		
-		AmazonS3Utils.uploadToS3(s3key, reportLocation.toString());
+		//AmazonS3Utils.uploadToS3(s3key, reportLocation.toString());
 		
 		return reportLocation.toString();
 	}
@@ -260,19 +260,20 @@ public class InsAndOutsReport {
 		String dflMngrEmail = globalsService.getEmailConfig().get("dflmngrEmailAddr");
 		
 		String subject = "";
-		String body = "";
+		String body = "<html>\n<body>\n";
 		
 		if(isFinal) {
 			subject = "Ins and Outs for DFL round " + round + " - FULL";
-			body = "Please find attached the full ins and outs for round " + round + ".\n\n";
+			body = "<p>Please find attached the full ins and outs for round " + round + ".</p>\n";
 		} else {
 			subject = "Ins and Outs for DFL round " + round + " - PARTIAL";
-			body = "Please find attached the partial ins and outs for round " + round + ". Team updates can still be made, further updates will be sent.\n\n";
+			body = "<p>Please find attached the partial ins and outs for round " + round + ". Team updates can still be made, further updates will be sent.</p>\n";
 		}
 		
-		body = body + "DFL Manager has made the following predictions:\n\n";
+		body = body + "<p>DFL Manager has made the following predictions:</p>\n";
 		body = body + addPredictions(round);
-		body = body + "\nDFL Manager Admin";
+		body = body + "<p>DFL Manager Admin</p>\n";
+		body = body + "</body>\n</html>";
 		
 		List<String> to = new ArrayList<>();
 
@@ -288,12 +289,13 @@ public class InsAndOutsReport {
 		attachments.add(reportName);
 		
 		loggerUtils.log("info", "Emailing to={}; reportName={}", to, reportName);
-		EmailUtils.sendTextEmail(to, dflMngrEmail, subject, body, attachments);
+		EmailUtils.sendHtmlEmail(to, dflMngrEmail, subject, body, attachments);
 	}
 	
 	private String addPredictions(int round) {
 		
 		String predictionsStr = "";
+		predictionsStr = predictionsStr + "<p><ul type=none>\n";
 		
 		List<DflFixture> roundFixtures = dflFixtureService.getFixturesForRound(round);
 		
@@ -311,9 +313,14 @@ public class InsAndOutsReport {
 				resultString = " to be defeated by ";
 			}
 			
-			predictionsStr = predictionsStr + 
-							 "\t" + homeTeam.getName() + " " + resultString + awayTeam.getName() + ", " + homeTeamPredictedScore + " to " + awayTeamPredictedScore + "\n";
+			String gameUrl = globalsService.getOnlineBaseUrl() + "/results/" + fixture.getRound() + "/" + fixture.getGame();
+			
+			predictionsStr = predictionsStr + "<li>" + homeTeam.getName() + " " + resultString + awayTeam.getName() + ", " + homeTeamPredictedScore + " to " + awayTeamPredictedScore + 
+					   " - <a href=\"" + gameUrl + "\">Match Report</a></li>\n";
+
 		}
+		
+		predictionsStr = predictionsStr + "</ul></p>\n";
 		
 		return predictionsStr;
 	}

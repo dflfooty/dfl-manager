@@ -408,4 +408,15 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 		
 		return cutoff;
 	}
+	
+	public String getOnlineBaseUrl() {
+		
+		String onlineBaseUrl = "";
+		String code = "onlineBaseUrl";
+		String groupCode = "dflRef";
+		
+		onlineBaseUrl = getValue(code, groupCode);
+		
+		return onlineBaseUrl;
+	}
 }

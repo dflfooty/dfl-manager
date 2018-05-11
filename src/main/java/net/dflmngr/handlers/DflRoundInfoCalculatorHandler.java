@@ -149,19 +149,19 @@ public class DflRoundInfoCalculatorHandler {
 					int gamesCount = aflRoundFixtures.size();
 					loggerUtils.log("info", "Games in AFL round: {}", gamesCount);
 					
-					Map<Integer, List<AflFixture>> gamesInsSplitRound = new HashMap<>();
-					gamesInsSplitRound.put(i, aflRoundFixtures);
+					Map<Integer, List<AflFixture>> gamesInSplitRound = new HashMap<>();
+					gamesInSplitRound.put(i, aflRoundFixtures);
 					
 					for(i++; i <= aflRoundsMax; i++) {
 						List<AflFixture> aflNextRoundFixtures = aflFixture.get(i);
-						gamesInsSplitRound.put(i, aflNextRoundFixtures);
+						gamesInSplitRound.put(i, aflNextRoundFixtures);
 						
 						loggerUtils.log("info", "Games in next AFL round: {}", aflNextRoundFixtures.size());
 						gamesCount = gamesCount + aflNextRoundFixtures.size();
 						
 						if(gamesCount % 9 == 0)  {
 							loggerUtils.log("info", "Found enough games to make DFL rounds ... calculation split round");
-							allRoundInfo.addAll(calculateSplitRound(dflRound, gamesInsSplitRound));
+							allRoundInfo.addAll(calculateSplitRound(dflRound, gamesInSplitRound));
 							//allRoundInfo.addAll(altCalculateSplitRound(dflRound, gamesInsSplitRound));
 							for(DflRoundInfo roundInfo : allRoundInfo) {
 								if(roundInfo.getRound() > dflRound) {
@@ -175,7 +175,7 @@ public class DflRoundInfoCalculatorHandler {
 				dflRound++;
 			}
 			
-			dflRoundInfoService.insertAll(allRoundInfo, false);
+			dflRoundInfoService.replaceAll(allRoundInfo);
 			
 			loggerUtils.log("info", "DflRoundInfoCalculator Complete");
 		} catch (Exception ex) {
@@ -183,11 +183,11 @@ public class DflRoundInfoCalculatorHandler {
 		}
 	}
 	
-	private List<DflRoundInfo> calculateSplitRound(int dflRound, Map<Integer, List<AflFixture>> gamesInsSplitRound) throws Exception {
+	private List<DflRoundInfo> calculateSplitRound(int dflRound, Map<Integer, List<AflFixture>> gamesInSplitRound) throws Exception {
 		
 		List<DflRoundInfo> splitRoundInfo = new ArrayList<>();
 		
-		Set<Integer> aflSplitRounds = gamesInsSplitRound.keySet();
+		Set<Integer> aflSplitRounds = gamesInSplitRound.keySet();
 		int aflFirstSplitRound = Collections.min(aflSplitRounds);
 		
 		loggerUtils.log("info", "AFL rounds used in split round: {}", aflSplitRounds);
@@ -197,6 +197,7 @@ public class DflRoundInfoCalculatorHandler {
 		dflRoundInfo.setSplitRound(DomainDecodes.DFL_ROUND_INFO.SPLIT_ROUND.YES);
 		
 		List<DflRoundMapping> roundMappings = new ArrayList<>();
+		List<AflFixture> mappedAflFixtures = new ArrayList<>();
 		
 		Map<Integer, ZonedDateTime> gameStartTimes = new HashMap<>();
 		
@@ -208,7 +209,7 @@ public class DflRoundInfoCalculatorHandler {
 			
 			loggerUtils.log("info", "Working with AFL round: {}", currentSplitRound);
 			
-			List<AflFixture> splitRoundGames = gamesInsSplitRound.get(currentSplitRound);
+			List<AflFixture> splitRoundGames = gamesInSplitRound.get(currentSplitRound);
 			for(AflFixture splitRoundGame : splitRoundGames) {
 				String homeKey = splitRoundGame.getRound() + "-" + splitRoundGame.getGame() + "-1";
 				String awayKey = splitRoundGame.getRound() + "-" + splitRoundGame.getGame() + "-2";
@@ -271,6 +272,10 @@ public class DflRoundInfoCalculatorHandler {
 						
 						roundMappings.add(roundMapping);
 						
+						if(!mappedAflFixtures.contains(aflFixture)) {
+							mappedAflFixtures.add(aflFixture);
+						}
+						
 						workingWithGames.remove(key);
 						
 						if(roundMappings.size() == 18) {
@@ -281,9 +286,9 @@ public class DflRoundInfoCalculatorHandler {
 							ZonedDateTime hardLockout = calculateHardLockout(dflRound, gameStartTimes);
 							dflRoundInfo.setHardLockoutTime(hardLockout);
 							
-							//loggerUtils.log("info", "Calculating early games");
-							//List<DflRoundEarlyGames> earlyGames = calculateEarlyGames(hardLockout, gamesInSplitRound, dflRound);
-							//dflRoundInfo.setEarlyGames(earlyGames);
+							loggerUtils.log("info", "Calculating early games");
+							List<DflRoundEarlyGames> earlyGames = calculateEarlyGames(hardLockout, mappedAflFixtures, dflRound);
+							dflRoundInfo.setEarlyGames(earlyGames);
 							
 							splitRoundInfo.add(dflRoundInfo);
 							
@@ -292,6 +297,7 @@ public class DflRoundInfoCalculatorHandler {
 							dflRoundInfo.setRound(dflRound);
 							dflRoundInfo.setSplitRound(DomainDecodes.DFL_ROUND_INFO.SPLIT_ROUND.YES);
 							roundMappings = new ArrayList<>();
+							mappedAflFixtures = new ArrayList<>();
 							gameStartTimes = new HashMap<>();
 						}
 					}

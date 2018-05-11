@@ -99,7 +99,7 @@ public class DflFixtureGeneratorHandler {
 		}
 		
 		loggerUtils.log("info", "Saving fixutres in db...");
-		dflFixtureService.insertAll(dflFixture, false);
+		dflFixtureService.replaceAll(dflFixture);
 		
 		loggerUtils.log("info", "DFl fixture generated");
 	}

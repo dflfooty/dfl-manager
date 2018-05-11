@@ -164,7 +164,7 @@ public class ScoresCalculatorHandler {
 					handleEarlyGameSelections(round, earlyGameTeams);
 					StartRoundHandler startRound = new StartRoundHandler();
 					startRound.configureLogging(mdcKey, loggerName, logfile);
-					startRound.execute(round, null);
+					startRound.execute(round, null, true);
 					
 					insAndOutsService.removeForRound(round);
 				//}

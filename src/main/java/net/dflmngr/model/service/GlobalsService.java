@@ -34,4 +34,5 @@ public interface GlobalsService extends GenericService<Globals, GlobalsPK> {
 	public Map<Integer, Map<Integer, String[]>> getDflFixuteTemplate();
 	public Map<String, String> getDflFixtureOrder();
 	public boolean getSendMedalReports(int currentRound);
+	public String getOnlineBaseUrl();
 }

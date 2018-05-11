@@ -72,6 +72,9 @@ public class GenericServiceImpl<E, K> implements GenericService<E, K>  {
 		for(E entity : existingEntitys) {
 			dao.remove(entity);
 		}
+		
+		dao.flush();
+		
 		for(E entity : entitys) {
 			dao.persist(entity);
 		}

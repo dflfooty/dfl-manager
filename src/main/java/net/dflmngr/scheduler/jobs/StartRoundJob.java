@@ -29,7 +29,7 @@ public class StartRoundJob implements Job {
 			startRound.configureLogging("online.name", "online-logger", ("StartRound_R"+round));
 
 			loggerUtils.log("info", "Running StartRound: round={};", round);
-			startRound.execute(round, null);
+			startRound.execute(round, null, false);
 			loggerUtils.log("info", "StartRoundJob completed");
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);

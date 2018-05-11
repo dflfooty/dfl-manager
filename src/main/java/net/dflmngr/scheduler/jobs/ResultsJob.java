@@ -40,11 +40,11 @@ public class ResultsJob implements Job {
 				if(isFinal) {
 					logFile = "ResultsRound_R" + round;
 					onHeroku = true;
+					sendReport = true;
 				} else {
 					logFile = "ProgressRound_R" + round;
-					skipStats = true;
+					onHeroku = true;
 				}
-				sendReport = true;
 			}
 			
 			ResultsHandler resultsHandler = new ResultsHandler();
