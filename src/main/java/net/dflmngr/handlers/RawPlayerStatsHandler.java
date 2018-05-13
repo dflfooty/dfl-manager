@@ -69,7 +69,7 @@ public class RawPlayerStatsHandler {
 		isExecutable = true;
 	}
 	
-	public void execute(int round, boolean isFinal, boolean onHeroku) {
+	public void execute(int round, boolean scrapeAll, boolean onHeroku) {
 				
 		try {
 			if(!isExecutable) {
@@ -93,7 +93,7 @@ public class RawPlayerStatsHandler {
 				
 				loggerUtils.log("info", "DFL round includes AFL round={}", aflRound);
 				if(roundMapping.getAflGame() == 0) {
-					if(isFinal) {
+					if(scrapeAll) {
 						List<AflFixture> fixtures = aflFixtureService.getAflFixturesPlayedForRound(aflRound);
 						fixturesToProcess.addAll(fixtures);
 					} else {
@@ -102,15 +102,19 @@ public class RawPlayerStatsHandler {
 				} else {
 					int aflGame = roundMapping.getAflGame();
 					
-					List<AflFixture> completedFixtures = aflFixtureService.getFixturesToScrape();
 					AflFixture fixture = null;
-					
-					for(AflFixture aflFixture : completedFixtures) {
-						if(aflGame == aflFixture.getGame()) {
-							fixture = aflFixture;
+					if(scrapeAll) {
+						fixture = aflFixtureService.getPlayedGame(aflRound, aflGame);
+					} else {
+						List<AflFixture> completedFixtures = aflFixtureService.getFixturesToScrape();
+						for(AflFixture aflFixture : completedFixtures) {
+							if(aflGame == aflFixture.getGame()) {
+								fixture = aflFixture;
+								break;
+							}
 						}
 					}
-										
+							
 					if(fixture != null) {
 						if(!aflGames.contains(aflGame)) {
 							aflGames.add(aflGame);
@@ -127,7 +131,7 @@ public class RawPlayerStatsHandler {
 				loggerUtils.log("info", "AFL games to download stats from: {}", fixturesToProcess);
 				processFixtures(round, fixturesToProcess, onHeroku);
 				
-				if(!isFinal) {
+				if(!scrapeAll) {
 					List<AflFixture> updateFixtures = new ArrayList<>();
 					for(AflFixture fixture : fixturesToProcess) {
 						if(fixture.getEndTime() != null) {

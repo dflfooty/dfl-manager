@@ -105,7 +105,11 @@ public class ResultsHandler {
 					loggerUtils.log("info", "Getting stats");
 					RawPlayerStatsHandler statsHandler = new RawPlayerStatsHandler();
 					statsHandler.configureLogging(mdcKey, loggerName, logfile);
-					statsHandler.execute(round, isFinal, onHeroku);
+					boolean scrapeAll = false;
+					if(inputRound != 0) {
+						scrapeAll = true;
+					}
+					statsHandler.execute(round, scrapeAll, onHeroku);
 				}
 	
 				loggerUtils.log("info", "Calculating scores");
