@@ -7,12 +7,20 @@ import java.util.Map;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflFixture;
 import net.dflmngr.model.entity.DflLadder;
+import net.dflmngr.model.entity.DflPlayerPredictedScores;
+import net.dflmngr.model.entity.DflPlayerScores;
+import net.dflmngr.model.entity.DflSelectedPlayer;
 import net.dflmngr.model.entity.DflTeamScores;
 import net.dflmngr.model.service.DflFixtureService;
 import net.dflmngr.model.service.DflLadderService;
+import net.dflmngr.model.service.DflPlayerPredictedScoresService;
+import net.dflmngr.model.service.DflPlayerScoresService;
+import net.dflmngr.model.service.DflSelectedTeamService;
 import net.dflmngr.model.service.DflTeamScoresService;
 import net.dflmngr.model.service.impl.DflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflLadderServiceImpl;
+import net.dflmngr.model.service.impl.DflPlayerPredictedScoresServiceImpl;
+import net.dflmngr.model.service.impl.DflSelectedTeamServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamScoresServiceImpl;
 
 public class LadderCalculatorHandler {
@@ -31,11 +39,16 @@ public class LadderCalculatorHandler {
 	DflLadderService dflLadderService;
 	DflFixtureService dflFixtureService;
 	DflTeamScoresService dflTeamScoresService;
+	DflSelectedTeamService dflSelectedTeamService;
+	DflPlayerScoresService dflPlayerScoresService;
+	DflPlayerPredictedScoresService dflPlayerPredictedScoresService;
 	
 	public LadderCalculatorHandler() {
 		dflLadderService = new DflLadderServiceImpl();
 		dflFixtureService = new DflFixtureServiceImpl();
 		dflTeamScoresService = new DflTeamScoresServiceImpl();
+		dflSelectedTeamService = new DflSelectedTeamServiceImpl();
+		dflPlayerPredictedScoresService = new DflPlayerPredictedScoresServiceImpl();
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
@@ -47,24 +60,23 @@ public class LadderCalculatorHandler {
 		isExecutable = true;
 	}
 	
-	public void execute(int round, boolean liveLadderOveride, Map<String, Integer> teamScores) {
+	public void execute(int round, boolean liveLadderOveride) {
 		
 		try{
 			if(!isExecutable) {
 				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
-			
-			loggerUtils.log("info", "LadderCalculatorHandler executing round={} ...", round);
-			if(liveLadderOveride) {
-				loggerUtils.log("info", "Calculating live ladder override scores={} ...", teamScores);
-			}
-			
-			handleLadder(round, liveLadderOveride, teamScores);
+						
+			loggerUtils.log("info", "LadderCalculatorHandler executing round={} ...", round);			
+			handleLadder(round, liveLadderOveride);
 			
 			dflLadderService.close();;
 			dflFixtureService.close();;
-			dflTeamScoresService.close();;
+			dflTeamScoresService.close();
+			dflSelectedTeamService.close();
+			dflPlayerScoresService.close();
+			dflPlayerPredictedScoresService.close();
 			
 			loggerUtils.log("info", "LadderCalculatorHandler completed");
 			
@@ -72,8 +84,8 @@ public class LadderCalculatorHandler {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
 	}
-	
-	private void handleLadder(int round, boolean liveLadderOveride, Map<String, Integer> teamScores) {
+		
+	private void handleLadder(int round, boolean liveLadderOveride) {
 		
 		List<DflFixture> roundFixtures = dflFixtureService.getFixturesForRound(round);
 		Map<String, DflTeamScores> roundTeamScores = dflTeamScoresService.getForRoundWithKey(round);
@@ -90,15 +102,15 @@ public class LadderCalculatorHandler {
 			String awayTeamCode = fixture.getAwayTeam();
 			
 			if(liveLadderOveride) {
-				homeTeamScore = teamScores.get(homeTeamCode);
-				awayTeamScore = teamScores.get(awayTeamCode);
+				homeTeamScore = calculateLiveTeamScore(round, homeTeamCode);
+				awayTeamScore = calculateLiveTeamScore(round, awayTeamCode);
 			} else {
 				homeTeamScore = roundTeamScores.get(homeTeamCode).getScore();
 				awayTeamScore = roundTeamScores.get(awayTeamCode).getScore();				
 			}
 			
-			DflLadder homeTeamLadder = calculateLadder(round, homeTeamCode, previousLadder.get(homeTeamCode), homeTeamScore, awayTeamScore);
-			DflLadder awayTeamLadder = calculateLadder(round, awayTeamCode, previousLadder.get(awayTeamCode), awayTeamScore, homeTeamScore);
+			DflLadder homeTeamLadder = calculateLadder(round, homeTeamCode, previousLadder.get(homeTeamCode), homeTeamScore, awayTeamScore, liveLadderOveride);
+			DflLadder awayTeamLadder = calculateLadder(round, awayTeamCode, previousLadder.get(awayTeamCode), awayTeamScore, homeTeamScore, liveLadderOveride);
 			
 			roundLadder.add(homeTeamLadder);
 			roundLadder.add(awayTeamLadder);
@@ -107,7 +119,28 @@ public class LadderCalculatorHandler {
 		dflLadderService.replaceAllForRound(round, roundLadder);
 	}
 	
-	private DflLadder calculateLadder(int round, String teamCode, DflLadder previousLadder, int teamScore, int oppositionScore) {
+	private int calculateLiveTeamScore(int round, String teamCode) {
+		
+		int teamScore = 0;
+		
+		List<DflSelectedPlayer> selectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, teamCode);
+		Map<Integer, DflPlayerScores> scores = dflPlayerScoresService.getForRoundWithKey(round);
+		Map<Integer, DflPlayerPredictedScores> predictedScores = dflPlayerPredictedScoresService.getForRoundWithKey(round);
+		
+		for(DflSelectedPlayer player : selectedTeam) {
+			if(!player.isDnp()) {
+				if(player.hasPlayed()) {
+					teamScore = teamScore + scores.get(player.getPlayerId()).getScore();
+				} else {
+					teamScore = teamScore + predictedScores.get(player.getPlayerId()).getPredictedScore();
+				}
+			}
+		}
+	
+		return teamScore;
+	}
+	
+	private DflLadder calculateLadder(int round, String teamCode, DflLadder previousLadder, int teamScore, int oppositionScore, boolean isLive) {
 		
 		DflLadder newLadder = new DflLadder();
 		
@@ -144,6 +177,7 @@ public class LadderCalculatorHandler {
 		newLadder.setAverageAgainst(averageAgainst);
 		newLadder.setPts(pts);
 		newLadder.setPercentage(percentage);
+		newLadder.setLive(isLive);
 		
 		return newLadder;
 	}

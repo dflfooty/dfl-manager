@@ -1193,7 +1193,7 @@ public class ResultsReport {
 			loggerUtils.log("info", "Calculating Live Ladder");
 			LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
 			ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
-			ladderCalculator.execute(round, true, currentLadderScores);
+			ladderCalculator.execute(round, true);
 			
 			List<DflLadder> ladder = dflLadderService.getLadderForRound(round);
 			Collections.sort(ladder, Collections.reverseOrder());

@@ -40,6 +40,7 @@ public class DflLadder implements Comparator<DflLadder>, Comparable<DflLadder> {
 	
 	private int pts;
 	private float percentage;
+	private boolean live;
 	
 	public int getRound() {
 		return round;
@@ -107,13 +108,19 @@ public class DflLadder implements Comparator<DflLadder>, Comparable<DflLadder> {
 	public void setPercentage(float percentage) {
 		this.percentage = percentage;
 	}
+	public boolean isLive() {
+		return live;
+	}
+	public void setLive(boolean live) {
+		this.live = live;
+	}
 	
 	@Override
 	public String toString() {
 		return "DflLadder [round=" + round + ", teamCode=" + teamCode + ", wins=" + wins + ", losses=" + losses
 				+ ", draws=" + draws + ", pointsFor=" + pointsFor + ", pointsAgainst=" + pointsAgainst + ", averageFor="
 				+ averageFor + ", averageAgainst=" + averageAgainst + ", pts=" + pts + ", percentage=" + percentage
-				+ "]";
+				+ ", live=" + live + "]";
 	}
 	
 	@Override
@@ -123,6 +130,7 @@ public class DflLadder implements Comparator<DflLadder>, Comparable<DflLadder> {
 		result = prime * result + Float.floatToIntBits(averageAgainst);
 		result = prime * result + Float.floatToIntBits(averageFor);
 		result = prime * result + draws;
+		result = prime * result + (live ? 1231 : 1237);
 		result = prime * result + losses;
 		result = prime * result + Float.floatToIntBits(percentage);
 		result = prime * result + pointsAgainst;
@@ -147,6 +155,8 @@ public class DflLadder implements Comparator<DflLadder>, Comparable<DflLadder> {
 		if (Float.floatToIntBits(averageFor) != Float.floatToIntBits(other.averageFor))
 			return false;
 		if (draws != other.draws)
+			return false;
+		if (live != other.live)
 			return false;
 		if (losses != other.losses)
 			return false;
