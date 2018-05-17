@@ -129,7 +129,7 @@ public class RawPlayerStatsHandler {
 				loggerUtils.log("info", "No AFL games to download stats from");
 			} else {
 				loggerUtils.log("info", "AFL games to download stats from: {}", fixturesToProcess);
-				processFixtures(round, fixturesToProcess, onHeroku);
+				processFixtures(round, fixturesToProcess, scrapeAll, onHeroku);
 				
 				if(!scrapeAll) {
 					List<AflFixture> updateFixtures = new ArrayList<>();
@@ -157,7 +157,7 @@ public class RawPlayerStatsHandler {
 		}
 	}
 		
-	private void processFixtures(int round, List<AflFixture> fixturesToProcess, boolean onHeroku) throws Exception {
+	private void processFixtures(int round, List<AflFixture> fixturesToProcess, boolean scrapeAll, boolean onHeroku) throws Exception {
 		
 		String year = globalsService.getCurrentYear();
 		String statsUrl = globalsService.getAflStatsUrl();
@@ -166,12 +166,33 @@ public class RawPlayerStatsHandler {
 			String homeTeam = fixture.getHomeTeam();
 			String awayTeam = fixture.getAwayTeam();
 			String aflRound = Integer.toString(fixture.getRound());
-
+			
 			String fullStatsUrl = statsUrl + "/" + year + "/" + aflRound + "/" + homeTeam.toLowerCase() + "-v-" + awayTeam.toLowerCase();
 			loggerUtils.log("info", "AFL stats URL: {}", fullStatsUrl);
+			
+			String scrapingStatus = "";
+			if(scrapeAll) {
+				if(fixture.isStatsDownloaded()) {
+					scrapingStatus = "Finalized";
+				} else {
+					if(fixture.getEndTime() != null) {
+						scrapingStatus = "Completed";
+					} else {
+						scrapingStatus = "InProgress";
+					}
+				}
+			} else {
+				if(fixture.getEndTime() != null || fixture.isStatsDownloaded()) {
+					scrapingStatus = "Completed";
+				} else {
+					scrapingStatus = "InProgress";
+				}
+			}
+			
+			loggerUtils.log("info", "Scraping status={}", scrapingStatus);
 
 			if(onHeroku) {
-				String command = "bin/run_raw_stats_downloader.sh " + round + " " + " " + homeTeam + " " + awayTeam + " " + fullStatsUrl;
+				String command = "bin/run_raw_stats_downloader.sh " + round + " " + " " + homeTeam + " " + awayTeam + " " + fullStatsUrl + " " + scrapingStatus;
 				
 				int tries = 1;
 				while(!spawnDyno(command)) {
@@ -184,7 +205,7 @@ public class RawPlayerStatsHandler {
 				loggerUtils.log("info", "Running locally ... ");
 				RawStatsDownloaderHandler handler = new RawStatsDownloaderHandler();
 				handler.configureLogging("RawPlayerDownloader");
-				handler.execute(round, homeTeam, awayTeam, fullStatsUrl);
+				handler.execute(round, homeTeam, awayTeam, fullStatsUrl, scrapingStatus);
 			}
 		}			
 	}

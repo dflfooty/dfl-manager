@@ -43,6 +43,9 @@ public class RawPlayerStats implements Serializable {
 	private int goals;
 	private int behinds;
 	
+	@Column(name="scraping_status")
+	private String scrapingStatus;
+	
 	public int getRound() {
 		return round;
 	}
@@ -126,6 +129,12 @@ public class RawPlayerStats implements Serializable {
 	}
 	public void setBehinds(int behinds) {
 		this.behinds = behinds;
+	}		
+	public String getScrapingStatus() {
+		return scrapingStatus;
+	}
+	public void setScrapingStatus(String scrapingStatus) {
+		this.scrapingStatus = scrapingStatus;
 	}
 	
 	@Override
@@ -133,7 +142,7 @@ public class RawPlayerStats implements Serializable {
 		return "RawPlayerStats [round=" + round + ", name=" + name + ", team=" + team + ", jumperNo=" + jumperNo
 				+ ", kicks=" + kicks + ", handballs=" + handballs + ", disposals=" + disposals + ", marks=" + marks
 				+ ", hitouts=" + hitouts + ", freesFor=" + freesFor + ", freesAgainst=" + freesAgainst + ", tackles="
-				+ tackles + ", goals=" + goals + ", behinds=" + behinds + "]";
+				+ tackles + ", goals=" + goals + ", behinds=" + behinds + ", scrapingStatus=" + scrapingStatus + "]";
 	}
 	
 	@Override
@@ -152,6 +161,7 @@ public class RawPlayerStats implements Serializable {
 		result = prime * result + marks;
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + round;
+		result = prime * result + ((scrapingStatus == null) ? 0 : scrapingStatus.hashCode());
 		result = prime * result + tackles;
 		result = prime * result + ((team == null) ? 0 : team.hashCode());
 		return result;
@@ -192,6 +202,11 @@ public class RawPlayerStats implements Serializable {
 		} else if (!name.equals(other.name))
 			return false;
 		if (round != other.round)
+			return false;
+		if (scrapingStatus == null) {
+			if (other.scrapingStatus != null)
+				return false;
+		} else if (!scrapingStatus.equals(other.scrapingStatus))
 			return false;
 		if (tackles != other.tackles)
 			return false;

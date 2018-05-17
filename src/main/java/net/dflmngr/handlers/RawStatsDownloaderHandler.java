@@ -62,7 +62,7 @@ public class RawStatsDownloaderHandler {
 		isExecutable = true;
 	}
 	
-	public void execute(int round, String homeTeam, String awayTeam, String statsUrl) {
+	public void execute(int round, String homeTeam, String awayTeam, String statsUrl, String scrapingStatus) {
 		
 		Process process = new Process();
 		//ProcessPK processPK = new ProcessPK();
@@ -99,7 +99,7 @@ public class RawStatsDownloaderHandler {
 			for(int i = 0; i < 5; i++) {
 				loggerUtils.log("info", "Attempt {}", i);
 				try {
-					playerStats = downloadStats(round, homeTeam, awayTeam, statsUrl);
+					playerStats = downloadStats(round, homeTeam, awayTeam, statsUrl, scrapingStatus);
 					loggerUtils.log("info", "Player stats count: {}", playerStats.size());
 					if(playerStats.size() >= 44) {
 						statsDownloaded = true;
@@ -142,7 +142,7 @@ public class RawStatsDownloaderHandler {
 		}
 	}
 
-	private List<RawPlayerStats> downloadStats(int round, String homeTeam, String awayTeam, String statsUrl) throws Exception {
+	private List<RawPlayerStats> downloadStats(int round, String homeTeam, String awayTeam, String statsUrl, String scrapingStatus) throws Exception {
 		
 		List<RawPlayerStats> playerStats = new ArrayList<>();
 		
@@ -181,8 +181,8 @@ public class RawStatsDownloaderHandler {
 		
 		
 		try {
-			playerStats.addAll(getStats(round, homeTeam, "h", driver, isLive));
-			playerStats.addAll(getStats(round, awayTeam, "a", driver, isLive));
+			playerStats.addAll(getStats(round, homeTeam, "h", driver, isLive, scrapingStatus));
+			playerStats.addAll(getStats(round, awayTeam, "a", driver, isLive, scrapingStatus));
 		} catch (Exception ex) {
 			throw ex;
 		} finally {
@@ -192,7 +192,7 @@ public class RawStatsDownloaderHandler {
 		return playerStats;
 	}
 	
-	private List<RawPlayerStats> getStats(int round, String aflTeam, String homeORaway, WebDriver driver, boolean isLive) throws Exception {
+	private List<RawPlayerStats> getStats(int round, String aflTeam, String homeORaway, WebDriver driver, boolean isLive, String scrapingStatus) throws Exception {
 		
 		
 		if(isLive) {
@@ -237,6 +237,7 @@ public class RawStatsDownloaderHandler {
 			playerStats.setTackles(Integer.parseInt(stats.get(19).getText()));
 			playerStats.setGoals(Integer.parseInt(stats.get(23).getText()));
 			playerStats.setBehinds(Integer.parseInt(stats.get(24).getText()));
+			playerStats.setScrapingStatus(scrapingStatus);
 			
 			loggerUtils.log("info", "Player stats: {}", playerStats);
 			
@@ -257,10 +258,11 @@ public class RawStatsDownloaderHandler {
 		String homeTeam = args[1];
 		String awayTeam = args[2];
 		String statsUrl = args[3];
+		String scrapingStatus = args[4];
 		
 		RawStatsDownloaderHandler handler = new RawStatsDownloaderHandler();
 		handler.configureLogging("RawPlayerDownloader");
-		handler.execute(round, homeTeam, awayTeam, statsUrl);
+		handler.execute(round, homeTeam, awayTeam, statsUrl, scrapingStatus);
 		
 		System.exit(0);
 	}
