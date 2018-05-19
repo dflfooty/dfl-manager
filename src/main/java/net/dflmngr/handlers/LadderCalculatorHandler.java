@@ -20,6 +20,7 @@ import net.dflmngr.model.service.DflTeamScoresService;
 import net.dflmngr.model.service.impl.DflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflLadderServiceImpl;
 import net.dflmngr.model.service.impl.DflPlayerPredictedScoresServiceImpl;
+import net.dflmngr.model.service.impl.DflPlayerScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflSelectedTeamServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamScoresServiceImpl;
 
@@ -48,6 +49,7 @@ public class LadderCalculatorHandler {
 		dflFixtureService = new DflFixtureServiceImpl();
 		dflTeamScoresService = new DflTeamScoresServiceImpl();
 		dflSelectedTeamService = new DflSelectedTeamServiceImpl();
+		dflPlayerScoresService = new DflPlayerScoresServiceImpl();
 		dflPlayerPredictedScoresService = new DflPlayerPredictedScoresServiceImpl();
 	}
 	
@@ -128,7 +130,7 @@ public class LadderCalculatorHandler {
 		Map<Integer, DflPlayerPredictedScores> predictedScores = dflPlayerPredictedScoresService.getForRoundWithKey(round);
 		
 		for(DflSelectedPlayer player : selectedTeam) {
-			if(!player.isDnp()) {
+			if(!player.isDnp()  && player.isScoreUsed()) {
 				if(player.hasPlayed()) {
 					teamScore = teamScore + scores.get(player.getPlayerId()).getScore();
 				} else {
