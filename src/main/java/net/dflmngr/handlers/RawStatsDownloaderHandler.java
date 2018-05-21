@@ -92,7 +92,7 @@ public class RawStatsDownloaderHandler {
 			
 			processService.insert(process);
 			
-			loggerUtils.log("info", "Downloading AFL stats: round={}, homeTeam={} awayTeam={} ur={}", round, homeTeam, awayTeam, statsUrl);
+			loggerUtils.log("info", "Downloading AFL stats: round={}, homeTeam={} awayTeam={} url={}", round, homeTeam, awayTeam, statsUrl);
 			
 			List<RawPlayerStats> playerStats = null;
 			boolean statsDownloaded = false;

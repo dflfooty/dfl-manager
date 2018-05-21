@@ -9,5 +9,6 @@ public interface RawPlayerStatsDao extends GenericDao<RawPlayerStats, RawPlayerS
 	
 	public List<RawPlayerStats> findForRound(int round);
 	public void deleteStatsForRoundAndTeam(int round, String team);
+	public List<RawPlayerStats> findForRoundAndTeam(int round, String team);
 	
 }

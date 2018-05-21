@@ -97,5 +97,6 @@ public abstract class GenericDaoImpl<E, K> implements GenericDao<E, K> {
 	
 	public void close() {
 		entityManager.close();
+		factory.close();
 	}
 }

@@ -54,8 +54,19 @@ public class RawPlayerStatsServiceImpl extends GenericServiceImpl<RawPlayerStats
 	}
 	
 	public void removeStatsForRoundAndTeam(int round, String team) {
+		
 		dao.beginTransaction();
-		dao.deleteStatsForRoundAndTeam(round, team);
+		
+		List<RawPlayerStats> existingStats = getForRoundAndTeam(round, team);
+		for(RawPlayerStats stats : existingStats) {
+			delete(stats);
+		}
+		
 		dao.commit();
+	}
+	
+	public List<RawPlayerStats> getForRoundAndTeam(int round, String team) {
+		List<RawPlayerStats> playerStats = dao.findForRoundAndTeam(round, team);
+		return playerStats;
 	}
 }

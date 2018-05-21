@@ -40,4 +40,18 @@ public class RawPlayerStatsDaoImpl extends GenericDaoImpl<RawPlayerStats, RawPla
 		entityManager.createQuery(criteriaDelete).executeUpdate();
 		
 	}
+	
+	public List<RawPlayerStats> findForRoundAndTeam(int round, String team) {
+		criteriaBuilder = entityManager.getCriteriaBuilder();
+		criteriaQuery = criteriaBuilder.createQuery(entityClass);
+		entity = criteriaQuery.from(entityClass);
+		
+		Predicate roundEquals = criteriaBuilder.equal(entity.get(RawPlayerStats_.round), round);
+		Predicate teamEquals = criteriaBuilder.equal(entity.get(RawPlayerStats_.team), team);
+		
+		criteriaQuery.where(criteriaBuilder.and(roundEquals, teamEquals));
+		List<RawPlayerStats> entitys = entityManager.createQuery(criteriaQuery).getResultList();
+		
+		return entitys;
+	}
 }
