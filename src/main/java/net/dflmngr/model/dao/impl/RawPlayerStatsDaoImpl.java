@@ -16,6 +16,9 @@ public class RawPlayerStatsDaoImpl extends GenericDaoImpl<RawPlayerStats, RawPla
 	}
 	
 	public List<RawPlayerStats> findForRound(int round) {
+		
+		entityManager.clear();
+		
 		criteriaBuilder = entityManager.getCriteriaBuilder();
 		criteriaQuery = criteriaBuilder.createQuery(entityClass);
 		entity = criteriaQuery.from(entityClass);
@@ -42,6 +45,9 @@ public class RawPlayerStatsDaoImpl extends GenericDaoImpl<RawPlayerStats, RawPla
 	}
 	
 	public List<RawPlayerStats> findForRoundAndTeam(int round, String team) {
+		
+		entityManager.clear();
+		
 		criteriaBuilder = entityManager.getCriteriaBuilder();
 		criteriaQuery = criteriaBuilder.createQuery(entityClass);
 		entity = criteriaQuery.from(entityClass);
