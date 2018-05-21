@@ -8,7 +8,7 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.persistence.PersistenceContext;
+//import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
@@ -27,7 +27,7 @@ public abstract class GenericDaoImpl<E, K> implements GenericDao<E, K> {
 	protected Root<E> entity;
 	private static EntityManagerFactory factory;
 	
-	@PersistenceContext
+	//@PersistenceContext
 	protected EntityManager entityManager;
 	
 	public GenericDaoImpl(Class<E> entityClass) {
@@ -96,6 +96,8 @@ public abstract class GenericDaoImpl<E, K> implements GenericDao<E, K> {
 	}
 	
 	public void close() {
+		entityManager.clear();
 		entityManager.close();
+		entityManager = null;
 	}
 }
