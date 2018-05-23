@@ -7,27 +7,23 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-//import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-//import java.util.Properties;
 
+import javax.mail.BodyPart;
 import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Part;
-//import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflPlayer;
 import net.dflmngr.model.entity.DflTeam;
@@ -171,48 +167,22 @@ public class EmailSelectionsHandler {
 				
 				if (contentType.contains("multipart")) {
 					Multipart multipart = (Multipart) messages[i].getContent();
+					
+					
 								
 					for(int j = 0; j < multipart.getCount(); j++) {
-						MimeBodyPart part = (MimeBodyPart) multipart.getBodyPart(j);
-											
-						String disposition = part.getDisposition();
-		
-						if (disposition != null && (disposition.equalsIgnoreCase(Part.ATTACHMENT) || disposition.equalsIgnoreCase(Part.INLINE))) {
-							String attachementName = part.getFileName();
-							Instant instant = messages[i].getReceivedDate().toInstant();
-							ZonedDateTime receivedDate = ZonedDateTime.ofInstant(instant, ZoneId.of(DflmngrUtils.defaultTimezone));;
-							loggerUtils.log("info", "Attachement found, name={}", attachementName);
-							if(attachementName.equals("selections.txt")) {
-								loggerUtils.log("info", "Message from {}, has selection attachment", from);
-								selectionsFileAttached = true;
-								validationResult = handleSelectionFile(part.getInputStream(), receivedDate);
-								validationResult.setFrom(from);
-								validationResults.add(validationResult);
-								loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
-							} else if (attachementName.equalsIgnoreCase("WINMAIL.DAT") || attachementName.equalsIgnoreCase("ATT00001.DAT")) {
-								loggerUtils.log("info", "Message from {}, is a TNEF message", from);
-								validationResult = handleTNEFMessage(part.getInputStream(), from, receivedDate);
-								validationResult.setFrom(from);
-								validationResults.add(validationResult);
-								loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
-							}
-						}
-							
+						BodyPart part = multipart.getBodyPart(j);
+						
+						Instant instant = messages[i].getReceivedDate().toInstant();
+						ZonedDateTime receivedDate = ZonedDateTime.ofInstant(instant, ZoneId.of(DflmngrUtils.defaultTimezone));
+						
+						validationResult = scanEmailPartsAndValidate(part, receivedDate, from);
 					}
 				}
 				if(validationResult == null) {
-					loggerUtils.log("info", "Validation is still NULL");
 					validationResult = new SelectedTeamValidation();
-					if(selectionsFileAttached) {
-						validationResult.unknownError = true;
-						validationResult.selectionFileMissing = false;
-						validationResult.roundCompleted = false;
-						validationResult.lockedOut = false;
-						loggerUtils.log("info", "Selection file was found, but there was some error.");
-					} else {
-						loggerUtils.log("info", "Selection file is missing.");
-						validationResult.selectionFileMissing = true;
-					}
+					loggerUtils.log("info", "Selection file is missing.");
+					validationResult.selectionFileMissing = true;
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 					loggerUtils.log("info", "Message from {} ... FAILURE!", from);
@@ -267,6 +237,46 @@ public class EmailSelectionsHandler {
 		store.close();
 	}
 	
+
+	private SelectedTeamValidation scanEmailPartsAndValidate(BodyPart part, ZonedDateTime receivedDate, String from) throws Exception {
+		
+		SelectedTeamValidation validationResult = null;
+		
+		Object content = part.getContent();
+		
+	    if(content instanceof InputStream || content instanceof String) {	    	
+	        if(Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || (part.getFileName() != null && !part.getFileName().isEmpty())) {
+				String attachementName = part.getFileName();
+				loggerUtils.log("info", "Attachement found, name={}", attachementName);
+				if(attachementName.equals("selections.txt")) {
+					loggerUtils.log("info", "Message from {}, has selection attachment", from);
+					selectionsFileAttached = true;
+					validationResult = handleSelectionFile(part.getInputStream(), receivedDate);
+					validationResult.setFrom(from);
+					validationResults.add(validationResult);
+					loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
+				} else if(attachementName.equalsIgnoreCase("WINMAIL.DAT") || attachementName.equalsIgnoreCase("ATT00001.DAT")) {
+					loggerUtils.log("info", "Message from {}, is a TNEF message", from);
+					validationResult = handleTNEFMessage(part.getInputStream(), from, receivedDate);
+					validationResult.setFrom(from);
+					validationResults.add(validationResult);
+					loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
+				}
+	        }
+	    }
+
+	    if(content instanceof Multipart) {
+            Multipart multipart = (Multipart) content;
+            for(int i = 0; i < multipart.getCount(); i++) {
+                BodyPart bodyPart = multipart.getBodyPart(i);
+                scanEmailPartsAndValidate(bodyPart, receivedDate, from);
+            }
+	    }
+	    
+	    return validationResult;
+	}
+
+	
 	private SelectedTeamValidation handleTNEFMessage(InputStream inputStream, String from, ZonedDateTime receivedDate) throws Exception {
 
 		SelectedTeamValidation validationResult = null;
@@ -274,13 +284,12 @@ public class EmailSelectionsHandler {
 		TNEFInputStream tnefInputSteam = new TNEFInputStream(inputStream);
 		net.freeutils.tnef.Message message = new net.freeutils.tnef.Message(tnefInputSteam);
 
-		for (Attachment attachment : message.getAttachments()) {
-			if (attachment.getNestedMessage() == null) {
+		for(Attachment attachment : message.getAttachments()) {
+			if(attachment.getNestedMessage() == null) {
 				String filename = attachment.getFilename();
 
-				if (filename.equals("selections.txt")) {
+				if(filename.equals("selections.txt")) {
 					loggerUtils.log("info", "Message from {}, has selection attachment", from);
-					selectionsFileAttached = true;
 					validationResult = handleSelectionFile(attachment.getRawData(), receivedDate);
 				}
 			} 
@@ -403,7 +412,7 @@ public class EmailSelectionsHandler {
 		
 		return validationResult;
 	}
-	
+		
 	private void sendResponses() throws Exception {
 		
 		
