@@ -587,7 +587,7 @@ public class ScoresCalculatorHandler {
 		for(DflSelectedPlayer player : played22) {
 			if(!player.isDnp()) {
 				if(scores.containsKey(player.getPlayerId())) {
-					loggerUtils.log("info", "Calculating scores team={}, playerid={}. teamplayer{}, playerscore={}, teamscore={}",
+					loggerUtils.log("info", "Calculating scores team={}, playerId={}. teamplayer={}, playerscore={}, teamscore={}",
 							         player.getTeamCode(), player.getPlayerId(), player.getTeamPlayerId(), scores.get(player.getPlayerId()), teamScore);
 					teamScore = teamScore + scores.get(player.getPlayerId());
 					

@@ -86,7 +86,7 @@ public class RawPlayerStatsHandler {
 			List<AflFixture> fixturesToProcess = new ArrayList<>();
 			Map<String, Integer> teamsToProcess = new HashMap<>();
 			
-			Set<Integer> aflGames = new HashSet<>();
+			Set<String> aflGames = new HashSet<>();
 			
 			loggerUtils.log("info", "Checking for AFL rounds to download");
 			
@@ -120,10 +120,12 @@ public class RawPlayerStatsHandler {
 							}
 						}
 					}
+					
+					String fixtureKey = aflRound + "-" + aflGame;
 							
 					if(fixture != null) {
-						if(!aflGames.contains(aflGame)) {
-							aflGames.add(aflGame);
+						if(!aflGames.contains(fixtureKey)) {
+							aflGames.add(fixtureKey);
 							fixturesToProcess.add(fixture);
 						}
 					}

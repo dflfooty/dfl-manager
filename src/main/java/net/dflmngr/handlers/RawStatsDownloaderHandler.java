@@ -101,9 +101,16 @@ public class RawStatsDownloaderHandler {
 				try {
 					playerStats = downloadStats(round, homeTeam, awayTeam, statsUrl, includeHomeTeam, includeAwayTeam, scrapingStatus);
 					loggerUtils.log("info", "Player stats count: {}", playerStats.size());
-					if(playerStats.size() >= 44) {
-						statsDownloaded = true;
-						break;
+					if(includeHomeTeam && includeAwayTeam) {
+						if(playerStats.size() >= 44) {
+							statsDownloaded = true;
+							break;
+						}
+					} else {
+						if(playerStats.size() >= 22) {
+							statsDownloaded = true;
+							break;
+						}
 					}
 				} catch (Exception ex) {
 					loggerUtils.log("info", "Exception caught downloading stats will try again");
