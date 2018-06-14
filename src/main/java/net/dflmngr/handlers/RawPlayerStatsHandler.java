@@ -6,8 +6,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
@@ -82,6 +84,7 @@ public class RawPlayerStatsHandler {
 			DflRoundInfo dflRoundInfo = dflRoundInfoService.get(round);
 			
 			List<AflFixture> fixturesToProcess = new ArrayList<>();
+			Map<String, Integer> teamsToProcess = new HashMap<>();
 			
 			Set<Integer> aflGames = new HashSet<>();
 			
@@ -101,6 +104,9 @@ public class RawPlayerStatsHandler {
 					}
 				} else {
 					int aflGame = roundMapping.getAflGame();
+					String team = roundMapping.getAflTeam();
+					
+					teamsToProcess.put(team, aflRound);
 					
 					AflFixture fixture = null;
 					if(scrapeAll) {
@@ -129,7 +135,7 @@ public class RawPlayerStatsHandler {
 				loggerUtils.log("info", "No AFL games to download stats from");
 			} else {
 				loggerUtils.log("info", "AFL games to download stats from: {}", fixturesToProcess);
-				processFixtures(round, fixturesToProcess, scrapeAll, onHeroku);
+				processFixtures(round, fixturesToProcess, teamsToProcess, scrapeAll, onHeroku);
 				
 				if(!scrapeAll) {
 					List<AflFixture> updateFixtures = new ArrayList<>();
@@ -157,7 +163,7 @@ public class RawPlayerStatsHandler {
 		}
 	}
 		
-	private void processFixtures(int round, List<AflFixture> fixturesToProcess, boolean scrapeAll, boolean onHeroku) throws Exception {
+	private void processFixtures(int round, List<AflFixture> fixturesToProcess, Map<String, Integer> teamsToProcess, boolean scrapeAll, boolean onHeroku) throws Exception {
 		
 		String year = globalsService.getCurrentYear();
 		String statsUrl = globalsService.getAflStatsUrl();
@@ -169,6 +175,19 @@ public class RawPlayerStatsHandler {
 			
 			String fullStatsUrl = statsUrl + "/" + year + "/" + aflRound + "/" + homeTeam.toLowerCase() + "-v-" + awayTeam.toLowerCase();
 			loggerUtils.log("info", "AFL stats URL: {}", fullStatsUrl);
+			
+			boolean includeHomeTeam = false;
+			boolean includeAwayTeam = false;
+			
+			int aflRoundCheck = teamsToProcess.get(homeTeam);
+			if(aflRoundCheck == fixture.getRound()) {
+				includeHomeTeam = true;
+			}
+			
+			aflRoundCheck = teamsToProcess.get(awayTeam);
+			if(aflRoundCheck == fixture.getRound()) {
+				includeAwayTeam = true;
+			}
 			
 			String scrapingStatus = "";
 			if(scrapeAll) {
@@ -192,7 +211,8 @@ public class RawPlayerStatsHandler {
 			loggerUtils.log("info", "Scraping status={}", scrapingStatus);
 
 			if(onHeroku) {
-				String command = "bin/run_raw_stats_downloader.sh " + round + " " + " " + homeTeam + " " + awayTeam + " " + fullStatsUrl + " " + scrapingStatus;
+				String command = "bin/run_raw_stats_downloader.sh " + round + " " + " " + homeTeam + " " + awayTeam + " " + fullStatsUrl + " " 
+			                     + includeHomeTeam + " " + includeAwayTeam + " " + scrapingStatus;
 				
 				int tries = 1;
 				while(!spawnDyno(command)) {
@@ -205,7 +225,7 @@ public class RawPlayerStatsHandler {
 				loggerUtils.log("info", "Running locally ... ");
 				RawStatsDownloaderHandler handler = new RawStatsDownloaderHandler();
 				handler.configureLogging("RawPlayerDownloader");
-				handler.execute(round, homeTeam, awayTeam, fullStatsUrl, scrapingStatus);
+				handler.execute(round, homeTeam, awayTeam, fullStatsUrl, includeHomeTeam, includeAwayTeam, scrapingStatus);
 			}
 		}			
 	}

@@ -62,7 +62,7 @@ public class RawStatsDownloaderHandler {
 		isExecutable = true;
 	}
 	
-	public void execute(int round, String homeTeam, String awayTeam, String statsUrl, String scrapingStatus) {
+	public void execute(int round, String homeTeam, String awayTeam, String statsUrl, boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) {
 		
 		Process process = new Process();
 		//ProcessPK processPK = new ProcessPK();
@@ -99,7 +99,7 @@ public class RawStatsDownloaderHandler {
 			for(int i = 0; i < 5; i++) {
 				loggerUtils.log("info", "Attempt {}", i);
 				try {
-					playerStats = downloadStats(round, homeTeam, awayTeam, statsUrl, scrapingStatus);
+					playerStats = downloadStats(round, homeTeam, awayTeam, statsUrl, includeHomeTeam, includeAwayTeam, scrapingStatus);
 					loggerUtils.log("info", "Player stats count: {}", playerStats.size());
 					if(playerStats.size() >= 44) {
 						statsDownloaded = true;
@@ -142,7 +142,7 @@ public class RawStatsDownloaderHandler {
 		}
 	}
 
-	private List<RawPlayerStats> downloadStats(int round, String homeTeam, String awayTeam, String statsUrl, String scrapingStatus) throws Exception {
+	private List<RawPlayerStats> downloadStats(int round, String homeTeam, String awayTeam, String statsUrl, boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) throws Exception {
 		
 		List<RawPlayerStats> playerStats = new ArrayList<>();
 		
@@ -181,8 +181,13 @@ public class RawStatsDownloaderHandler {
 		
 		
 		try {
-			playerStats.addAll(getStats(round, homeTeam, "h", driver, isLive, scrapingStatus));
-			playerStats.addAll(getStats(round, awayTeam, "a", driver, isLive, scrapingStatus));
+			if(includeHomeTeam) {
+			 playerStats.addAll(getStats(round, homeTeam, "h", driver, isLive, scrapingStatus));
+			}
+			
+			if(includeAwayTeam) {
+				playerStats.addAll(getStats(round, awayTeam, "a", driver, isLive, scrapingStatus));
+			}
 		} catch (Exception ex) {
 			throw ex;
 		} finally {
@@ -258,11 +263,13 @@ public class RawStatsDownloaderHandler {
 		String homeTeam = args[1];
 		String awayTeam = args[2];
 		String statsUrl = args[3];
-		String scrapingStatus = args[4];
+		boolean includeHomeTeam = Boolean.parseBoolean(args[4]);
+		boolean includeAwayTeam = Boolean.parseBoolean(args[5]);
+		String scrapingStatus = args[6];
 		
 		RawStatsDownloaderHandler handler = new RawStatsDownloaderHandler();
 		handler.configureLogging("RawPlayerDownloader");
-		handler.execute(round, homeTeam, awayTeam, statsUrl, scrapingStatus);
+		handler.execute(round, homeTeam, awayTeam, statsUrl, includeHomeTeam, includeAwayTeam, scrapingStatus);
 		
 		System.exit(0);
 	}
