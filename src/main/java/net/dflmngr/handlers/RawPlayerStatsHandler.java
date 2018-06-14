@@ -176,17 +176,19 @@ public class RawPlayerStatsHandler {
 			String fullStatsUrl = statsUrl + "/" + year + "/" + aflRound + "/" + homeTeam.toLowerCase() + "-v-" + awayTeam.toLowerCase();
 			loggerUtils.log("info", "AFL stats URL: {}", fullStatsUrl);
 			
-			boolean includeHomeTeam = false;
-			boolean includeAwayTeam = false;
+			boolean includeHomeTeam = true;
+			boolean includeAwayTeam = true;
 			
+			if(teamsToProcess != null && !teamsToProcess.isEmpty()) {
 			int aflRoundCheck = teamsToProcess.get(homeTeam);
-			if(aflRoundCheck == fixture.getRound()) {
-				includeHomeTeam = true;
-			}
-			
-			aflRoundCheck = teamsToProcess.get(awayTeam);
-			if(aflRoundCheck == fixture.getRound()) {
-				includeAwayTeam = true;
+				if(aflRoundCheck != fixture.getRound()) {
+					includeHomeTeam = false;
+				}
+				
+				aflRoundCheck = teamsToProcess.get(awayTeam);
+				if(aflRoundCheck != fixture.getRound()) {
+					includeAwayTeam = false;
+				}
 			}
 			
 			String scrapingStatus = "";
