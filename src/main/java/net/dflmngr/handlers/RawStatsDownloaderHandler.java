@@ -120,8 +120,13 @@ public class RawStatsDownloaderHandler {
 			if(statsDownloaded) {
 				loggerUtils.log("info", "Saving player stats to database");
 				
-				rawPlayerStatsService.removeStatsForRoundAndTeam(round, homeTeam);
-				rawPlayerStatsService.removeStatsForRoundAndTeam(round, awayTeam);
+				
+				if(includeHomeTeam) {
+					rawPlayerStatsService.removeStatsForRoundAndTeam(round, homeTeam);
+				}
+				if(includeAwayTeam) {
+					rawPlayerStatsService.removeStatsForRoundAndTeam(round, awayTeam);
+				}
 				rawPlayerStatsService.insertAll(playerStats, false);
 				
 				loggerUtils.log("info", "Player stats saved");
