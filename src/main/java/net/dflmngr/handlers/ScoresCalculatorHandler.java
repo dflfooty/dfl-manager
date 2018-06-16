@@ -395,9 +395,18 @@ public class ScoresCalculatorHandler {
 		int aflRound = 0;
 		for(DflRoundMapping roundMapping : dflRoundInfo.getRoundMapping()) {
 			int currentAflRound = roundMapping.getAflRound();
-			if(aflRound != currentAflRound) {
-				playedTeams.addAll(aflFixtureService.getAflTeamsPlayedForRound(currentAflRound));
-				aflRound = currentAflRound;
+			
+			if(roundMapping.getAflGame() == 0) {
+				if(aflRound != currentAflRound) {
+					playedTeams.addAll(aflFixtureService.getAflTeamsPlayedForRound(currentAflRound));
+					aflRound = currentAflRound;
+				}
+			} else {
+				AflFixture aflFixture = aflFixtureService.getPlayedGame(currentAflRound, roundMapping.getAflGame());
+				if(aflFixture != null) {
+					playedTeams.add(roundMapping.getAflTeam());
+					aflRound = currentAflRound;
+				}
 			}
 		}
 		

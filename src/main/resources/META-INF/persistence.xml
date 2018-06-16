@@ -42,6 +42,7 @@
 		<class>net.dflmngr.model.entity.DflBest22</class>
 		
 		<properties>
+			<property name="eclipselink.cache.shared.default" value="false"/>
 			<!--property name="eclipselink.logging.level.sql" value="FINE"/>
  			<property name="eclipselink.logging.parameters" value="true"/>
  			<property name="hibernate.archive.autodetection" value="class"/>
