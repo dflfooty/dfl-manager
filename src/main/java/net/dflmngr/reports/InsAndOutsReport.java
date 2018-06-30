@@ -96,6 +96,8 @@ public class InsAndOutsReport {
 			List<DflTeam> teams = dflTeamService.findAll();
 			Map<String, List<Integer>> ins = new  HashMap<>();
 			Map<String, List<Integer>> outs = new  HashMap<>();
+			Map<String, Integer> emg1s = new HashMap<>();
+			Map<String, Integer> emg2s = new HashMap<>();
 			
 			this.reportType = reportType;
 			
@@ -104,14 +106,23 @@ public class InsAndOutsReport {
 			for(DflTeam team : teams) {
 				List<Integer> teamIns = new ArrayList<>();
 				List<Integer> teamOuts = new ArrayList<>();
+				int emg1 = 0;
+				int emg2 = 0;
+				
 				
 				List<InsAndOuts> teamInsAndOuts = insAndOutsService.getByTeamAndRound(round, team.getTeamCode());
 				
 				for(InsAndOuts inOrOut : teamInsAndOuts) {
 					if(inOrOut.getInOrOut().equals(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.IN)) {
 						teamIns.add(inOrOut.getTeamPlayerId());
-					} else {
+					} else if(inOrOut.getInOrOut().equals(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.OUT)) {
 						teamOuts.add(inOrOut.getTeamPlayerId());
+					} else {
+						if(inOrOut.getInOrOut().equals(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.EMG1)) {
+							emg1 = inOrOut.getTeamPlayerId();
+						} else {
+							emg2 = inOrOut.getTeamPlayerId();
+						}
 					}
 				}
 				
@@ -123,11 +134,15 @@ public class InsAndOutsReport {
 					loggerUtils.log("info", "{} outs: {}", team.getTeamCode(), teamOuts);
 				}
 				
+				loggerUtils.log("info", "{} emg1: {}, emg2: {}", team.getTeamCode(), emg1, emg2);
+				
 				ins.put(team.getTeamCode(), teamIns);
 				outs.put(team.getTeamCode(), teamOuts);
+				emg1s.put(team.getTeamCode(), emg1);
+				emg2s.put(team.getTeamCode(), emg2);
 			}
 	
-			String report = writeReport(teams, round, ins, outs);
+			String report = writeReport(teams, round, ins, outs, emg1s, emg2s);
 			
 			if(reportType.equals("Full")) {
 				loggerUtils.log("info", "Sending Full Report");
@@ -148,7 +163,7 @@ public class InsAndOutsReport {
 		}
 	}
 	
-	private String writeReport(List<DflTeam> teams, int round, Map<String, List<Integer>> ins, Map<String, List<Integer>> outs) throws Exception {
+	private String writeReport(List<DflTeam> teams, int round, Map<String, List<Integer>> ins, Map<String, List<Integer>> outs, Map<String, Integer> emg1s, Map<String, Integer> emg2s) throws Exception {
 		
 		String reportName = "InsAndOutsReport_" + this.reportType + "_" + DflmngrUtils.getNowStr() + ".xlsx";
 		
@@ -174,6 +189,8 @@ public class InsAndOutsReport {
 		if(round > 1) {
 			addSelectionsToReport(sheet, teams, outs, "Outs");
 		}
+		
+		addEmgsToReport(sheet, teams, emg1s, emg2s);
 		
 		OutputStream out = Files.newOutputStream(reportLocation);
 		workbook.write(out);
@@ -252,6 +269,54 @@ public class InsAndOutsReport {
 					cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
 					cell.setCellValue(selection);
 			}		
+		}
+	}
+	
+	private void addEmgsToReport(XSSFSheet sheet, List<DflTeam> teams, Map<String, Integer> emg1s, Map<String, Integer> emg2s) {
+		
+		XSSFRow row;
+		XSSFCell cell;
+		
+		loggerUtils.log("info", "Writing report data for: Emgs");
+		
+		row = sheet.getRow(26);
+		cell = row.createCell(0);
+		cell.setCellValue("Emgs");
+				
+		for(DflTeam team : teams) {
+			
+			row = sheet.getRow(0);
+			Iterator<Cell> cellIterator = row.cellIterator();
+			
+			int columnIndex = 1;
+			while(cellIterator.hasNext()) {
+				cell = (XSSFCell) cellIterator.next();
+				
+				if(cell.getStringCellValue().equals(team.getTeamCode())) {
+					break;
+				}
+				
+				columnIndex++;
+			}
+			
+			int emg1 = emg1s.get(team.getTeamCode());
+			int emg2 = emg2s.get(team.getTeamCode());
+			
+			row = sheet.getRow(26);
+			if(row == null) {
+				row = sheet.createRow(26);
+			}
+			
+			cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+			cell.setCellValue(emg1);
+			
+			row = sheet.getRow(27);
+			if(row == null) {
+				row = sheet.createRow(27);
+			}
+			
+			cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+			cell.setCellValue(emg2);	
 		}
 	}
 	

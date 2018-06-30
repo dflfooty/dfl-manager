@@ -96,17 +96,21 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		//Calendar nowCal = Calendar.getInstance();
 		//nowCal.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
 		//nowCal.setTime(now);
-		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
+		//ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
 		
 		
 		//Calendar startCal = Calendar.getInstance();
 		//startCal.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
 		//startCal.setTime(DflmngrUtils.dateDbFormat.parse(fixture.getStart()));
 		//startCal.add(Calendar.HOUR_OF_DAY, 3);
-		ZonedDateTime gameEndTime = fixture.getStartTime().plusHours(3);
+		//ZonedDateTime gameEndTime = fixture.getStartTime().plusHours(3);
 		
 		//if(nowCal.after(startCal)) {
-		if(now.isAfter(gameEndTime)) {
+		//if(now.isAfter(gameEndTime)) {
+		//	playedFixture = fixture;
+		//}
+		
+		if(fixture.getEndTime() != null) {
 			playedFixture = fixture;
 		}
 		

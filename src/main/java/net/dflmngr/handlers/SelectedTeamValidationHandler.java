@@ -89,10 +89,15 @@ public class SelectedTeamValidationHandler {
 				List<DflRoundEarlyGames> earlyGames = roundInfo.getEarlyGames();
 				int completedCount = 0;
 				for(DflRoundEarlyGames earlyGame : earlyGames) {
-					if(receivedDate.isAfter(earlyGame.getStartTime())) {
+					//if(receivedDate.isAfter(earlyGame.getStartTime())) {
+					//	completedCount++;
+					//}
+					AflFixture fixture = aflFixtureService.getPlayedGame(earlyGame.getAflRound(), earlyGame.getAflGame());
+					if(fixture != null) {
 						completedCount++;
 					}
 				}
+				
 				if(completedCount == earlyGames.size()) {
 					earlyGamesCompleted = true;
 				}
