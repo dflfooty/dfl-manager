@@ -52,7 +52,7 @@ public class LoggingUtils {
 		try {
 			switch (level) {
 				case "info" : logger.info(loggerMsg, arguments); break;
-				case "error" : logger.error(loggerMsg, arguments);
+				case "error" : logger.error(loggerMsg, arguments); break;
 			}
 		} catch (Exception ex) {
 			logger.error("Error in ... ", ex);

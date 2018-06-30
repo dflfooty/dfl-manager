@@ -302,21 +302,25 @@ public class InsAndOutsReport {
 			int emg1 = emg1s.get(team.getTeamCode());
 			int emg2 = emg2s.get(team.getTeamCode());
 			
-			row = sheet.getRow(26);
-			if(row == null) {
-				row = sheet.createRow(26);
+			if(emg1 > 0) {
+				row = sheet.getRow(26);
+				if(row == null) {
+					row = sheet.createRow(26);
+				}
+				
+				cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+				cell.setCellValue(emg1);
 			}
 			
-			cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-			cell.setCellValue(emg1);
-			
-			row = sheet.getRow(27);
-			if(row == null) {
-				row = sheet.createRow(27);
+			if(emg2 > 0) {
+				row = sheet.getRow(27);
+				if(row == null) {
+					row = sheet.createRow(27);
+				}
+				
+				cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+				cell.setCellValue(emg2);
 			}
-			
-			cell = row.getCell(columnIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-			cell.setCellValue(emg2);	
 		}
 	}
 	
