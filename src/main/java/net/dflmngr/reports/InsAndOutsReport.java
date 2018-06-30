@@ -208,7 +208,7 @@ public class InsAndOutsReport {
 		
 		loggerUtils.log("info", "Initlizing report rows");
 		
-		for(int i = 0; i < 25; i++) {
+		for(int i = 0; i <= 27; i++) {
 			sheet.createRow(i);
 		}
 
