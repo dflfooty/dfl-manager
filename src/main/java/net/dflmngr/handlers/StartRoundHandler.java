@@ -369,9 +369,14 @@ public class StartRoundHandler {
 					selectedPlayer.setRound(round);
 					selectedPlayer.setTeamCode(team.getTeamCode());
 					selectedPlayer.setTeamPlayerId(tmpSelectedPlayer.getTeamPlayerId());
-					selectedPlayer.setDnp(tmpSelectedPlayer.isDnp());
+					selectedPlayer.setDnp(false);
 					selectedPlayer.setEmergency(tmpSelectedPlayer.isEmergency());
-					selectedPlayer.setScoreUsed(tmpSelectedPlayer.isScoreUsed());
+					
+					if(tmpSelectedPlayer.isEmergency() != 0) {
+						selectedPlayer.setScoreUsed(false);
+					} else {
+						selectedPlayer.setScoreUsed(true);
+					}
 					
 					selectedTeam.add(selectedPlayer);
 					selectedPlayerIds.add(tmpSelectedPlayer.getPlayerId());
