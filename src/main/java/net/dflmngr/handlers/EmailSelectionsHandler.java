@@ -24,6 +24,8 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.jsoup.Jsoup;
+
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflPlayer;
 import net.dflmngr.model.entity.DflTeam;
@@ -244,27 +246,56 @@ public class EmailSelectionsHandler {
 		
 		Object content = part.getContent();
 		
-	    if(content instanceof InputStream || content instanceof String) {	    	
-	        if(Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || (part.getFileName() != null && !part.getFileName().isEmpty())) {
-				String attachementName = part.getFileName();
-				loggerUtils.log("info", "Attachement found, name={}", attachementName);
-				if(attachementName.equals("selections.txt")) {
-					loggerUtils.log("info", "Message from {}, has selection attachment", from);
+	    if(content instanceof InputStream || content instanceof String) {
+	    	
+	    	if(part.isMimeType("test/plain")) {
+	    		String text = ((String)content).trim();
+	    		if(text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
+	    			text = text.substring(0, text.indexOf("[end]"));
+	    			String[] lines = text.split("\\R+");
+	    			
+					loggerUtils.log("info", "Message from {}, has selection in text body", from);
 					selectionsFileAttached = true;
-					validationResult = handleSelectionFile(part.getInputStream(), receivedDate);
+					validationResult = handleSelectionEmailText(lines, receivedDate);
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
-					loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
-				} else if(attachementName.equalsIgnoreCase("WINMAIL.DAT") || attachementName.equalsIgnoreCase("ATT00001.DAT")) {
-					loggerUtils.log("info", "Message from {}, is a TNEF message", from);
-					validationResult = handleTNEFMessage(part.getInputStream(), from, receivedDate);
+	    		}
+	    	} else if (part.isMimeType("text/html")) {
+	    		String text = Jsoup.parse((String) content).text().trim();
+	    		if(text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
+	    			text = text.substring(0, text.indexOf("[end]"));
+	    			String[] lines = text.split("\\R+");
+	    			
+					loggerUtils.log("info", "Message from {}, has selection in html body", from);
+					selectionsFileAttached = true;
+					validationResult = handleSelectionEmailText(lines, receivedDate);
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
-					loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
-				}
-	        }
+	    		}
+	    	}
+	    	
+	    	if(validationResult != null) {
+		        if(Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || Part.INLINE.equalsIgnoreCase(part.getDisposition()) || (part.getFileName() != null && !part.getFileName().isEmpty())) {
+					String attachementName = part.getFileName();
+					loggerUtils.log("info", "Attachement found, name={}", attachementName);
+					if(attachementName.equalsIgnoreCase("selections.txt")) {
+						loggerUtils.log("info", "Message from {}, has selection attachment", from);
+						selectionsFileAttached = true;
+						validationResult = handleSelectionFile(part.getInputStream(), receivedDate);
+						validationResult.setFrom(from);
+						validationResults.add(validationResult);
+						loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
+					} else if(attachementName.equalsIgnoreCase("WINMAIL.DAT") || attachementName.equalsIgnoreCase("ATT00001.DAT")) {
+						loggerUtils.log("info", "Message from {}, is a TNEF message", from);
+						validationResult = handleTNEFMessage(part.getInputStream(), from, receivedDate);
+						validationResult.setFrom(from);
+						validationResults.add(validationResult);
+						loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
+					}
+		        }
+	    	}
 	    }
-
+	    
 	    if(content instanceof Multipart) {
             Multipart multipart = (Multipart) content;
             for(int i = 0; i < multipart.getCount(); i++) {
@@ -412,7 +443,118 @@ public class EmailSelectionsHandler {
 		
 		return validationResult;
 	}
+	
+	private SelectedTeamValidation handleSelectionEmailText(String [] emailLines, ZonedDateTime receivedDate) throws Exception {
 		
+		String line = "";
+		String teamCode = "";
+		int round = 0;
+		List<Integer> ins = new ArrayList<>();
+		List<Integer> outs = new ArrayList<>();
+		List<Double> emgs = new ArrayList<>();
+		
+		loggerUtils.log("info", "Moving messages to Processed folder");
+		
+		for(int i = 0; i < emailLines.length; i++) { 
+				
+			line = emailLines[i];
+				
+			if(line.toLowerCase().contains("[team]")) {
+				while(i < emailLines.length) {
+					line = emailLines[i++].trim();
+					if(line.toLowerCase().contains("[round]")) {
+						break;
+					} else if(line.equalsIgnoreCase("")) {
+						// ignore blank lines
+					} else {
+						teamCode = line;
+					}
+				}
+				loggerUtils.log("info", "Selections for team: {}", teamCode);
+			}
+			
+			if(line.toLowerCase().contains("[round]")) {
+				while(i < emailLines.length) {
+					line = emailLines[i++].trim();
+					if(line.toLowerCase().contains("[in]") || line.toLowerCase().contains("[out]") || line.toLowerCase().contains("[emg]")) {
+						break;
+					} else if(line.equalsIgnoreCase("")) {
+						// ignore blank lines
+					} else {
+						round = Integer.parseInt(line);
+					}
+				}
+				loggerUtils.log("info", "Selections for round: {}", round);
+			}
+			
+			if(line.toLowerCase().contains("[in]")) {
+				while(i < emailLines.length) {
+					line = emailLines[i++].trim();
+					if(line.toLowerCase().contains("[out]")) {
+						break;
+					} else if(line.toLowerCase().contains("[emg]")) {
+						break;
+					} else if(line.equalsIgnoreCase("")) {
+						// ignore blank lines
+					} else {
+						ins.add(Integer.parseInt(line));
+					}
+				}
+				loggerUtils.log("info", "Selection in: {}", ins);
+			}
+			
+			if(line.toLowerCase().contains("[out]")) {
+				while(i < emailLines.length) {
+					line = emailLines[i++].trim();
+					if(line.toLowerCase().contains("[in]")) {
+						break;
+					} else if(line.toLowerCase().contains("[emg]")) {
+						break;
+					} else if(line.equalsIgnoreCase("")) {
+						// ignore blank lines
+					} else {
+						outs.add(Integer.parseInt(line));
+					}
+				}
+				loggerUtils.log("info", "Selection out: {}", outs);
+			}
+			
+			if(line.toLowerCase().contains("[emg]")) {
+				int emgCount = 1;
+				while(i < emailLines.length) {
+					line = emailLines[i++].trim();
+					if(line.toLowerCase().contains("[in]")) {
+						break;
+					} else if(line.toLowerCase().contains("[out]")) {
+						break;
+					} else if(line.equalsIgnoreCase("")) {
+						// ignore blank lines
+					} else {
+						double emg = Double.parseDouble(line);
+						if(emgCount == 1) {
+							emg = emg + 0.1;
+							emgCount++;
+						} else {
+							emg = emg + 0.2;
+						}
+						emgs.add(emg);
+					}
+				}
+				loggerUtils.log("info", "Selection emergencies: {}", emgs);
+			}	
+		}
+		
+		Map<String, List<Integer>> insAndOuts = new HashMap<>();
+		insAndOuts.put("in", ins);
+		insAndOuts.put("out", outs);
+		
+		SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
+		validationHandler.configureLogging(mdcKey, loggerName, logfile);
+		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false);
+		
+		return validationResult;
+	}
+	
 	private void sendResponses() throws Exception {
 		
 		
