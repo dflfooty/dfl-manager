@@ -16,6 +16,9 @@ public class AccessTokenObject {
 
 	@JsonProperty("expires_in")
 	private int expiresIn;
+	
+	@JsonProperty("scope")
+	private String scope;
 
 	public String getAccessToken() {
 		return accessToken;
@@ -39,5 +42,13 @@ public class AccessTokenObject {
 
 	public void setExpiresIn(int expiresIn) {
 		this.expiresIn = expiresIn;
+	}
+
+	public String getScope() {
+		return scope;
+	}
+
+	public void setScope(String scope) {
+		this.scope = scope;
 	}
 }
