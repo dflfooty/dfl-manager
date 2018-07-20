@@ -248,7 +248,7 @@ public class EmailSelectionsHandler {
 		
 	    if(content instanceof InputStream || content instanceof String) {
 	    	
-	    	if(part.isMimeType("test/plain")) {
+	    	if(part.isMimeType("text/plain")) {
 	    		String text = ((String)content).trim();
 	    		if(text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
 	    			text = text.substring(0, text.indexOf("[end]"));
@@ -274,7 +274,7 @@ public class EmailSelectionsHandler {
 	    		}
 	    	}
 	    	
-	    	if(validationResult != null) {
+	    	if(validationResult == null) {
 		        if(Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || Part.INLINE.equalsIgnoreCase(part.getDisposition()) || (part.getFileName() != null && !part.getFileName().isEmpty())) {
 					String attachementName = part.getFileName();
 					loggerUtils.log("info", "Attachement found, name={}", attachementName);
