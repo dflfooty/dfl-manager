@@ -25,6 +25,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Whitelist;
 
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflPlayer;
@@ -179,11 +181,15 @@ public class EmailSelectionsHandler {
 						ZonedDateTime receivedDate = ZonedDateTime.ofInstant(instant, ZoneId.of(DflmngrUtils.defaultTimezone));
 						
 						validationResult = scanEmailPartsAndValidate(part, receivedDate, from);
+						
+						if(validationResult != null) {
+							break;
+						}
 					}
 				}
 				if(validationResult == null) {
 					validationResult = new SelectedTeamValidation();
-					loggerUtils.log("info", "Selection file is missing.");
+					loggerUtils.log("info", "Selection file or selection body is missing.");
 					validationResult.selectionFileMissing = true;
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
@@ -260,8 +266,15 @@ public class EmailSelectionsHandler {
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 	    		}
-	    	} else if (part.isMimeType("text/html")) {
-	    		String text = Jsoup.parse((String) content).text().trim();
+	    	} else if (part.isMimeType("text/html")) {	    		
+	    		Document document = Jsoup.parse((String) content);
+	    	    document.outputSettings(new Document.OutputSettings().prettyPrint(false));//makes html() preserve linebreaks and spacing
+	    	    document.select("br").append("\\n");
+	    	    document.select("p").prepend("\\n\\n");
+	    	    String s = document.body().html().replaceAll("\\\\n", "\n");
+	    	    String text = Jsoup.clean(s, "", Whitelist.none(), new Document.OutputSettings().prettyPrint(false)).trim();
+	    		
+	    		
 	    		if(text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
 	    			text = text.substring(0, text.indexOf("[end]"));
 	    			String[] lines = text.split("\\R+");
@@ -296,13 +309,15 @@ public class EmailSelectionsHandler {
 	    	}
 	    }
 	    
-	    if(content instanceof Multipart) {
-            Multipart multipart = (Multipart) content;
-            for(int i = 0; i < multipart.getCount(); i++) {
-                BodyPart bodyPart = multipart.getBodyPart(i);
-                scanEmailPartsAndValidate(bodyPart, receivedDate, from);
-            }
-	    }
+	    if(validationResult == null) {
+		    if(content instanceof Multipart) {
+	            Multipart multipart = (Multipart) content;
+	            for(int i = 0; i < multipart.getCount(); i++) {
+	                BodyPart bodyPart = multipart.getBodyPart(i);
+	                validationResult = scanEmailPartsAndValidate(bodyPart, receivedDate, from);
+	            }
+		    }
+	    }   
 	    
 	    return validationResult;
 	}
@@ -713,7 +728,7 @@ public class EmailSelectionsHandler {
 		if(validationResult.playedSelections) {
 			messageBody = messageBody + "\t- You have selected/dropped a player who has already played and was not included in your previous selections.\n";
 		} else if(validationResult.selectionFileMissing) {
-			messageBody = messageBody + "\t- You sent the email with no selections.txt\n";
+			messageBody = messageBody + "\t- You sent the email with no selections.txt or the selections were missing from the emil body\n";
 		} else if(validationResult.roundCompleted) {
 			messageBody = messageBody + "\t- The round you have in your selections.txt has past\n";
 		} else if(validationResult.lockedOut) {
