@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.mail.BodyPart;
 import javax.mail.Flags;
@@ -512,7 +514,7 @@ public class EmailSelectionsHandler {
 					} else if(line.equalsIgnoreCase("")) {
 						// ignore blank lines
 					} else {
-						ins.add(Integer.parseInt(line));
+						ins.add(Integer.parseInt(getPlayerNo(line)));
 					}
 				}
 				loggerUtils.log("info", "Selection in: {}", ins);
@@ -528,7 +530,7 @@ public class EmailSelectionsHandler {
 					} else if(line.equalsIgnoreCase("")) {
 						// ignore blank lines
 					} else {
-						outs.add(Integer.parseInt(line));
+						outs.add(Integer.parseInt(getPlayerNo(line)));
 					}
 				}
 				loggerUtils.log("info", "Selection out: {}", outs);
@@ -545,7 +547,7 @@ public class EmailSelectionsHandler {
 					} else if(line.equalsIgnoreCase("")) {
 						// ignore blank lines
 					} else {
-						double emg = Double.parseDouble(line);
+						double emg = Double.parseDouble(getPlayerNo(line));
 						if(emgCount == 1) {
 							emg = emg + 0.1;
 							emgCount++;
@@ -568,6 +570,21 @@ public class EmailSelectionsHandler {
 		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false);
 		
 		return validationResult;
+	}
+	
+	private String getPlayerNo(String line) {
+		
+		String playerNo = "";
+				
+		Pattern pattern = Pattern.compile("[\\s:\\-]");
+		Matcher matcher = pattern.matcher(line);
+		
+		if(matcher.find()) {
+			int i = matcher.start();
+			playerNo = line.substring(0, i);
+		}
+		
+		return playerNo;
 	}
 	
 	private void sendResponses() throws Exception {
