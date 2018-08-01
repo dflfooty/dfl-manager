@@ -162,6 +162,8 @@ public class EndRoundHandler {
 	
 	private void calculateFinalsWeek1(int round) throws Exception {
 		
+		loggerUtils.log("info", "Calculating fixture for week 1 of the finals....");
+		
 		List<DflLadder> ladder = dflLadderService.getLadderForRound(round);
 		Collections.sort(ladder, Collections.reverseOrder());
 		
@@ -178,14 +180,16 @@ public class EndRoundHandler {
 		finalWeek1Game1.setAwayTeam(third.getTeamCode());
 		
 		DflFixture finalWeek1Game2 = new DflFixture();
-		finalWeek1Game1.setRound(round+1);
-		finalWeek1Game1.setGame(2);
-		finalWeek1Game1.setHomeTeam(fourth.getTeamCode());
-		finalWeek1Game1.setAwayTeam(fifth.getTeamCode());
+		finalWeek1Game2.setRound(round+1);
+		finalWeek1Game2.setGame(2);
+		finalWeek1Game2.setHomeTeam(fourth.getTeamCode());
+		finalWeek1Game2.setAwayTeam(fifth.getTeamCode());
 		
 		List<DflFixture> finalsFixtures = new ArrayList<>();
 		finalsFixtures.add(finalWeek1Game1);
 		finalsFixtures.add(finalWeek1Game2);
+		
+		loggerUtils.log("info", "Week 1 finals fixtures={}", finalsFixtures);
 		
 		dflFixtureService.updateAll(finalsFixtures, false);
 		
@@ -193,6 +197,8 @@ public class EndRoundHandler {
 	}
 	
 	private void calculateFinalsWeek2(int round) throws Exception {
+		
+		loggerUtils.log("info", "Calculating fixture for week 2 of the finals....");
 		
 		DflFixturePK dflFixturePK = new DflFixturePK();
 		dflFixturePK.setRound(round);
@@ -250,14 +256,16 @@ public class EndRoundHandler {
 		finalWeek2Game1.setAwayTeam(game1Winner);
 		
 		DflFixture finalWeek2Game2 = new DflFixture();
-		finalWeek2Game1.setRound(round+1);
-		finalWeek2Game1.setGame(2);
-		finalWeek2Game1.setHomeTeam(game1Loser);
-		finalWeek2Game1.setAwayTeam(game2Winner);
+		finalWeek2Game2.setRound(round+1);
+		finalWeek2Game2.setGame(2);
+		finalWeek2Game2.setHomeTeam(game1Loser);
+		finalWeek2Game2.setAwayTeam(game2Winner);
 		
 		List<DflFixture> finalsFixtures = new ArrayList<>();
 		finalsFixtures.add(finalWeek2Game1);
 		finalsFixtures.add(finalWeek2Game2);
+		
+		loggerUtils.log("info", "Week 2 finals fixtures={}", finalsFixtures);
 		
 		dflFixtureService.updateAll(finalsFixtures, false);
 		
@@ -265,6 +273,8 @@ public class EndRoundHandler {
 	}
 	
 	private void calculateFinalsWeek3(int round) throws Exception {
+		
+		loggerUtils.log("info", "Calculating fixture for week 3 of the finals....");
 		
 		DflFixturePK dflFixturePK = new DflFixturePK();
 		dflFixturePK.setRound(round);
@@ -316,12 +326,16 @@ public class EndRoundHandler {
 		List<DflFixture> finalsFixtures = new ArrayList<>();
 		finalsFixtures.add(finalWeek3Game1);
 		
+		loggerUtils.log("info", "Week 3 finals fixtures={}", finalsFixtures);
+		
 		dflFixtureService.updateAll(finalsFixtures, false);
 		
 		createFinalsWeek3Email(round, finalWeek3Game1, game2Loser);		
 	}
 	
 	private void calculateFinalsWeek4(int round) throws Exception {
+		
+		loggerUtils.log("info", "Calculating fixture for week 4 of the finals....");
 		
 		DflFixturePK dflFixturePK = new DflFixturePK();
 		dflFixturePK.setRound(round);
@@ -376,6 +390,8 @@ public class EndRoundHandler {
 		
 		List<DflFixture> finalsFixtures = new ArrayList<>();
 		finalsFixtures.add(finalWeek4Game1);
+		
+		loggerUtils.log("info", "Week 4 finals fixtures={}", finalsFixtures);
 		
 		dflFixtureService.updateAll(finalsFixtures, false);
 		
