@@ -514,7 +514,12 @@ public class EmailSelectionsHandler {
 					} else if(line.equalsIgnoreCase("")) {
 						// ignore blank lines
 					} else {
-						ins.add(Integer.parseInt(getPlayerNo(line)));
+						int in = getPlayerNo(line);
+						if(in > 0) {
+							ins.add(in);
+						} else {
+							loggerUtils.log("info", "Couldn't get player number for INs, No.={}", in);
+						}
 					}
 				}
 				loggerUtils.log("info", "Selection in: {}", ins);
@@ -530,7 +535,12 @@ public class EmailSelectionsHandler {
 					} else if(line.equalsIgnoreCase("")) {
 						// ignore blank lines
 					} else {
-						outs.add(Integer.parseInt(getPlayerNo(line)));
+						int out = getPlayerNo(line);
+						if(out > 0) {
+							outs.add(out);
+						} else {
+							loggerUtils.log("info", "Couldn't get player number for OUTs, No.={}", out);
+						}
 					}
 				}
 				loggerUtils.log("info", "Selection out: {}", outs);
@@ -547,14 +557,18 @@ public class EmailSelectionsHandler {
 					} else if(line.equalsIgnoreCase("")) {
 						// ignore blank lines
 					} else {
-						double emg = Double.parseDouble(getPlayerNo(line));
-						if(emgCount == 1) {
-							emg = emg + 0.1;
-							emgCount++;
+						double emg = getPlayerNo(line);
+						if(emg > 0) {
+							if(emgCount == 1) {
+								emg = emg + 0.1;
+								emgCount++;
+							} else {
+								emg = emg + 0.2;
+							}
+							emgs.add(emg);
 						} else {
-							emg = emg + 0.2;
+							loggerUtils.log("info", "Couldn't get player number for OUTs, No.={}", emg);
 						}
-						emgs.add(emg);
 					}
 				}
 				loggerUtils.log("info", "Selection emergencies: {}", emgs);
@@ -572,20 +586,57 @@ public class EmailSelectionsHandler {
 		return validationResult;
 	}
 	
-	private String getPlayerNo(String line) {
+	private int getPlayerNo(String line) {
 		
-		String playerNo = "";
+		int playerNo;
+		String playerNoStr;
 				
 		Pattern pattern = Pattern.compile("[\\s:\\-]");
 		Matcher matcher = pattern.matcher(line);
 		
 		if(matcher.find()) {
 			int i = matcher.start();
-			playerNo = line.substring(0, i);
+			playerNoStr = line.substring(0, i);
+		} else {
+			playerNoStr = line;
+		}
+		
+		try {
+			playerNo = Integer.parseInt(playerNoStr);
+		} catch (NumberFormatException e) {
+			loggerUtils.log("info", "Error parsing player number, number format exception ... oh well.  Error={}", e.getMessage());
+			playerNo = 0;
 		}
 		
 		return playerNo;
 	}
+	
+	/*
+	private double getPlayerNoForEmgs(String line) {
+		
+		double playerNo;
+		String playerNoStr;
+				
+		Pattern pattern = Pattern.compile("[\\s:\\-]");
+		Matcher matcher = pattern.matcher(line);
+		
+		if(matcher.find()) {
+			int i = matcher.start();
+			playerNoStr = line.substring(0, i);
+		} else {
+			playerNoStr = line;
+		}
+		
+		try {
+			playerNo = Double.parseDouble(playerNoStr);
+		} catch (NumberFormatException e) {
+			loggerUtils.log("info", "Error parsing player number, number format exception ... oh well.  Error={}", e.getMessage());
+			playerNo = 0;
+		}
+		
+		return playerNo;
+	}
+	*/
 	
 	private void sendResponses() throws Exception {
 		
