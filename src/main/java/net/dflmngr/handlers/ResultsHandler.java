@@ -117,15 +117,17 @@ public class ResultsHandler {
 				scoresCalculator.configureLogging(mdcKey, loggerName, logfile);
 				scoresCalculator.execute(round);
 
-				loggerUtils.log("info", "Calculating Ladder");
-				LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
-				ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
-				if(isFinal) {
-					loggerUtils.log("info", "Ladder is not live");
-					ladderCalculator.execute(round, false);
-				} else {
-					loggerUtils.log("info", "Ladder is live");
-					ladderCalculator.execute(round, true);
+				if(round <= 18) {
+					loggerUtils.log("info", "Calculating Ladder");
+					LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
+					ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
+					if(isFinal) {
+						loggerUtils.log("info", "Ladder is not live");
+						ladderCalculator.execute(round, false);
+					} else {
+						loggerUtils.log("info", "Ladder is live");
+						ladderCalculator.execute(round, true);
+					}
 				}
 				
 				if(sendReport) {

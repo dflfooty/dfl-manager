@@ -244,7 +244,7 @@ public class EndRoundHandler {
 			game2Loser = week1Game2.getHomeTeam();
 		}
 		
-		List<DflLadder> ladder = dflLadderService.getLadderForRound(round);
+		List<DflLadder> ladder = dflLadderService.getLadderForRound(round - 1);
 		Collections.sort(ladder, Collections.reverseOrder());
 		
 		DflLadder first = ladder.get(0);
