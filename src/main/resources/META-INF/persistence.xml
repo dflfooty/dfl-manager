@@ -5,7 +5,7 @@
 	version="2.1">
 		
 	<persistence-unit name="dflmngr" transaction-type="RESOURCE_LOCAL">
-			
+		
 		<provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
 		<!--provider>org.hibernate.jpa.HibernatePersistenceProvider</provider-->
 		
@@ -41,9 +41,11 @@
 		<class>net.dflmngr.model.entity.Process</class>
 		<class>net.dflmngr.model.entity.DflBest22</class>
 		
+		<shared-cache-mode>NONE</shared-cache-mode>
+		
 		<properties>
-			<property name="eclipselink.cache.shared.default" value="false"/>
-			<!--property name="eclipselink.logging.level.sql" value="FINE"/>
+			<!--property name="eclipselink.cache.shared.default" value="false"/
+			<property name="eclipselink.logging.level.sql" value="FINE"/>
  			<property name="eclipselink.logging.parameters" value="true"/>
  			<property name="hibernate.archive.autodetection" value="class"/>
             <property name="hibernate.show_sql" value="false"/>
@@ -58,6 +60,6 @@
             <property name="hibernate.c3p0.max_statements" value="50" />
             <property name="hibernate.c3p0.timeout" value="1800" /-->
  		</properties>
-		
+
 	</persistence-unit>
 </persistence>
