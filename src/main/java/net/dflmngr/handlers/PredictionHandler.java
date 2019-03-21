@@ -101,30 +101,32 @@ public class PredictionHandler {
 		
 		Map<Integer, List<DflPlayerScores>> allPlayerScores = dflPlayerScoresService.getUptoRoundWithKey(round);
 		
-		for (Map.Entry<Integer, List<DflPlayerScores>> playerScores : allPlayerScores.entrySet()) {
-			DflPlayerPredictedScores predictedPlayerScore = new DflPlayerPredictedScores();
-			
-		    int playerId = playerScores.getKey();
-		    List<DflPlayerScores> scores = playerScores.getValue();
-		    
-		    int totalScore = 0;
-		    for(DflPlayerScores playerScore : scores) {
-		    	totalScore = totalScore + playerScore.getScore();
-		    }
-		    
-		    int predictedScore = totalScore / scores.size();
-		    
-		    predictedPlayerScore.setPlayerId(playerId);
-		    predictedPlayerScore.setRound(round);
-		    predictedPlayerScore.setAflPlayerId(scores.get(0).getAflPlayerId());
-		    predictedPlayerScore.setTeamCode(scores.get(0).getTeamCode());
-		    predictedPlayerScore.setTeamPlayerId(scores.get(0).getTeamPlayerId());
-		    predictedPlayerScore.setPredictedScore(predictedScore);
-		    
-		    loggerUtils.log("info", "Predicted score for: playerId={}; round={}; teamCode={}; teamPlayerId={} predictedScore={};", 
-		    				playerId, round, predictedPlayerScore.getTeamCode(), predictedPlayerScore.getTeamPlayerId(), predictedPlayerScore.getPredictedScore());
-		    
-		    predictedPlayerScores.add(predictedPlayerScore);
+		if(round > 1) {
+			for (Map.Entry<Integer, List<DflPlayerScores>> playerScores : allPlayerScores.entrySet()) {
+				DflPlayerPredictedScores predictedPlayerScore = new DflPlayerPredictedScores();
+				
+			    int playerId = playerScores.getKey();
+			    List<DflPlayerScores> scores = playerScores.getValue();
+			    
+			    int totalScore = 0;
+			    for(DflPlayerScores playerScore : scores) {
+			    	totalScore = totalScore + playerScore.getScore();
+			    }
+			    
+			    int predictedScore = totalScore / scores.size();
+			    
+			    predictedPlayerScore.setPlayerId(playerId);
+			    predictedPlayerScore.setRound(round);
+			    predictedPlayerScore.setAflPlayerId(scores.get(0).getAflPlayerId());
+			    predictedPlayerScore.setTeamCode(scores.get(0).getTeamCode());
+			    predictedPlayerScore.setTeamPlayerId(scores.get(0).getTeamPlayerId());
+			    predictedPlayerScore.setPredictedScore(predictedScore);
+			    
+			    loggerUtils.log("info", "Predicted score for: playerId={}; round={}; teamCode={}; teamPlayerId={} predictedScore={};", 
+			    				playerId, round, predictedPlayerScore.getTeamCode(), predictedPlayerScore.getTeamPlayerId(), predictedPlayerScore.getPredictedScore());
+			    
+			    predictedPlayerScores.add(predictedPlayerScore);
+			}
 		}
 		
 		dflPlayerPredictedScoresService.replaceAllForRound(round, predictedPlayerScores);
@@ -147,11 +149,16 @@ public class PredictionHandler {
 				if(selectedPlayer.isEmergency() == 0) {
 					DflPlayerPredictedScoresPK dflPlayerPredictedScoresPK = new DflPlayerPredictedScoresPK();
 					dflPlayerPredictedScoresPK.setPlayerId(selectedPlayer.getPlayerId());
-					dflPlayerPredictedScoresPK.setRound(round);
 					
-					DflPlayerPredictedScores predictedPlayerScore = dflPlayerPredictedScoresService.get(dflPlayerPredictedScoresPK);
-					if(predictedPlayerScore != null) {
-						predictedScore = predictedScore + predictedPlayerScore.getPredictedScore();
+					if(round == 1) {
+						dflPlayerPredictedScoresPK.setRound(round);
+						
+						DflPlayerPredictedScores predictedPlayerScore = dflPlayerPredictedScoresService.get(dflPlayerPredictedScoresPK);
+						if(predictedPlayerScore != null) {
+							predictedScore = predictedScore + predictedPlayerScore.getPredictedScore();
+						} else {
+							predictedScore = predictedScore + 25;
+						}
 					} else {
 						predictedScore = predictedScore + 25;
 					}

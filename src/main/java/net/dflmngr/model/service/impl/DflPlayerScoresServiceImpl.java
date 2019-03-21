@@ -89,7 +89,7 @@ public class DflPlayerScoresServiceImpl extends GenericServiceImpl<DflPlayerScor
 	public Map<Integer, List<DflPlayerScores>> getUptoRoundWithKey(int round) {
 		Map<Integer, List<DflPlayerScores>> playerScoresWithKey = new HashMap<>();
 		
-		for(int i = 1; i <= round; i++) {
+		for(int i = 1; i < round; i++) {
 			List<DflPlayerScores> scores = getForRound(i);
 			
 			for(DflPlayerScores playerScore : scores) {
