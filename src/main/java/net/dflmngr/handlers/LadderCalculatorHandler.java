@@ -134,7 +134,11 @@ public class LadderCalculatorHandler {
 				if(player.hasPlayed()) {
 					teamScore = teamScore + scores.get(player.getPlayerId()).getScore();
 				} else {
-					teamScore = teamScore + predictedScores.get(player.getPlayerId()).getPredictedScore();
+					if(predictedScores.containsKey(player.getPlayerId())) {
+						teamScore = teamScore + predictedScores.get(player.getPlayerId()).getPredictedScore();
+					} else {
+						teamScore = teamScore + 25;
+					}
 				}
 			}
 		}
