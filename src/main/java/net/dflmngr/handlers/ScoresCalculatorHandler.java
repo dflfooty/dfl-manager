@@ -236,7 +236,7 @@ public class ScoresCalculatorHandler {
 			
 			loggerUtils.log("info", "In count={}; Out count={}", inCount, outCount);
 						
-			if(inCount > outCount) {
+			if(inCount > outCount && round != 1) {
 				int removeCount = inCount - outCount;
 				
 				loggerUtils.log("info", "Players to remove={}", removeCount);
