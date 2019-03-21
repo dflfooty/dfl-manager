@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -118,8 +119,10 @@ public class AflPlayerLoaderHandler {
 			}
 		}
 		
+		aflPlayers = removeDuplicates(aflPlayers);
+		
 		loggerUtils.log("info", "Saving players to database ...");
-		aflPlayerService.insertAll(aflPlayers, false);
+		aflPlayerService.replaceAll(aflPlayers);
 		
 		loggerUtils.log("info", "Creating afl-dfl player cross references");
 		crossRefAflDflPlayers(aflPlayers);
@@ -189,6 +192,8 @@ public class AflPlayerLoaderHandler {
 		
 		Element playerListTable = doc.getElementById("tlist").getElementsByTag("tbody").get(0);
 		
+		int noJumper = 99;
+		
 		Elements playerRecs = playerListTable.getElementsByTag("tr");
 		for(Element playerRec : playerRecs) {
 			
@@ -197,10 +202,19 @@ public class AflPlayerLoaderHandler {
 			Elements playerData = playerRec.getElementsByTag("td");
 			
 			aflPlayer.setTeamId(teamId);
-			aflPlayer.setJumperNo(Integer.parseInt(playerData.get(0).text()));
+			
+			String jumperNoString = playerData.get(0).text();
+			if(StringUtils.isNumeric(jumperNoString)) {
+				aflPlayer.setJumperNo(Integer.parseInt(jumperNoString));
+			} else {
+				aflPlayer.setJumperNo(noJumper);
+				noJumper--;
+			}
+			
 			aflPlayer.setPlayerId(aflPlayer.getTeamId()+aflPlayer.getJumperNo());
 			
-			String []name = playerData.get(1).text().split(" ");
+			aflPlayer.setName(playerData.get(1).text().trim());
+			String []name = aflPlayer.getName().split(" ");
 			aflPlayer.setFirstName(name[0]);
 			aflPlayer.setSecondName(name[1]);
 			
@@ -216,6 +230,28 @@ public class AflPlayerLoaderHandler {
 		return aflPlayers;
 	}
 	
+	private List<AflPlayer> removeDuplicates(List<AflPlayer> aflPlayers) {
+		
+		List<AflPlayer> checkedPlayers = new ArrayList<>();
+		
+		for(AflPlayer player : aflPlayers) {
+			boolean playerExists = false;
+			for(AflPlayer checkedPlayer : checkedPlayers) {
+				if(player.getPlayerId().contentEquals(checkedPlayer.getPlayerId())) {
+					playerExists = true;
+					break;
+				}
+			}
+			if(playerExists) {
+				loggerUtils.log("info", "Player EXISTS!!; Player: {}", player);
+			} else {
+				checkedPlayers.add(player);
+			}
+		}
+		
+		return checkedPlayers;
+	}
+	
 	private void crossRefAflDflPlayers(List<AflPlayer> aflPlayers) {
 		
 		Map<String, DflPlayer> dflPlayerCrossRefs = dflPlayerService.getCrossRefPlayers();
@@ -224,8 +260,8 @@ public class AflPlayerLoaderHandler {
 		Map<String, DflPlayer> dflPlayerUpdates = new HashMap<>();
 		Map<Integer, AflPlayer> aflPlayerUpdates = new HashMap<>();
 		
-		for(AflPlayer aflPlayer : aflPlayers) {
-			String aflPlayerCrossRef = (aflPlayer.getFirstName() + "-" + aflPlayer.getSecondName() + "-" + globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase())).toLowerCase();
+		for(AflPlayer aflPlayer : aflPlayers) {			
+			String aflPlayerCrossRef = (aflPlayer.getName().replaceAll("[^a-zA-Z]", "") + "-" + globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase())).toLowerCase();
 			loggerUtils.log("info", "Searching for player: {}", aflPlayerCrossRef);
 			DflPlayer dflPlayer = dflPlayerCrossRefs.get(aflPlayerCrossRef);
 			
@@ -260,11 +296,15 @@ public class AflPlayerLoaderHandler {
 		    
 		    boolean matched = false;
 		    
-		    String dflCheckOne = (dflPlayer.getLastName() + "-" + dflPlayer.getAflClub()).toLowerCase();
-		    String dflCheckTwo = (dflPlayer.getFirstName() + "-" + dflPlayer.getAflClub()).toLowerCase();
+		    String dflCheckOne = ((dflPlayer.getFirstName() + dflPlayer.getInitial() + dflPlayer.getLastName()).replaceAll("[^a-zA-Z]", "") + "-" + dflPlayer.getAflClub()).toLowerCase();
+		    String dflCheckTwo = (dflPlayer.getLastName().replaceAll("[^a-zA-Z]", "") + "-" + dflPlayer.getAflClub()).toLowerCase();
+		    String dflCheckThree = (dflPlayer.getFirstName().replaceAll("[^a-zA-Z]", "") + "-" + dflPlayer.getAflClub()).toLowerCase();
 		    
 		    for(AflPlayer aflPlayer : aflUnmatchedPlayers) {
-		    	String aflCheckOne = (aflPlayer.getSecondName() + "-" + globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase())).toLowerCase();
+		    	
+		    	String aflTeamName = globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase());
+		    	
+		    	String aflCheckOne = (aflPlayer.getName().replaceAll("[^a-zA-Z]", "") + "-" + aflTeamName).toLowerCase();
 		    	
 		    	loggerUtils.log("info", "Check one {} vs {}", dflCheckOne, aflCheckOne);
 		    			    	
@@ -286,9 +326,11 @@ public class AflPlayerLoaderHandler {
 		    		//dflPlayerCrossRefs.remove(crossRef);
 		    		
 		    		matched = true;
+		    		break;
 		    	}
+		    	
 		    	if(!matched) {
-		    		String aflCheckTwo = (aflPlayer.getFirstName() + "-" + globalsService.getAflTeamMap(aflPlayer.getTeamId())).toLowerCase();
+		    		String aflCheckTwo = (aflPlayer.getSecondName().replaceAll("[^a-zA-Z]", "") + "-" + aflTeamName).toLowerCase();
 		    		
 		    		loggerUtils.log("info", "Check two {} vs {}", dflCheckTwo, aflCheckTwo);
 		    		
@@ -310,8 +352,37 @@ public class AflPlayerLoaderHandler {
 			    		//dflPlayerCrossRefs.remove(crossRef);
 			    		
 			    		matched = true;
+			    		break;
 		    		}
 		    	}
+		    	
+		    	if(!matched) {
+		    		String aflCheckThree = (aflPlayer.getFirstName().replaceAll("[^a-zA-Z]", "") + "-" + aflTeamName).toLowerCase();
+		    		
+		    		loggerUtils.log("info", "Check three {} vs {}", dflCheckThree, aflCheckThree);
+		    		
+		    		if(dflCheckThree.equals(aflCheckThree)) {
+			    		int dflPlayerId = dflPlayer.getPlayerId();
+						String aflPlayerId = aflPlayer.getPlayerId();
+			    		
+						loggerUtils.log("info", "Matched player on Check Two - CrossRef: {}, DflPlayerId: {}, AflPlayerId {}", crossRef, dflPlayerId, aflPlayerId);
+						
+						dflPlayerUpdates.put(aflPlayerId, dflPlayer);
+						aflPlayerUpdates.put(dflPlayerId, aflPlayer);	
+						
+						//player.setAflPlayerId(aflPlayerId);
+						//aflPlayer.setDflPlayerId(dflPlayerId);
+						
+						//dflPlayerService.update(player);
+						//aflPlayerService.update(aflPlayer);
+			    		
+			    		//dflPlayerCrossRefs.remove(crossRef);
+			    		
+			    		matched = true;
+			    		break;
+		    		}
+		    	}
+		    	
 		    }
 		    
 		    if(!matched) {
@@ -334,7 +405,7 @@ public class AflPlayerLoaderHandler {
 		dflPlayerService.bulkUpdateAflPlayerId(dflPlayerUpdates);
 		aflPlayerService.bulkUpdateDflPlayerId(aflPlayerUpdates);
 		
-		dflUnmatchedPlayerService.insertAll(unmatchedPlayers, false);
+		dflUnmatchedPlayerService.replaceAll(unmatchedPlayers);
 		
 	}
 	

@@ -126,6 +126,21 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 		return timezone;
 	}
 	
+	public Map<String, String> getGround(String groundName) {
+		
+		Map<String, String> ground = new HashMap<>();
+		
+		String code = groundName;
+		String groupCode = "ground";
+		
+		Map<String, String> data = getValueAndParams(code, groupCode);
+		
+		ground.put("ground", data.get("value"));
+		ground.put("timezone", data.get("params"));
+		
+		return ground;
+	}
+	
 	public List<String> getTeamCodes() {
 		
 		String groupCode = "teamCode";

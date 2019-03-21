@@ -1,39 +1,38 @@
 package net.dflmngr.handlers;
 
-import java.net.URL;
-//import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-//import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-//import java.util.TimeZone;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 
-//import net.dflmngr.jndi.JndiProvider;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.service.AflFixtureService;
 import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
-//import net.dflmngr.utils.DflmngrUtils;
 
 public class AflFixtureLoaderHandler {
 	private LoggingUtils loggerUtils;
 	
 	//SimpleDateFormat formatter = new SimpleDateFormat("EEEE, MMMM dd h:mma yyyy");
-	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd h:mma yyyy");
+	//DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd h:mm a");
+	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd h:mm a yyyy");
 	
 	GlobalsService globalsService;
 	AflFixtureService aflFixtureService;
+	
+	
 	
 	public AflFixtureLoaderHandler() {
 		
@@ -41,7 +40,6 @@ public class AflFixtureLoaderHandler {
 		loggerUtils = new LoggingUtils("AflFixtureLoader");
 		
 		try {
-			
 			globalsService = new GlobalsServiceImpl();
 			aflFixtureService = new AflFixtureServiceImpl();
 		} catch (Exception ex) {
@@ -85,84 +83,165 @@ public class AflFixtureLoaderHandler {
 			paddedRoundNo = aflRoundStr;
 		}
 		
+		
 		List<String> aflFixtureUrlParts = globalsService.getAflFixtureUrl();
-		String aflFixtureUrl = aflFixtureUrlParts.get(0) + aflFixtureUrlParts.get(1) + currentYear + aflFixtureUrlParts.get(2) + paddedRoundNo + aflFixtureUrlParts.get(3);
+		//String aflFixtureUrl = aflFixtureUrlParts.get(0) + aflFixtureUrlParts.get(1) + currentYear + aflFixtureUrlParts.get(2) + paddedRoundNo + aflFixtureUrlParts.get(3);
+		String aflFixtureUrl = String.format(aflFixtureUrlParts.get(0), currentYear, currentYear, paddedRoundNo);
 		
 		loggerUtils.log("info", "AFL fixture URL: {}", aflFixtureUrl);
 		
+		
+		WebDriverManager.chromedriver().setup();
+		WebDriver driver = new ChromeDriver();
+		
+		int webdriverTimeout = globalsService.getWebdriverTimeout();
+		int webdriverWait = globalsService.getWebdriverWait();
+		driver.manage().timeouts().implicitlyWait(webdriverWait, TimeUnit.SECONDS);
+		driver.manage().timeouts().pageLoadTimeout(webdriverTimeout, TimeUnit.SECONDS);
+		
+		driver.get(aflFixtureUrl);
+		
+		int retry = 1;
+		while(retry <= 5) {
+			loggerUtils.log("info", "Try: {}", retry);
+			if(driver.findElements(By.className("o-fixture-match-wrapper")).isEmpty()) {
+				loggerUtils.log("info", "Still waiting, will try again in 5");
+				Thread.sleep(5000);
+			} else {
+				break;
+			}
+			retry++;
+		}
+		
+		
+		List<WebElement> fixtureRows = driver.findElements(By.className("o-fixture-match-wrapper"));
+		
+		String dateString = "";
+		int gameNo = 1;
+		
+		for(WebElement fixtureRow : fixtureRows) {
+			
+			if(!fixtureRow.findElements(By.tagName("h4")).isEmpty()) {
+				dateString = fixtureRow.findElements(By.tagName("h4")).get(0).getText().trim();
+			}
+		
+			AflFixture fixture = new AflFixture();
+			fixture.setRound(aflRound);
+			fixture.setGame(gameNo);
+			
+			List<WebElement> gameData = fixtureRow.findElements(By.className("o-fixture-state-wrapper")).get(0).findElements(By.tagName("a"));
+			
+			String gameUrl = gameData.get(0).getAttribute("href");
+			String[] teams = gameData.get(0).getAttribute("href").substring(gameUrl.lastIndexOf("/") + 1, gameUrl.length()).split("-");
+			
+			fixture.setHomeTeam(teams[0].toUpperCase());
+			fixture.setAwayTeam(teams[2].toUpperCase());
+			
+			String timeString = gameData.get(0).findElements(By.className("c-fixture-timer")).get(0).getText().trim();
+			String dateTimeString = dateString + " " + timeString.substring(0, timeString.lastIndexOf(" ")) + " " + currentYear;
+			
+			String ground = gameData.get(1).findElements(By.className("o-fixture-icon-title-wrapper")).get(0).getText().trim();
+			Map<String, String> groundData = globalsService.getGround(ground);
+			
+			fixture.setGround(groundData.get("ground"));
+						
+			String timezone = groundData.get("timezone");
+			String defaultTimezone = globalsService.getGroundTimeZone("default");
+			
+			ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(timezone));
+			
+			if(timezone.equals(defaultTimezone)) {
+				fixture.setStartTime(localStart);
+			} else {
+				ZonedDateTime defualtStart = localStart.withZoneSameInstant(ZoneId.of(defaultTimezone));
+				fixture.setStartTime(defualtStart);
+			}
+							
+			fixture.setTimezone(timezone);
+			
+			loggerUtils.log("info", "Scraped fixture data: {}", fixture);
+			
+			games.add(fixture);
+			
+			gameNo++;
+		}
+		
+		driver.quit();
+		
+		/*
 		Document doc = Jsoup.parse(new URL(aflFixtureUrl).openStream(), "UTF-8", aflFixtureUrl);
 		
-		Elements fixtureRows = doc.getElementById("tround").getElementsByTag("tbody").select("tr");
-		Iterator<Element> fixtureRowsElements = fixtureRows.listIterator();
+		Elements scripts = doc.getElementsByTag("script2");
+		Iterator<Element> scriptElements = scripts.listIterator();
 		
-		if(fixtureRowsElements.hasNext()) {
-			
-			Element fixtureRow = fixtureRowsElements.next();
-			
-			int gameCount = 1;
-			
-			while(fixtureRowsElements.hasNext()) {
-				String dateStr = "";
+		String json = "";
+		
+		if(scriptElements.hasNext()) {
+			while(scriptElements.hasNext()) {
+				Element script = scriptElements.next();
 				
-				if(fixtureRow.child(0).tagName().equalsIgnoreCase("th")) {
-					dateStr = fixtureRow.child(0).text();
-				} 
-				
-				if(fixtureRowsElements.hasNext()) {
-					fixtureRow = fixtureRowsElements.next();
-					while(!fixtureRow.child(0).tagName().equalsIgnoreCase("th")) {
-						//fixtureRow = fixtureRowsElements.next();
-						
-						AflFixture fixture = new AflFixture();
-						
-						fixture.setRound(aflRound);
-						fixture.setGame(gameCount);
-						
-						Elements teamNames = fixtureRow.select(".team-logos");
-						fixture.setHomeTeam(teamNames.select(".home").text());
-						fixture.setAwayTeam(teamNames.select(".away").text());
-						
-						String ground = fixtureRow.select(".venue").text();
-						fixture.setGround(ground);
-						String timezone = globalsService.getGroundTimeZone(ground);
-						String defaultTimezone = globalsService.getGroundTimeZone("default");
-						
-						//formatter.setTimeZone(TimeZone.getTimeZone(timezone));
-						String timeStr = fixtureRow.select(".time").text();
-						//Date localDate = formatter.parse(dateStr + " " + timeStr + " " + currentYear);
-						ZonedDateTime localStart = LocalDateTime.parse((dateStr + " " + timeStr + " " + currentYear), formatter).atZone(ZoneId.of(timezone));
-						
-						
-						if(timezone.equals(defaultTimezone)) {
-							//String dbDateStr = DflmngrUtils.dateDbFormat.format(localDate);
-							//fixture.setStart(dbDateStr);
-							fixture.setStartTime(localStart);
-						} else {
-							//formatter.setTimeZone(TimeZone.getTimeZone(defaultTimezone));
-							//String defaultDateStr = formatter.format(localDate);
-							//Date defaultDate = formatter.parse(defaultDateStr);
-							//String dbDateStr = DflmngrUtils.dateDbFormat.format(defaultDate);
-							ZonedDateTime defualtStart = localStart.withZoneSameInstant(ZoneId.of(defaultTimezone));
-							fixture.setStartTime(defualtStart);
-						}
-						
-						fixture.setTimezone(timezone);
-						
-						loggerUtils.log("info", "Scraped fixture data: {}", fixture);
-												
-						games.add(fixture);
-						gameCount++;
-						
-						if(fixtureRowsElements.hasNext()) {
-							fixtureRow = fixtureRowsElements.next();
-						} else {
-							break;
-						}
-					} 
-				}	
+				String scriptText = script.text();
+				if(scriptText.contains("window.byClubData")) {
+					json = scriptText.substring(scriptText.indexOf("{"), scriptText.lastIndexOf("}")+1);
+				}
 			}
 		}
-				
+		
+		
+		JsonObject jsonObject = (JsonObject) Jsoner.deserialize(json);
+		List<JsonObject> jsonFixtures = jsonObject.getCollection("fixtures");
+		
+		for(JsonObject jsonFixture : jsonFixtures) {
+			Map<String, String> jsonHomeTeam = jsonFixture.getMap("homeTeam");
+			Map<String, String> jsonAwayTeam = jsonFixture.getMap("awayTeam");
+			Map<String, Object> jsonMatch = jsonFixture.getMap("match");
+			JsonArray jsonStartTimes = (JsonArray) jsonMatch.get("startDateTimes");
+		
+			String dateTimeString = "";
+			
+			Iterator<Object> iter = jsonStartTimes.iterator();
+			
+			
+			while(iter.hasNext()) {
+				JsonObject startTime = (JsonObject) iter.next();
+				String tz = startTime.getString("name");
+				if(tz.equalsIgnoreCase("venue")) {
+					dateTimeString = startTime.getString("date") + " " + startTime.getString("time");;
+				}
+			}
+			
+			AflFixture fixture = new AflFixture();
+			fixture.setRound(aflRound);
+			
+			String matchId = (String) jsonMatch.get("matchId");
+			int gameNo = Integer.parseInt(matchId.substring(matchId.length()-2));
+			fixture.setGame(gameNo);
+			
+			
+			fixture.setHomeTeam(jsonHomeTeam.get("teamAbbr"));
+			fixture.setAwayTeam(jsonAwayTeam.get("teamAbbr"));
+			
+			String ground = (String) jsonMatch.get("venueAbbr");
+			fixture.setGround(ground);
+			String timezone = globalsService.getGroundTimeZone(ground);
+			String defaultTimezone = globalsService.getGroundTimeZone("default");
+			
+			ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(timezone));
+			
+			if(timezone.equals(defaultTimezone)) {
+				fixture.setStartTime(localStart);
+			} else {
+				ZonedDateTime defualtStart = localStart.withZoneSameInstant(ZoneId.of(defaultTimezone));
+				fixture.setStartTime(defualtStart);
+			}
+							
+			fixture.setTimezone(timezone);
+			
+			loggerUtils.log("info", "Scraped fixture data: {}", fixture);
+			
+			games.add(fixture);
+		}
+		*/		
 		return games;
 	}
 	

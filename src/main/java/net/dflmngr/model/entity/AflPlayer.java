@@ -18,6 +18,9 @@ public class AflPlayer {
 	@Column(name = "jumper_no")
 	private int jumperNo;
 	
+	@Column(name = "name")
+	private String name;
+	
 	@Column(name = "first_name")
 	private String firstName;
 	
@@ -45,6 +48,12 @@ public class AflPlayer {
 	}
 	public void setJumperNo(int jumperNo) {
 		this.jumperNo = jumperNo;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
 	}
 	public String getFirstName() {
 		return firstName;
@@ -92,9 +101,9 @@ public class AflPlayer {
 	
 	@Override
 	public String toString() {
-		return "AflPlayer [playerId=" + playerId + ", jumperNo=" + jumperNo + ", firstName=" + firstName
-				+ ", secondName=" + secondName + ", teamId=" + teamId + ", height=" + height + ", weight=" + weight
-				+ ", dob=" + dob + ", dflPlayerId=" + dflPlayerId + "]";
+		return "AflPlayer [playerId=" + playerId + ", jumperNo=" + jumperNo + ", name=" + name + ", firstName="
+				+ firstName + ", secondName=" + secondName + ", teamId=" + teamId + ", height=" + height + ", weight="
+				+ weight + ", dob=" + dob + ", dflPlayerId=" + dflPlayerId + "]";
 	}
 	
 	@Override
@@ -106,6 +115,7 @@ public class AflPlayer {
 		result = prime * result + ((firstName == null) ? 0 : firstName.hashCode());
 		result = prime * result + height;
 		result = prime * result + jumperNo;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + ((playerId == null) ? 0 : playerId.hashCode());
 		result = prime * result + ((secondName == null) ? 0 : secondName.hashCode());
 		result = prime * result + ((teamId == null) ? 0 : teamId.hashCode());
@@ -137,6 +147,11 @@ public class AflPlayer {
 		if (height != other.height)
 			return false;
 		if (jumperNo != other.jumperNo)
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
 			return false;
 		if (playerId == null) {
 			if (other.playerId != null)

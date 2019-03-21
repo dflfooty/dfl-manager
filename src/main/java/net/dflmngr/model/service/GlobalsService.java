@@ -13,6 +13,7 @@ public interface GlobalsService extends GenericService<Globals, GlobalsPK> {
 	public String getCurrentYear();
 	public List<String> getAflFixtureUrl(); 
 	public String getGroundTimeZone(String ground);
+	public Map<String, String> getGround(String groundName);
 	public List<String> getTeamCodes();
 	public String getAppDir();
 	public String getReportDir();

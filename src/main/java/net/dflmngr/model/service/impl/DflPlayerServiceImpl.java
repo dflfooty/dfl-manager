@@ -35,7 +35,7 @@ public class DflPlayerServiceImpl extends GenericServiceImpl<DflPlayer, Integer>
 		List<DflPlayer> allPlayers = dao.findAll();
 		
 		for(DflPlayer player : allPlayers) {
-			String crossRefId = (player.getFirstName() + "-" + player.getLastName() + "-" + player.getAflClub()).toLowerCase();
+			String crossRefId = ((player.getFirstName() +  player.getLastName()).replaceAll("[^a-zA-Z]", "") + "-" + player.getAflClub()).toLowerCase();
 			crossRefPlayers.put(crossRefId, player);
 		}
 		
