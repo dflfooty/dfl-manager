@@ -51,8 +51,10 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 		
 		Predicate startLess = criteriaBuilder.lessThan(entity.get(AflFixture_.startTime), time);
 		Predicate statsDownloadedNull = criteriaBuilder.isNull(entity.get(AflFixture_.statsDownloaded));
+		Predicate statsDownloadedFalse = criteriaBuilder.isFalse(entity.get(AflFixture_.statsDownloaded));
+		Predicate statsDownloadedNullOrFalse = criteriaBuilder.or(statsDownloadedNull, statsDownloadedFalse);
 		
-		criteriaQuery.where(criteriaBuilder.and(startLess, statsDownloadedNull));
+		criteriaQuery.where(criteriaBuilder.and(startLess, statsDownloadedNullOrFalse));
 		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
 		
 		return entitys;

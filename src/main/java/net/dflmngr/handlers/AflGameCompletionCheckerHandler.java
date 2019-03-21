@@ -86,6 +86,8 @@ public class AflGameCompletionCheckerHandler {
 						loggerUtils.log("info", "Fixture complete, fixture={}", fixture);
 						fixture.setEndTime(now);
 						completeFixtures.add(fixture);
+					} else {
+						loggerUtils.log("info", "Fixture not complete, fixture={}", fixture);
 					}
 				}
 				
