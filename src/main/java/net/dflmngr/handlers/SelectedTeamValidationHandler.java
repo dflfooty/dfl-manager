@@ -13,6 +13,7 @@ import net.dflmngr.model.entity.DflPlayer;
 import net.dflmngr.model.entity.DflRoundEarlyGames;
 import net.dflmngr.model.entity.DflRoundInfo;
 import net.dflmngr.model.entity.DflSelectedPlayer;
+import net.dflmngr.model.entity.DflSelectionIds;
 import net.dflmngr.model.entity.DflTeamPlayer;
 import net.dflmngr.model.entity.keys.AflFixturePK;
 import net.dflmngr.model.service.AflFixtureService;
@@ -20,6 +21,7 @@ import net.dflmngr.model.service.DflEarlyInsAndOutsService;
 import net.dflmngr.model.service.DflPlayerService;
 import net.dflmngr.model.service.DflRoundInfoService;
 import net.dflmngr.model.service.DflSelectedTeamService;
+import net.dflmngr.model.service.DflSelectionIdsService;
 import net.dflmngr.model.service.DflTeamPlayerService;
 import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
@@ -27,6 +29,7 @@ import net.dflmngr.model.service.impl.DflEarlyInsAndOutsServiceImpl;
 import net.dflmngr.model.service.impl.DflPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
 import net.dflmngr.model.service.impl.DflSelectedTeamServiceImpl;
+import net.dflmngr.model.service.impl.DflSelectionIdsServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.utils.DflmngrUtils;
@@ -48,6 +51,7 @@ public class SelectedTeamValidationHandler {
 	private DflRoundInfoService dflRoundInfoService;
 	private DflEarlyInsAndOutsService dflEarlyInsAndOutsService;
 	private AflFixtureService aflFixtureService;
+	private DflSelectionIdsService dflSelectionIdsService;
 			
 	public SelectedTeamValidationHandler() {		
 		dflSelectedTeamService = new DflSelectedTeamServiceImpl();
@@ -57,6 +61,7 @@ public class SelectedTeamValidationHandler {
 		dflRoundInfoService = new DflRoundInfoServiceImpl();
 		dflEarlyInsAndOutsService = new DflEarlyInsAndOutsServiceImpl();
 		aflFixtureService = new AflFixtureServiceImpl();
+		dflSelectionIdsService = new DflSelectionIdsServiceImpl();
 		isExecutable = false;
 	}
 	
@@ -65,7 +70,7 @@ public class SelectedTeamValidationHandler {
 		isExecutable = true;
 	}
 	
-	public SelectedTeamValidation execute(int round, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, ZonedDateTime receivedDate, boolean skipEarlyGames) {
+	public SelectedTeamValidation execute(int round, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, ZonedDateTime receivedDate, boolean skipEarlyGames, String selectionId) {
 		
 		SelectedTeamValidation validationResult = null;
 		
@@ -125,7 +130,7 @@ public class SelectedTeamValidationHandler {
 				validationResult = standardValidation(round, currentRound, teamCode, insAndOuts, emergencies, receivedDate, lockoutTime);
 			}
 			*/
-			validationResult = standardValidation(round, currentRound, teamCode, insAndOuts, emergencies);
+			validationResult = standardValidation(round, currentRound, teamCode, insAndOuts, emergencies, selectionId);
 						
 			validationResult.setRound(round);
 			validationResult.setTeamCode(teamCode);
@@ -247,7 +252,7 @@ public class SelectedTeamValidationHandler {
 	}
 	
 	//private SelectedTeamValidation standardValidation(int round, int currentRound, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, ZonedDateTime receivedDate, ZonedDateTime lockoutTime) {
-	private SelectedTeamValidation standardValidation(int round, int currentRound, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies) {
+	private SelectedTeamValidation standardValidation(int round, int currentRound, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, String selectionId) {
 		
 		//SelectedTeamValidation validationResult = null;
 		SelectedTeamValidation validationResult = new SelectedTeamValidation();
@@ -275,6 +280,8 @@ public class SelectedTeamValidationHandler {
 		
 		boolean aflRoundComplete = aflFixtureService.getAflRoundComplete(round);
 		
+		boolean selectionExists = dflSelectionIdsService.selectionIdExists(round, teamCode, selectionId);
+		
 		if(round < currentRound) {
 			//validationResult = new SelectedTeamValidation();
 			validationResult.selectionFileMissing = false;
@@ -289,8 +296,13 @@ public class SelectedTeamValidationHandler {
 			validationResult.lockedOut = true;
 			//loggerUtils.log("info", "Team invalid email recived after lockout, recived date={}", receivedDate);
 			loggerUtils.log("info", "Team invalid email recived after AFL round complete");
+		} else if(selectionExists) {
+			validationResult.selectionFileMissing = false;
+			validationResult.roundCompleted = false;
+			validationResult.lockedOut = false;
+			validationResult.duplicateSubmissionId = true;
+			loggerUtils.log("info", "Already handled a selection for round={}. teamCode={}, id={}", round, teamCode, selectionId);
 		} else {
-			
 			if(round == 1) {
 				loggerUtils.log("info", "Round 1 only ins.");
 				List<Integer> ins = insAndOuts.get("in");
@@ -548,6 +560,15 @@ public class SelectedTeamValidationHandler {
 			
 			//validationResult = validateTeam(teamCode, selectedTeam, insAndOuts, emergencies, selectedWarning, droppedWarning);
 			validationResult = validateTeam(teamCode, selectedTeam, validationResult);
+			
+			if(!selectionId.equalsIgnoreCase("noid")) {
+				DflSelectionIds selectionIds = new DflSelectionIds();
+				selectionIds.setRound(round);
+				selectionIds.setTeamCode(teamCode);
+				selectionIds.setSelectionId(selectionId);
+				
+				dflSelectionIdsService.insert(selectionIds);
+			}
 		}
 		
 		return validationResult;

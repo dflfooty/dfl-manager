@@ -40,6 +40,7 @@
 		<class>net.dflmngr.model.entity.DflPreseasonScores</class>
 		<class>net.dflmngr.model.entity.Process</class>
 		<class>net.dflmngr.model.entity.DflBest22</class>
+		<class>net.dflmngr.model.entity.DflSelectionIds</class>
 		
 		<shared-cache-mode>NONE</shared-cache-mode>
 		

@@ -264,7 +264,19 @@ public class EmailSelectionsHandler {
 	    			
 					loggerUtils.log("info", "Message from {}, has selection in text body", from);
 					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, receivedDate);
+					validationResult = handleSelectionEmailText(lines, receivedDate, "noid");
+					validationResult.setFrom(from);
+					validationResults.add(validationResult);
+	    		} else if(text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
+	    			text = text.substring(text.indexOf("[start id="), text.indexOf("[end]"));
+	    			String[] lines = text.split("\\R+");
+	    			
+	    			String idLine = lines[0];
+	    			String id = idLine.split("=")[1].trim().replaceAll("]", "");
+	    			
+					loggerUtils.log("info", "Message from {}, has selection in text body", from);
+					selectionsFileAttached = true;
+					validationResult = handleSelectionEmailText(lines, receivedDate, id);
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 	    		}
@@ -283,7 +295,19 @@ public class EmailSelectionsHandler {
 	    			
 					loggerUtils.log("info", "Message from {}, has selection in html body", from);
 					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, receivedDate);
+					validationResult = handleSelectionEmailText(lines, receivedDate, "noid");
+					validationResult.setFrom(from);
+					validationResults.add(validationResult);
+	    		} else if(text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
+	    			text = text.substring((text.indexOf("[start id=") - 10), text.indexOf("[end]"));
+	    			String[] lines = text.split("\\R+");
+	    			
+	    			String idLine = lines[0];
+	    			String id = idLine.split("=")[1].trim().replaceAll("]", "");
+	    			
+					loggerUtils.log("info", "Message from {}, has selection in text body", from);
+					selectionsFileAttached = true;
+					validationResult = handleSelectionEmailText(lines, receivedDate, id);
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 	    		}
@@ -456,12 +480,12 @@ public class EmailSelectionsHandler {
 		
 		SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
 		validationHandler.configureLogging(mdcKey, loggerName, logfile);
-		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false);
+		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false, "noid");
 		
 		return validationResult;
 	}
 	
-	private SelectedTeamValidation handleSelectionEmailText(String [] emailLines, ZonedDateTime receivedDate) throws Exception {
+	private SelectedTeamValidation handleSelectionEmailText(String [] emailLines, ZonedDateTime receivedDate, String id) throws Exception {
 		
 		String line = "";
 		String teamCode = "";
@@ -581,7 +605,7 @@ public class EmailSelectionsHandler {
 		
 		SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
 		validationHandler.configureLogging(mdcKey, loggerName, logfile);
-		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false);
+		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false, id);
 		
 		return validationResult;
 	}
@@ -804,6 +828,8 @@ public class EmailSelectionsHandler {
 			messageBody = messageBody + "\t- The round you have in your selections as had all AFL games completed.\n";
 		} else if(validationResult.unknownError) {
 			messageBody = messageBody + "\t- Some exception occured follow up with email to xdfl google group.\n";
+		} else if(validationResult.duplicateSubmissionId) {
+				messageBody = messageBody + "\t- Already processed selection for your selection id.\n";
 		} else if(!validationResult.teamPlayerCheckOk) {
 			messageBody = messageBody + "\t- The ins and/or outs numbers sent are not correct\n";
 		} else {

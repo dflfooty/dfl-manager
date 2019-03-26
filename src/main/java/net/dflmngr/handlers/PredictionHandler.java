@@ -77,6 +77,8 @@ public class PredictionHandler {
 			
 			loggerUtils.log("info", "PredictionHandler excuting, rount={} ....", round);
 			
+			
+			
 			if(doPlayers) {
 				calculatePlayerPredictions(round);
 			}
@@ -190,7 +192,7 @@ public class PredictionHandler {
 				DflPlayerPredictedScoresPK dflPlayerPredictedScoresPK = new DflPlayerPredictedScoresPK();
 				dflPlayerPredictedScoresPK.setPlayerId(selectedPlayer.getPlayerId());
 				
-				if(round == 1) {
+				if(round > 1) {
 					dflPlayerPredictedScoresPK.setRound(round);
 					
 					DflPlayerPredictedScores predictedPlayerScore = dflPlayerPredictedScoresService.get(dflPlayerPredictedScoresPK);

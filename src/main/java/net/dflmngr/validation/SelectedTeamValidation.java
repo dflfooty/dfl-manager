@@ -30,6 +30,8 @@ public class SelectedTeamValidation {
 	public boolean emergencyFbWarning;
 	public boolean emergencyDefWarning;
 	
+	public boolean duplicateSubmissionId;
+	
 	public boolean selectedWarning;
 	public boolean droppedWarning;
 	public List<DflPlayer> selectedWarnPlayers;
@@ -91,6 +93,8 @@ public class SelectedTeamValidation {
 		emergencyFbWarning = false;
 		emergencyDefWarning = false;
 		
+		duplicateSubmissionId = false;
+		
 		unknownError = false;
 	}
 	
@@ -103,7 +107,8 @@ public class SelectedTeamValidation {
 				valid = true;
 			}
 		} else {
-			if(!selectionFileMissing && ffCheckOk && fwdCheckOk && rckCheckOk && midCheckOk && fbCheckOk && defCheckOk && benchCheckOk && teamPlayerCheckOk && !unknownError && !lockedOut && !roundCompleted) {
+			if(!selectionFileMissing && ffCheckOk && fwdCheckOk && rckCheckOk && midCheckOk && fbCheckOk && defCheckOk && benchCheckOk 
+				&& teamPlayerCheckOk && !unknownError && !lockedOut && !roundCompleted && !duplicateSubmissionId) {
 				valid = true;
 			}
 		}

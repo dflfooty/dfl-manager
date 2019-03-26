@@ -127,7 +127,8 @@ public class StartRoundHandler {
 			}
 			
 			if(round > 1) {
-				createTeamSelections(round, earlyGamesExist, earlyGamesCompleted, dummyReceivedDate);
+				//createTeamSelections(round, earlyGamesExist, earlyGamesCompleted, dummyReceivedDate);
+				createTeamSelections(round);
 			}
 			/*
 			loggerUtils.log("info", "Creating predictions");
@@ -172,6 +173,52 @@ public class StartRoundHandler {
 		
 	}
 	
+	private void createTeamSelections(int round) throws Exception {
+
+		loggerUtils.log("info", "Creating team selections for those who no changes");
+		
+		List<DflTeam> teams = dflTeamService.findAll();
+		
+		for(DflTeam team : teams) {
+			loggerUtils.log("info", "Working with team={}", team.getTeamCode());
+			
+			List<DflSelectedPlayer> currentSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, team.getTeamCode());
+			
+			if(currentSelectedTeam == null || currentSelectedTeam.isEmpty()) {
+				List<DflSelectedPlayer> previousSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round-1, team.getTeamCode());
+				
+				currentSelectedTeam = new ArrayList<>();
+				
+				for(DflSelectedPlayer player : previousSelectedTeam) {
+					DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+					selectedPlayer.setPlayerId(player.getPlayerId());
+					selectedPlayer.setRound(round);
+					selectedPlayer.setTeamCode(player.getTeamCode());
+					selectedPlayer.setTeamPlayerId(player.getTeamPlayerId());
+					selectedPlayer.setEmergency(player.isEmergency());
+					selectedPlayer.setDnp(false);
+					
+					if(player.isEmergency() != 0) {
+						selectedPlayer.setScoreUsed(false);
+					} else {
+						selectedPlayer.setScoreUsed(true);
+					}
+					
+					currentSelectedTeam.add(selectedPlayer);
+				}
+				
+				loggerUtils.log("info", "Saving selected to DB: selected team={}", currentSelectedTeam);
+				dflSelectedTeamService.replaceTeamForRound(round, team.getTeamCode(), currentSelectedTeam);
+				
+				loggerUtils.log("info", "Creating predictions");
+				PredictionHandler predictions = new PredictionHandler();
+				predictions.configureLogging(mdcKey, loggerName, logfile);
+				predictions.execute(round, team.getTeamCode(), false);
+			}
+		}
+	}
+	
+	/*
 	private void createTeamSelections(int round, boolean earlyGamesExist, boolean earlyGamesCompleted, ZonedDateTime dummyReceivedDate) throws Exception {
 
 		loggerUtils.log("info", "Creating team selections");
@@ -184,8 +231,8 @@ public class StartRoundHandler {
 			List<DflSelectedPlayer> tmpSelectedTeam = null;
 			
 			//if(round == 1) {
-				tmpSelectedTeam = new ArrayList<>();
-				loggerUtils.log("info", "Round 1: no previous team");
+			//	tmpSelectedTeam = new ArrayList<>();
+			//	loggerUtils.log("info", "Round 1: no previous team");
 			//} else {
 				tmpSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round-1, team.getTeamCode());
 				loggerUtils.log("info", "Not round 1: previous team: {}", tmpSelectedTeam);
@@ -302,7 +349,7 @@ public class StartRoundHandler {
 						emailValidationError(round, team, validationResult);
 					}
 				}
-			} else {*/
+			} else {
 			if(tmpSelectedTeam == null || tmpSelectedTeam.isEmpty()) {
 				if(insAndOuts != null && insAndOuts.size() > 0) {
 					List<DflSelectedPlayer> oldEmergencies = new ArrayList<>();
@@ -403,6 +450,9 @@ public class StartRoundHandler {
 			}
 		}
 	}
+	*/
+	
+	
 	
 	private void emailValidationError(int round, DflTeam team, SelectedTeamValidation validationResult) throws Exception {
 		
