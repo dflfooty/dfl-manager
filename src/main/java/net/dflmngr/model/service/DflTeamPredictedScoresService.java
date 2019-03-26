@@ -11,5 +11,6 @@ public interface DflTeamPredictedScoresService extends GenericService<DflTeamPre
 	public List<DflTeamPredictedScores> getForRound(int round);
 	public Map<String, DflTeamPredictedScores> getForRoundWithKey(int round);
 	List<DflTeamPredictedScores> getAllForRound(int round);
+	public void replaceTeamForRound(int round, String teamCode,  DflTeamPredictedScores predictedScore);
 	public void replaceAllForRound(int round, List<DflTeamPredictedScores> predictedScores);
 }

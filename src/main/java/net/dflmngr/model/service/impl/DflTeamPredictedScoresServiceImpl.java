@@ -47,6 +47,19 @@ public class DflTeamPredictedScoresServiceImpl extends GenericServiceImpl<DflTea
 		return predictedScores;
 	}
 	
+	public void replaceTeamForRound(int round, String teamCode,  DflTeamPredictedScores predictedScore) {
+		dao.beginTransaction();
+		
+		DflTeamPredictedScores preidction = getTeamPredictedScoreForRound(teamCode, round);
+		delete(preidction);
+		
+		dao.flush();
+		
+		insert(predictedScore);
+		
+		dao.commit();
+	}
+	
 	public void replaceAllForRound(int round, List<DflTeamPredictedScores> predictedScores) {
 		dao.beginTransaction();
 		

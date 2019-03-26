@@ -60,4 +60,18 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 		return entitys;
 	}
 	
+	public List<AflFixture> findIncompleteFixturesForRound(int round) {
+		criteriaBuilder = entityManager.getCriteriaBuilder();
+		criteriaQuery = criteriaBuilder.createQuery(entityClass);
+		entity = criteriaQuery.from(entityClass);
+		
+		Predicate roundEquals = criteriaBuilder.equal(entity.get(AflFixture_.round), round);
+		Predicate endTimeNull = criteriaBuilder.isNull(entity.get(AflFixture_.endTime));
+		
+		criteriaQuery.where(criteriaBuilder.and(roundEquals, endTimeNull));
+		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
+		
+		return entitys;
+	}
+	
 }

@@ -16,4 +16,5 @@ public interface AflFixtureService extends GenericService<AflFixture, AflFixture
 	public List<AflFixture> getIncompleteFixtures();
 	public List<AflFixture> getFixturesToScrape();
 	public List<Integer> getAflRoundsToScrape();
+	public boolean getAflRoundComplete(int round);
 }

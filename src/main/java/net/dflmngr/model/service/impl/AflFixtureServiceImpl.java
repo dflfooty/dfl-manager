@@ -158,4 +158,16 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		
 		return rounds;
 	}
+	
+	public boolean getAflRoundComplete(int round) {
+		boolean complete = false;
+		
+		List<AflFixture> incomleteFixtures = dao.findIncompleteFixturesForRound(round);
+		
+		if(incomleteFixtures == null || incomleteFixtures.isEmpty()) {
+			complete = true;
+		}
+		
+		return complete;
+	}
 }

@@ -106,6 +106,10 @@ public class EndRoundHandler {
 				this.emailOverride = emailOverride;
 			}
 			
+			PredictionHandler predictions = new PredictionHandler();
+			predictions.configureLogging(mdcKey, loggerName, logfile);
+			predictions.execute(round, null, true);
+			
 			MatthewAllenHandler matthewAllenHandler = new MatthewAllenHandler();
 			matthewAllenHandler.configureLogging(mdcKey, loggerName, logfile);
 			matthewAllenHandler.execute(round);

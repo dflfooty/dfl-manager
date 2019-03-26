@@ -800,7 +800,8 @@ public class EmailSelectionsHandler {
 		} else if(validationResult.roundCompleted) {
 			messageBody = messageBody + "\t- The round you have in your selections.txt has past\n";
 		} else if(validationResult.lockedOut) {
-			messageBody = messageBody + "\t- The round you have in your selections.txt is in progress and doesn't allow more selections\n";
+			//messageBody = messageBody + "\t- The round you have in your selections.txt is in progress and doesn't allow more selections\n";
+			messageBody = messageBody + "\t- The round you have in your selections as had all AFL games completed.\n";
 		} else if(validationResult.unknownError) {
 			messageBody = messageBody + "\t- Some exception occured follow up with email to xdfl google group.\n";
 		} else if(!validationResult.teamPlayerCheckOk) {

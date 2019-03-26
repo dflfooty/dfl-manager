@@ -78,12 +78,13 @@ public class SelectedTeamValidationHandler {
 			loggerUtils.log("info", "Validating selectionds for teamCode={}; round={};", teamCode, round);
 			
 			int currentRound = Integer.parseInt(globalsService.getCurrentRound());
-			DflRoundInfo roundInfo = dflRoundInfoService.get(round);
-			ZonedDateTime lockoutTime = roundInfo.getHardLockoutTime();
+			//DflRoundInfo roundInfo = dflRoundInfoService.get(round);
+			//ZonedDateTime lockoutTime = roundInfo.getHardLockoutTime();
 			
-			boolean earlyGamesCompleted = false;
-			boolean playedSelections = false;
+			//boolean earlyGamesCompleted = false;
+			//boolean playedSelections = false;
 			
+			/*
 			if(!skipEarlyGames && (roundInfo.getEarlyGames() != null && roundInfo.getEarlyGames().size() > 0)) {
 				loggerUtils.log("info", "Round has early games, doing early game validation");
 				List<DflRoundEarlyGames> earlyGames = roundInfo.getEarlyGames();
@@ -123,6 +124,8 @@ public class SelectedTeamValidationHandler {
 			} else {
 				validationResult = standardValidation(round, currentRound, teamCode, insAndOuts, emergencies, receivedDate, lockoutTime);
 			}
+			*/
+			validationResult = standardValidation(round, currentRound, teamCode, insAndOuts, emergencies);
 						
 			validationResult.setRound(round);
 			validationResult.setTeamCode(teamCode);
@@ -243,12 +246,14 @@ public class SelectedTeamValidationHandler {
 		return playedSelections;
 	}
 	
-	private SelectedTeamValidation standardValidation(int round, int currentRound, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, ZonedDateTime receivedDate, ZonedDateTime lockoutTime) {
+	//private SelectedTeamValidation standardValidation(int round, int currentRound, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, ZonedDateTime receivedDate, ZonedDateTime lockoutTime) {
+	private SelectedTeamValidation standardValidation(int round, int currentRound, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies) {
 		
 		//SelectedTeamValidation validationResult = null;
 		SelectedTeamValidation validationResult = new SelectedTeamValidation();
 		
-		loggerUtils.log("info", "DFL round={}; Lockout time={};", currentRound, lockoutTime);
+		//loggerUtils.log("info", "DFL round={}; Lockout time={};", currentRound, lockoutTime);
+		loggerUtils.log("info", "DFL round={};", currentRound);
 		
 		List<DflSelectedPlayer> selectedTeam = null;
 		
@@ -268,17 +273,22 @@ public class SelectedTeamValidationHandler {
 		List<DflPlayer> dupOutPlayers = new ArrayList<>();
 		List<DflPlayer> dupEmgPlayers = new ArrayList<>();
 		
+		boolean aflRoundComplete = aflFixtureService.getAflRoundComplete(round);
+		
 		if(round < currentRound) {
 			//validationResult = new SelectedTeamValidation();
 			validationResult.selectionFileMissing = false;
 			validationResult.roundCompleted = true;
 			loggerUtils.log("info", "Team invalid round is completed");
-		} else if(receivedDate.isAfter(lockoutTime)) {
+		
+		//} else if(receivedDate.isAfter(lockoutTime)) {
+		} else if(aflRoundComplete) {
 			//validationResult = new SelectedTeamValidation();
 			validationResult.selectionFileMissing = false;
 			validationResult.roundCompleted = false;
 			validationResult.lockedOut = true;
-			loggerUtils.log("info", "Team invalid email recived after lockout, recived date={}", receivedDate);
+			//loggerUtils.log("info", "Team invalid email recived after lockout, recived date={}", receivedDate);
+			loggerUtils.log("info", "Team invalid email recived after AFL round complete");
 		} else {
 			
 			if(round == 1) {

@@ -126,24 +126,31 @@ public class StartRoundHandler {
 				loggerUtils.log("info", "Executing start round for round={}",  round);
 			}
 			
-			createTeamSelections(round, earlyGamesExist, earlyGamesCompleted, dummyReceivedDate);
-			
+			if(round > 1) {
+				createTeamSelections(round, earlyGamesExist, earlyGamesCompleted, dummyReceivedDate);
+			}
+			/*
 			loggerUtils.log("info", "Creating predictions");
 			PredictionHandler predictions = new PredictionHandler();
 			predictions.configureLogging(mdcKey, loggerName, logfile);
 			predictions.execute(round);
+			*/
+			
 			
 			if(!earlyGamesExist || earlyGamesCompleted) {
 				loggerUtils.log("info", "Creating insAndOuts Report");
 				
-				InsAndOutsReport insAndOutsReport = new InsAndOutsReport();
-				insAndOutsReport.configureLogging(mdcKey, loggerName, logfile);
-				insAndOutsReport.execute(round, "Full", emailOveride);
-			} else {
+				//InsAndOutsReport insAndOutsReport = new InsAndOutsReport();
+				//insAndOutsReport.configureLogging(mdcKey, loggerName, logfile);
+				//insAndOutsReport.execute(round, "Full", emailOveride);
+				
+				sendFirstGameEmail(round, emailOveride);
+				
+			} /* else {
 				if(!fromScoresCalculator) {
 					sendFirstGameEmail(round, emailOveride);
 				}
-			}
+			}*/
 			
 			if(earlyGamesExist && !earlyGamesCompleted) {
 				loggerUtils.log("info", "Early game start round completed");
@@ -176,18 +183,19 @@ public class StartRoundHandler {
 			
 			List<DflSelectedPlayer> tmpSelectedTeam = null;
 			
-			if(round == 1) {
+			//if(round == 1) {
 				tmpSelectedTeam = new ArrayList<>();
 				loggerUtils.log("info", "Round 1: no previous team");
-			} else {
+			//} else {
 				tmpSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round-1, team.getTeamCode());
 				loggerUtils.log("info", "Not round 1: previous team: {}", tmpSelectedTeam);
-			}
+			//}
 						
 			List<InsAndOuts> insAndOuts = insAndOutsService.getByTeamAndRound(round, team.getTeamCode());
 			loggerUtils.log("info", "Final ins and outs: {}", insAndOuts);
 			
 			//if((earlyGamesExist && earlyGamesCompleted) && (insAndOuts == null || insAndOuts.size() == 0)) {
+			/*
 			if(earlyGamesExist && (insAndOuts == null || insAndOuts.size() == 0)) {
 				List<DflEarlyInsAndOuts> earlyInsAndOuts = dflEarlyInsAndOutsService.getByTeamAndRound(round, team.getTeamCode());
 				
@@ -294,7 +302,8 @@ public class StartRoundHandler {
 						emailValidationError(round, team, validationResult);
 					}
 				}
-			} else {
+			} else {*/
+			if(tmpSelectedTeam == null || tmpSelectedTeam.isEmpty()) {
 				if(insAndOuts != null && insAndOuts.size() > 0) {
 					List<DflSelectedPlayer> oldEmergencies = new ArrayList<>();
 					
@@ -355,7 +364,7 @@ public class StartRoundHandler {
 						}
 					}
 				}
-			}
+			
 		
 			List<DflSelectedPlayer> selectedTeam = new ArrayList<>();
 			List<Integer> selectedPlayerIds = new ArrayList<>();
@@ -385,6 +394,13 @@ public class StartRoundHandler {
 			
 			loggerUtils.log("info", "Saving selected to DB: selected team={}", selectedTeam);
 			dflSelectedTeamService.replaceTeamForRound(round, team.getTeamCode(), selectedTeam);
+			
+			loggerUtils.log("info", "Creating predictions");
+			PredictionHandler predictions = new PredictionHandler();
+			predictions.configureLogging(mdcKey, loggerName, logfile);
+			predictions.execute(round, team.getTeamCode(), false);
+			
+			}
 		}
 	}
 	
@@ -450,7 +466,7 @@ public class StartRoundHandler {
 		
 		String dflMngrEmail = globalsService.getEmailConfig().get("dflmngrEmailAddr");
 		
-		String subject = "DFL Manager - Early Games";
+		String subject = "DFL Manager - Predictions";
 		
 		List<DflFixture> roundFixtures = dflFixtureService.getFixturesForRound(round);
 		

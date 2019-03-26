@@ -67,7 +67,7 @@ public class PredictionHandler {
 		isExecutable = true;
 	}
 	
-	public void execute(int round) {
+	public void execute(int round, String teamCode, boolean doPlayers) {
 		
 		try{
 			if(!isExecutable) {
@@ -77,8 +77,11 @@ public class PredictionHandler {
 			
 			loggerUtils.log("info", "PredictionHandler excuting, rount={} ....", round);
 			
-			calculatePlayerPredictions(round);
-			calculateTeamPredictions(round);
+			if(doPlayers) {
+				calculatePlayerPredictions(round);
+			}
+			
+			calculateTeamPredictions(round, teamCode);
 			
 			loggerUtils.log("info", "PredictionHandler completed");
 			
@@ -132,50 +135,77 @@ public class PredictionHandler {
 		dflPlayerPredictedScoresService.replaceAllForRound(round, predictedPlayerScores);
 	}
 	
-	private void calculateTeamPredictions(int round) {
+	private void calculateTeamPredictions(int round, String teamCode) {
 		
 		loggerUtils.log("info", "Calculating predicted team scores ....");
 		
 		List<DflTeamPredictedScores> predictedTeamScores = new ArrayList<>();
 		
-		List<DflTeam> teams = dflTeamService.findAll();
-		
-		for(DflTeam team : teams) {
+		if(teamCode != null) {
 			DflTeamPredictedScores predictedTeamScore = new DflTeamPredictedScores();
-			List<DflSelectedPlayer> selectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, team.getTeamCode());
 			
-			int predictedScore = 0;
-			for(DflSelectedPlayer selectedPlayer : selectedTeam) {
-				if(selectedPlayer.isEmergency() == 0) {
-					DflPlayerPredictedScoresPK dflPlayerPredictedScoresPK = new DflPlayerPredictedScoresPK();
-					dflPlayerPredictedScoresPK.setPlayerId(selectedPlayer.getPlayerId());
-					
-					if(round == 1) {
-						dflPlayerPredictedScoresPK.setRound(round);
-						
-						DflPlayerPredictedScores predictedPlayerScore = dflPlayerPredictedScoresService.get(dflPlayerPredictedScoresPK);
-						if(predictedPlayerScore != null) {
-							predictedScore = predictedScore + predictedPlayerScore.getPredictedScore();
-						} else {
-							predictedScore = predictedScore + 25;
-						}
-					} else {
-						predictedScore = predictedScore + 25;
-					}
-				}
-			}
+			int predictedScore = teamPrediction(round, teamCode);
 			
-			predictedTeamScore.setTeamCode(team.getTeamCode());
+			predictedTeamScore.setTeamCode(teamCode);
 			predictedTeamScore.setRound(round);
 			predictedTeamScore.setPredictedScore(predictedScore);
 			
+			dflTeamPredictedScoresService.replaceTeamForRound(round, teamCode, predictedTeamScore);
+					
 		    loggerUtils.log("info", "Predicted score for: teamCode={}; round={}; predictedScore={};", 
-		    				predictedTeamScore.getTeamCode(), round, predictedTeamScore.getPredictedScore());
+    				predictedTeamScore.getTeamCode(), round, predictedTeamScore.getPredictedScore());
 			
-			predictedTeamScores.add(predictedTeamScore);
+		} else {
+			List<DflTeam> teams = dflTeamService.findAll();
+			
+			for(DflTeam team : teams) {
+				
+				DflTeamPredictedScores predictedTeamScore = new DflTeamPredictedScores();
+				
+				int predictedScore = teamPrediction(round, team.getTeamCode());
+				
+				predictedTeamScore.setTeamCode(team.getTeamCode());
+				predictedTeamScore.setRound(round);
+				predictedTeamScore.setPredictedScore(predictedScore);
+				
+			    loggerUtils.log("info", "Predicted score for: teamCode={}; round={}; predictedScore={};", 
+			    				predictedTeamScore.getTeamCode(), round, predictedTeamScore.getPredictedScore());
+				
+				predictedTeamScores.add(predictedTeamScore);
+			}
+			
+			dflTeamPredictedScoresService.replaceAllForRound(round, predictedTeamScores);
 		}
 		
-		dflTeamPredictedScoresService.replaceAllForRound(round, predictedTeamScores);
+
+	}
+	
+	private int teamPrediction(int round, String teamCode) {
+		
+		List<DflSelectedPlayer> selectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, teamCode);
+		
+		int predictedScore = 0;
+		for(DflSelectedPlayer selectedPlayer : selectedTeam) {
+			if(selectedPlayer.isEmergency() == 0) {
+				DflPlayerPredictedScoresPK dflPlayerPredictedScoresPK = new DflPlayerPredictedScoresPK();
+				dflPlayerPredictedScoresPK.setPlayerId(selectedPlayer.getPlayerId());
+				
+				if(round == 1) {
+					dflPlayerPredictedScoresPK.setRound(round);
+					
+					DflPlayerPredictedScores predictedPlayerScore = dflPlayerPredictedScoresService.get(dflPlayerPredictedScoresPK);
+					if(predictedPlayerScore != null) {
+						predictedScore = predictedScore + predictedPlayerScore.getPredictedScore();
+					} else {
+						predictedScore = predictedScore + 25;
+					}
+				} else {
+					predictedScore = predictedScore + 25;
+				}
+			}
+		}
+		
+		return predictedScore;
 	}
 	
 	public static void main(String[] args) {
@@ -198,7 +228,7 @@ public class PredictionHandler {
 			
 			PredictionHandler predictions = new PredictionHandler();
 			predictions.configureLogging("batch.name", "batch-logger", "PredictionsHandler_R" + round);
-			predictions.execute(round);
+			predictions.execute(round, null, true);
 		
 		} catch (ParseException ex) {
 			HelpFormatter formatter = new HelpFormatter();
