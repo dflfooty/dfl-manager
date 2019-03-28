@@ -81,7 +81,7 @@ public class Best22Handler {
 	
 	private void calculateBest22(int round) {
 		
-		Map<Integer, List<DflPlayerScores>> allPlayerScores = dflPlayerScoresService.getUptoRoundWithKey(round);
+		Map<Integer, List<DflPlayerScores>> allPlayerScores = dflPlayerScoresService.getUptoRoundWithKey(round+1);
 		
 		Map<Integer, Integer> ffScores = new HashMap<>();
 		Map<Integer, Integer> fwdScores = new HashMap<>();
