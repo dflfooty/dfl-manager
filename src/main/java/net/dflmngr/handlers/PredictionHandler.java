@@ -77,8 +77,6 @@ public class PredictionHandler {
 			
 			loggerUtils.log("info", "PredictionHandler excuting, rount={} ....", round);
 			
-			
-			
 			if(doPlayers) {
 				calculatePlayerPredictions(round);
 			}

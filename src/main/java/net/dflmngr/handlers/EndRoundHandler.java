@@ -21,6 +21,7 @@ import net.dflmngr.model.entity.DflFixture;
 import net.dflmngr.model.entity.DflLadder;
 import net.dflmngr.model.entity.DflMatthewAllen;
 import net.dflmngr.model.entity.DflPlayer;
+import net.dflmngr.model.entity.DflSelectedPlayer;
 import net.dflmngr.model.entity.DflTeam;
 import net.dflmngr.model.entity.DflTeamPlayer;
 import net.dflmngr.model.entity.keys.DflFixturePK;
@@ -30,6 +31,8 @@ import net.dflmngr.model.service.DflFixtureService;
 import net.dflmngr.model.service.DflLadderService;
 import net.dflmngr.model.service.DflMatthewAllenService;
 import net.dflmngr.model.service.DflPlayerService;
+import net.dflmngr.model.service.DflSelectedTeamService;
+import net.dflmngr.model.service.DflSelectionIdsService;
 import net.dflmngr.model.service.DflTeamPlayerService;
 import net.dflmngr.model.service.DflTeamScoresService;
 import net.dflmngr.model.service.DflTeamService;
@@ -39,6 +42,7 @@ import net.dflmngr.model.service.impl.DflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflLadderServiceImpl;
 import net.dflmngr.model.service.impl.DflMatthewAllenServiceImpl;
 import net.dflmngr.model.service.impl.DflPlayerServiceImpl;
+import net.dflmngr.model.service.impl.DflSelectedTeamServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
@@ -67,6 +71,7 @@ public class EndRoundHandler {
 	DflLadderService dflLadderService;
 	DflFixtureService dflFixtureService;
 	DflTeamScoresService dflTeamScoresService;
+	DflSelectedTeamService dflSelectedTeamService;
 	
 	String emailOverride;
 
@@ -80,6 +85,7 @@ public class EndRoundHandler {
 		dflLadderService = new DflLadderServiceImpl();
 		dflFixtureService = new DflFixtureServiceImpl();
 		dflTeamScoresService = new DflTeamScoresServiceImpl();
+		dflSelectedTeamService = new DflSelectedTeamServiceImpl();
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
@@ -105,6 +111,8 @@ public class EndRoundHandler {
 				loggerUtils.log("info", "Overriding email with: {}", emailOverride);
 				this.emailOverride = emailOverride;
 			}
+			
+			defaultSelectedTeams(round);
 			
 			PredictionHandler predictions = new PredictionHandler();
 			predictions.configureLogging(mdcKey, loggerName, logfile);
@@ -162,6 +170,40 @@ public class EndRoundHandler {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
 		
+	}
+	
+	private void defaultSelectedTeams(int round) {
+		
+		loggerUtils.log("info", "Creating selected teams for next round={}", round+1);
+		
+		List<DflSelectedPlayer> previousSelectedPlayers = dflSelectedTeamService.getAllForRound(round);
+		List<DflSelectedPlayer> updatedSelectedPlayers = new ArrayList<>();
+		
+		
+		for(DflSelectedPlayer previousSelectedPlayer : previousSelectedPlayers) {
+			List<DflSelectedPlayer> currentSelections = dflSelectedTeamService.getSelectedTeamForRound(round+1, previousSelectedPlayer.getTeamCode());
+			
+			if(currentSelections == null || currentSelections.isEmpty()) {
+				DflSelectedPlayer updatedSelectedPlayer = new DflSelectedPlayer();
+				updatedSelectedPlayer.setPlayerId(previousSelectedPlayer.getPlayerId());
+				updatedSelectedPlayer.setRound(round+1);
+				updatedSelectedPlayer.setTeamCode(previousSelectedPlayer.getTeamCode());
+				updatedSelectedPlayer.setTeamPlayerId(previousSelectedPlayer.getTeamPlayerId());
+				updatedSelectedPlayer.setDnp(false);
+				updatedSelectedPlayer.setEmergency(previousSelectedPlayer.isEmergency());
+				
+				if(updatedSelectedPlayer.isEmergency() != 0) {
+					updatedSelectedPlayer.setScoreUsed(false);
+				} else {
+					updatedSelectedPlayer.setScoreUsed(true);
+				}
+				
+				loggerUtils.log("info", "Adding selected player for next round, player={}", updatedSelectedPlayer);
+				updatedSelectedPlayers.add(updatedSelectedPlayer);
+			}
+		}
+		
+		dflSelectedTeamService.insertAll(updatedSelectedPlayers, false);
 	}
 	
 	private void calculateFinalsWeek1(int round) throws Exception {
