@@ -615,7 +615,7 @@ public class EmailSelectionsHandler {
 		int playerNo;
 		String playerNoStr;
 				
-		Pattern pattern = Pattern.compile("[\\s:\\-]");
+		Pattern pattern = Pattern.compile("[\\s:\\-\\.]");
 		Matcher matcher = pattern.matcher(line);
 		
 		if(matcher.find()) {
