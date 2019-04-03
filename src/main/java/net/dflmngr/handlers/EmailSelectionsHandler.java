@@ -77,6 +77,7 @@ public class EmailSelectionsHandler {
 	//Map <String, Boolean> responses;
 	
 	List<SelectedTeamValidation> validationResults;
+	Map<String, String> selectionsIdsCurrent;
 	
 	public EmailSelectionsHandler() {
 		globalsService = new GlobalsServiceImpl();
@@ -103,6 +104,7 @@ public class EmailSelectionsHandler {
 			
 			//this.responses = new HashMap<>();
 			validationResults = new ArrayList<>();
+			selectionsIdsCurrent = new HashMap<>();
 
 			loggerUtils.log("info", "Email Selections Handler is executing ....");
 			
@@ -299,7 +301,7 @@ public class EmailSelectionsHandler {
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 	    		} else if(text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
-	    			text = text.substring((text.indexOf("[start id=") - 10), text.indexOf("[end]"));
+	    			text = text.substring(text.indexOf("[start id="), text.indexOf("[end]"));
 	    			String[] lines = text.split("\\R+");
 	    			
 	    			String idLine = lines[0];
@@ -341,6 +343,9 @@ public class EmailSelectionsHandler {
 	            for(int i = 0; i < multipart.getCount(); i++) {
 	                BodyPart bodyPart = multipart.getBodyPart(i);
 	                validationResult = scanEmailPartsAndValidate(bodyPart, receivedDate, from);
+	                if(validationResult != null) {
+	                	break;
+	                }
 	            }
 		    }
 	    }   
@@ -477,7 +482,7 @@ public class EmailSelectionsHandler {
 		Map<String, List<Integer>> insAndOuts = new HashMap<>();
 		insAndOuts.put("in", ins);
 		insAndOuts.put("out", outs);
-		
+				
 		SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
 		validationHandler.configureLogging(mdcKey, loggerName, logfile);
 		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false, "noid");
@@ -599,14 +604,38 @@ public class EmailSelectionsHandler {
 			}	
 		}
 		
-		Map<String, List<Integer>> insAndOuts = new HashMap<>();
-		insAndOuts.put("in", ins);
-		insAndOuts.put("out", outs);
+		boolean idHandledThisBatch = false;
 		
-		SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
-		validationHandler.configureLogging(mdcKey, loggerName, logfile);
-		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false, id);
+		if(selectionsIdsCurrent.containsKey(id)) {
+			String team = selectionsIdsCurrent.get(id);
+			if(team.equalsIgnoreCase(teamCode)) {
+				idHandledThisBatch = true;
+			} else {
+				selectionsIdsCurrent.put(id, teamCode);
+			}
+		} else {
+			selectionsIdsCurrent.put(id, teamCode);
+		}
 		
+		SelectedTeamValidation validationResult = null;
+		
+		if(idHandledThisBatch) {
+			validationResult = new SelectedTeamValidation();
+			validationResult.selectionFileMissing = false;
+			validationResult.roundCompleted = false;
+			validationResult.lockedOut = false;
+			validationResult.duplicateSubmissionId = true;
+			loggerUtils.log("info", "Already handled a selection in this batch for round={}. teamCode={}, id={}", round, teamCode, id);
+		} else {
+			Map<String, List<Integer>> insAndOuts = new HashMap<>();
+			insAndOuts.put("in", ins);
+			insAndOuts.put("out", outs);
+			
+			SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
+			validationHandler.configureLogging(mdcKey, loggerName, logfile);
+			validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false, id);
+		}
+
 		return validationResult;
 	}
 	
