@@ -32,7 +32,6 @@ import net.dflmngr.model.service.DflLadderService;
 import net.dflmngr.model.service.DflMatthewAllenService;
 import net.dflmngr.model.service.DflPlayerService;
 import net.dflmngr.model.service.DflSelectedTeamService;
-import net.dflmngr.model.service.DflSelectionIdsService;
 import net.dflmngr.model.service.DflTeamPlayerService;
 import net.dflmngr.model.service.DflTeamScoresService;
 import net.dflmngr.model.service.DflTeamService;
