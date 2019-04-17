@@ -33,8 +33,6 @@ public class TeamInsOutsLoaderHandler {
 		
 	public TeamInsOutsLoaderHandler() throws Exception {		
 		isExecutable = false;
-		
-		
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
