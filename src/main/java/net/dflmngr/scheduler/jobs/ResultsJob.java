@@ -50,9 +50,9 @@ public class ResultsJob implements Job {
 			ResultsHandler resultsHandler = new ResultsHandler();
 			resultsHandler.configureLogging("online.name", "online-logger", logFile);
 
-			loggerUtils.log("info", "Running ProgressRound: round={};", round);
+			loggerUtils.log("info", "Running {}", logFile);
 			resultsHandler.execute(round, isFinal, null, skipStats, onHeroku, sendReport);
-			loggerUtils.log("info", "ProgressRoundJob completed");
+			loggerUtils.log("info", "{} completed", logFile);
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}

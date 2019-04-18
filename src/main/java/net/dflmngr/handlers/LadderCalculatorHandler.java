@@ -104,9 +104,11 @@ public class LadderCalculatorHandler {
 			String awayTeamCode = fixture.getAwayTeam();
 			
 			if(liveLadderOveride) {
+				loggerUtils.log("info", "Live ladder calculation homeTeam={}, awayTeam={}", homeTeamCode, awayTeamCode);
 				homeTeamScore = calculateLiveTeamScore(round, homeTeamCode);
 				awayTeamScore = calculateLiveTeamScore(round, awayTeamCode);
 			} else {
+				loggerUtils.log("info", "End round ladder calculation homeTeam={}, awayTeam={}", homeTeamCode, awayTeamCode);
 				homeTeamScore = roundTeamScores.get(homeTeamCode).getScore();
 				awayTeamScore = roundTeamScores.get(awayTeamCode).getScore();				
 			}
@@ -132,17 +134,25 @@ public class LadderCalculatorHandler {
 		for(DflSelectedPlayer player : selectedTeam) {
 			if(!player.isDnp()  && player.isScoreUsed()) {
 				if(player.hasPlayed()) {
-					teamScore = teamScore + scores.get(player.getPlayerId()).getScore();
+					int score = scores.get(player.getPlayerId()).getScore();
+					loggerUtils.log("info", "Player has played and scored: {}, player: {}", score, player);
+					teamScore = teamScore + score;
 				} else {
 					if(predictedScores.containsKey(player.getPlayerId())) {
-						teamScore = teamScore + predictedScores.get(player.getPlayerId()).getPredictedScore();
+						int score = predictedScores.get(player.getPlayerId()).getPredictedScore();
+						loggerUtils.log("info", "Player has not played using predicted score: {}, player: {}", score, player);
+						teamScore = teamScore + score;
 					} else {
+						loggerUtils.log("info", "Player has not played using default score: {}, player: {}", 25, player);
 						teamScore = teamScore + 25;
 					}
 				}
+			} else {
+				loggerUtils.log("info", "Player not player used, player: {}", player);
 			}
 		}
 	
+		loggerUtils.log("info", "Team total score: {}, team={}", teamScore, teamCode);
 		return teamScore;
 	}
 	
@@ -184,6 +194,9 @@ public class LadderCalculatorHandler {
 		newLadder.setPts(pts);
 		newLadder.setPercentage(percentage);
 		newLadder.setLive(isLive);
+		
+		loggerUtils.log("info", "Previous ladder={}", previousLadder);
+		loggerUtils.log("info", "New ladder={}", newLadder);
 		
 		return newLadder;
 	}
