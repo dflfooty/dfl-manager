@@ -2,6 +2,8 @@ package net.dflmngr.handlers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.DomainDecodes;
@@ -249,6 +251,8 @@ public class TeamInsOutsLoaderHandler {
 			List<DflSelectedPlayer> selectedTeam = new ArrayList<>();
 			List<Integer> selectedPlayerIds = new ArrayList<>();
 			
+			Map<Integer, DflSelectedPlayer> previousSelectedTeamMap = previousSelectedTeam.stream().collect(Collectors.toMap(player -> player.getPlayerId(), player -> player));
+			
 			for(DflSelectedPlayer tmpSelectedPlayer : tmpSelectedTeam) {
 				if(selectedPlayerIds.contains(tmpSelectedPlayer.getPlayerId())) {
 					loggerUtils.log("info", "Duplicate selected player: player={}", tmpSelectedPlayer);
@@ -258,13 +262,22 @@ public class TeamInsOutsLoaderHandler {
 					selectedPlayer.setRound(round);
 					selectedPlayer.setTeamCode(teamCode);
 					selectedPlayer.setTeamPlayerId(tmpSelectedPlayer.getTeamPlayerId());
-					selectedPlayer.setDnp(false);
 					selectedPlayer.setEmergency(tmpSelectedPlayer.isEmergency());
 					
-					if(tmpSelectedPlayer.isEmergency() != 0) {
-						selectedPlayer.setScoreUsed(false);
+					if(previousSelectedTeamMap.containsKey(tmpSelectedPlayer.getPlayerId())) {
+						DflSelectedPlayer previousSelectedPlayer = previousSelectedTeamMap.get(tmpSelectedPlayer.getPlayerId());
+						selectedPlayer.setDnp(previousSelectedPlayer.isDnp());
+						selectedPlayer.setScoreUsed(previousSelectedPlayer.isScoreUsed());
+						selectedPlayer.setHasPlayed(previousSelectedPlayer.hasPlayed());
+						selectedPlayer.setReplacementInd(previousSelectedPlayer.getReplacementInd());
 					} else {
-						selectedPlayer.setScoreUsed(true);
+						selectedPlayer.setDnp(false);
+
+						if(tmpSelectedPlayer.isEmergency() != 0) {
+							selectedPlayer.setScoreUsed(false);
+						} else {
+							selectedPlayer.setScoreUsed(true);
+						}
 					}
 					
 					selectedTeam.add(selectedPlayer);
