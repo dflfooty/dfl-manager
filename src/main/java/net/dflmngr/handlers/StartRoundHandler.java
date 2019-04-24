@@ -5,15 +5,24 @@ import java.util.List;
 
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflFixture;
+import net.dflmngr.model.entity.DflPlayer;
 import net.dflmngr.model.entity.DflTeam;
+import net.dflmngr.model.entity.DflTeamPlayer;
+import net.dflmngr.model.entity.InsAndOuts;
 import net.dflmngr.model.service.DflFixtureService;
+import net.dflmngr.model.service.DflPlayerService;
+import net.dflmngr.model.service.DflTeamPlayerService;
 import net.dflmngr.model.service.DflTeamPredictedScoresService;
 import net.dflmngr.model.service.DflTeamService;
 import net.dflmngr.model.service.GlobalsService;
+import net.dflmngr.model.service.InsAndOutsService;
 import net.dflmngr.model.service.impl.DflFixtureServiceImpl;
+import net.dflmngr.model.service.impl.DflPlayerServiceImpl;
+import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamPredictedScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
+import net.dflmngr.model.service.impl.InsAndOutsServiceImpl;
 import net.dflmngr.utils.EmailUtils;
 
 public class StartRoundHandler {
@@ -33,6 +42,9 @@ public class StartRoundHandler {
 	GlobalsService globalsService;
 	DflFixtureService dflFixtureService;
 	DflTeamPredictedScoresService dflTeamPredictedScoresService;
+	DflPlayerService dflPlayerService;
+	InsAndOutsService insAndOutsService;
+	DflTeamPlayerService dflTeamPlayerService;
 	
 	String emailOverride;
 	
@@ -41,6 +53,9 @@ public class StartRoundHandler {
 		globalsService = new GlobalsServiceImpl();
 		dflFixtureService = new DflFixtureServiceImpl();
 		dflTeamPredictedScoresService = new DflTeamPredictedScoresServiceImpl();
+		dflPlayerService = new DflPlayerServiceImpl();
+		insAndOutsService = new InsAndOutsServiceImpl();
+		dflTeamPlayerService = new DflTeamPlayerServiceImpl();
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
@@ -73,6 +88,9 @@ public class StartRoundHandler {
 			globalsService.close();
 			dflFixtureService.close();
 			dflTeamPredictedScoresService.close();
+			dflPlayerService.close();
+			insAndOutsService.close();
+			dflTeamPlayerService.close();
 		
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
@@ -113,11 +131,14 @@ public class StartRoundHandler {
 		}
 		
 		body = body + "</ul></p>\n";
+				
+		List<DflTeam> teams = dflTeamService.findAll();
+		
+		body = body + selectionSummary(round, teams);
 		
 		body = body + "<p>DFL Manager Admin</p>\n";
 		body = body + "</body>\n</html>";
 		
-		List<DflTeam> teams = dflTeamService.findAll();
 		List<String> to = new ArrayList<>();
 		
 		if(emailOverride != null && !emailOverride.equals("")) {
@@ -130,6 +151,107 @@ public class StartRoundHandler {
 
 		loggerUtils.log("info", "Emailing early games start round to={}", to);
 		EmailUtils.sendHtmlEmail(to, dflMngrEmail, subject, body, null);	
+	}
+	
+	private String selectionSummary(int round, List<DflTeam> teams) {
+		
+		String text = "<br><p><b>Selection Summary</b></p>\n";
+		
+		for(DflTeam team : teams) {
+			List<InsAndOuts> insAndOuts = insAndOutsService.getByTeamAndRound(round, team.getTeamCode());
+			List<InsAndOuts> ins = new ArrayList<>();
+			List<InsAndOuts> outs = new ArrayList<>();
+			
+			InsAndOuts emg1 = null;
+			InsAndOuts emg2 = null;
+			
+			for(InsAndOuts selection : insAndOuts) {
+				switch(selection.getInOrOut()) {
+					case "I" : ins.add(selection); break;
+					case "O" : outs.add(selection); break;
+					case "E1" : emg1 = selection; break;
+					case "E2" : emg2 = selection; break;
+				}
+			}
+			
+			text = text + "<p><b>" + team.getShortName() + ":</b>\n";
+			
+			if(ins.isEmpty() && outs.isEmpty() && emg1 == null && emg2 == null) {
+				text = text + "No selections received<br>\n";
+			} else {
+				text = text + "<br>\n";
+
+				if(!ins.isEmpty()) {
+					String line = "";
+					
+					text = text + "<b>Ins: </b>\n";
+					
+					for(InsAndOuts in : ins) {
+						DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(), in.getTeamPlayerId());
+						DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+						
+						if(line.length() == 0) {
+							line = in.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						} else {
+							line = line + ", " + in.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						}
+					}
+					
+					text = text + line + "<br>\n";
+				}
+				if(!outs.isEmpty()) {
+					String line = "";
+					
+					text = text + "<b>Outs</b>\n";
+					
+					for(InsAndOuts out : outs) {
+						DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(), out.getTeamPlayerId());
+						DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
+						if(line.length() == 0) {
+							line = out.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						} else {
+							line = line + ", " + out.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						}
+					}
+					
+					text = text + line + "<br>\n";
+				}
+				if(emg1 != null && emg2 != null) {
+					String line = "";
+					
+					text = text + "<b>Emgs</b>\n";
+					if(emg1 != null) {
+						DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(), emg1.getTeamPlayerId());
+						DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
+						if(line.length() == 0) {
+							line = emg1.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						} else {
+							line = line + ", " + emg2.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						}
+					}
+					if(emg2 != null) {
+						DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(), emg2.getTeamPlayerId());
+						DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
+						if(line.length() == 0) {
+							line = emg2.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						} else {
+							line = line + ", " + emg2.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						}
+					}
+					
+					text = text + line + "<br>\n";
+				}
+			}
+			
+			text = text + "</p>\n";
+		}
+		
+		text = text + "<br>\n";
+		
+		return text;
 	}
 	
 	public static void main(String[] args) {

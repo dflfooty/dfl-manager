@@ -133,7 +133,7 @@ public class LadderCalculatorHandler {
 		
 		for(DflSelectedPlayer player : selectedTeam) {
 			if(!player.isDnp()  && player.isScoreUsed()) {
-				if(player.hasPlayed()) {
+				if(scores.containsKey(player.getPlayerId())) {
 					int score = scores.get(player.getPlayerId()).getScore();
 					loggerUtils.log("info", "Player has played and scored: {}, player: {}", score, player);
 					teamScore = teamScore + score;
