@@ -33,8 +33,10 @@ import net.dflmngr.model.entity.DflPlayerScores;
 //import net.dflmngr.model.entity.DflRoundMapping;
 import net.dflmngr.model.entity.DflSelectedPlayer;
 import net.dflmngr.model.entity.DflTeam;
+import net.dflmngr.model.entity.DflTeamPlayer;
 import net.dflmngr.model.entity.DflTeamPredictedScores;
 import net.dflmngr.model.entity.DflTeamScores;
+import net.dflmngr.model.entity.InsAndOuts;
 import net.dflmngr.model.entity.RawPlayerStats;
 import net.dflmngr.model.service.AflFixtureService;
 import net.dflmngr.model.service.DflFixtureService;
@@ -44,10 +46,12 @@ import net.dflmngr.model.service.DflPlayerScoresService;
 import net.dflmngr.model.service.DflPlayerService;
 import net.dflmngr.model.service.DflRoundInfoService;
 import net.dflmngr.model.service.DflSelectedTeamService;
+import net.dflmngr.model.service.DflTeamPlayerService;
 import net.dflmngr.model.service.DflTeamPredictedScoresService;
 import net.dflmngr.model.service.DflTeamScoresService;
 import net.dflmngr.model.service.DflTeamService;
 import net.dflmngr.model.service.GlobalsService;
+import net.dflmngr.model.service.InsAndOutsService;
 import net.dflmngr.model.service.RawPlayerStatsService;
 import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflFixtureServiceImpl;
@@ -57,10 +61,12 @@ import net.dflmngr.model.service.impl.DflPlayerScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
 import net.dflmngr.model.service.impl.DflSelectedTeamServiceImpl;
+import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamPredictedScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
+import net.dflmngr.model.service.impl.InsAndOutsServiceImpl;
 import net.dflmngr.model.service.impl.RawPlayerStatsServiceImpl;
 import net.dflmngr.reports.struct.ResultsFixtureTabTeamStruct;
 //import net.dflmngr.utils.AmazonS3Utils;
@@ -93,6 +99,8 @@ public class ResultsReport {
 	DflPlayerPredictedScoresService dflPlayerPredictedScoresService;
 	DflTeamPredictedScoresService dflTeamPredictedScoresService;
 	DflRoundInfoService dflRoundInfoService;
+	InsAndOutsService insAndOutsService;
+	DflTeamPlayerService dflTeamPlayerService;
 	
 	String emailOverride;
 	
@@ -126,6 +134,8 @@ public class ResultsReport {
 		dflPlayerPredictedScoresService = new DflPlayerPredictedScoresServiceImpl();
 		dflTeamPredictedScoresService = new DflTeamPredictedScoresServiceImpl();
 		dflRoundInfoService = new DflRoundInfoServiceImpl();
+		insAndOutsService = new InsAndOutsServiceImpl();
+		dflTeamPlayerService = new DflTeamPlayerServiceImpl();
 		
 		playersPlayedCount = new HashMap<>();
 		selectedPlayersCount = new HashMap<>();
@@ -178,6 +188,8 @@ public class ResultsReport {
 			dflPlayerService.close();
 			aflFixtureService.close();
 			dflPlayerPredictedScoresService.close();
+			insAndOutsService.close();
+			dflTeamPlayerService.close();
 			
 			loggerUtils.log("info", "ResultsReport Completed");
 			
@@ -1097,6 +1109,11 @@ public class ResultsReport {
 		
 		body = body + "</table></p>\n";
 		body = body + "<p>Results attached.</p>\n";
+		
+		List<DflTeam> teams = dflTeamService.findAll();
+		
+		body = body + selectionSummary(round, teams);
+		
 		body = body + "<p>DFL Manager Admin</p>\n";
 		body = body + "</div></body></html>";
 		
@@ -1224,6 +1241,107 @@ public class ResultsReport {
 		body = body + "</div></body></html>";
 		
 		return body;
+	}
+	
+private String selectionSummary(int round, List<DflTeam> teams) {
+		
+		String text = "<br><p><b>Selection Summary</b></p>\n";
+		
+		for(DflTeam team : teams) {
+			List<InsAndOuts> insAndOuts = insAndOutsService.getByTeamAndRound(round, team.getTeamCode());
+			List<InsAndOuts> ins = new ArrayList<>();
+			List<InsAndOuts> outs = new ArrayList<>();
+			
+			InsAndOuts emg1 = null;
+			InsAndOuts emg2 = null;
+			
+			for(InsAndOuts selection : insAndOuts) {
+				switch(selection.getInOrOut()) {
+					case "I" : ins.add(selection); break;
+					case "O" : outs.add(selection); break;
+					case "E1" : emg1 = selection; break;
+					case "E2" : emg2 = selection; break;
+				}
+			}
+			
+			text = text + "<p><b>" + team.getShortName() + ":</b>\n";
+			
+			if(ins.isEmpty() && outs.isEmpty() && emg1 == null && emg2 == null) {
+				text = text + "No selections received<br>\n";
+			} else {
+				text = text + "<br>\n";
+
+				if(!ins.isEmpty()) {
+					String line = "";
+					
+					text = text + "<b>Ins: </b>\n";
+					
+					for(InsAndOuts in : ins) {
+						DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(), in.getTeamPlayerId());
+						DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+						
+						if(line.length() == 0) {
+							line = in.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						} else {
+							line = line + ", " + in.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						}
+					}
+					
+					text = text + line + "<br>\n";
+				}
+				if(!outs.isEmpty()) {
+					String line = "";
+					
+					text = text + "<b>Outs</b>\n";
+					
+					for(InsAndOuts out : outs) {
+						DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(), out.getTeamPlayerId());
+						DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
+						if(line.length() == 0) {
+							line = out.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						} else {
+							line = line + ", " + out.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						}
+					}
+					
+					text = text + line + "<br>\n";
+				}
+				if(emg1 != null && emg2 != null) {
+					String line = "";
+					
+					text = text + "<b>Emgs</b>\n";
+					if(emg1 != null) {
+						DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(), emg1.getTeamPlayerId());
+						DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
+						if(line.length() == 0) {
+							line = emg1.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						} else {
+							line = line + ", " + emg2.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						}
+					}
+					if(emg2 != null) {
+						DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(), emg2.getTeamPlayerId());
+						DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
+						if(line.length() == 0) {
+							line = emg2.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						} else {
+							line = line + ", " + emg2.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+						}
+					}
+					
+					text = text + line + "<br>\n";
+				}
+			}
+			
+			text = text + "</p>\n";
+		}
+		
+		text = text + "<br>\n";
+		
+		return text;
 	}
 	
 	public static void main(String[] args) {

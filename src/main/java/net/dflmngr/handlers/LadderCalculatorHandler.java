@@ -148,7 +148,7 @@ public class LadderCalculatorHandler {
 					}
 				}
 			} else {
-				loggerUtils.log("info", "Player not player used, player: {}", player);
+				loggerUtils.log("info", "Player not used, player: {}", player);
 			}
 		}
 	

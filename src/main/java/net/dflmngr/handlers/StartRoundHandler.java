@@ -4,20 +4,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.dflmngr.logging.LoggingUtils;
+import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.entity.DflFixture;
 import net.dflmngr.model.entity.DflPlayer;
+import net.dflmngr.model.entity.DflRoundEarlyGames;
+import net.dflmngr.model.entity.DflRoundInfo;
 import net.dflmngr.model.entity.DflTeam;
 import net.dflmngr.model.entity.DflTeamPlayer;
 import net.dflmngr.model.entity.InsAndOuts;
+import net.dflmngr.model.service.AflFixtureService;
 import net.dflmngr.model.service.DflFixtureService;
 import net.dflmngr.model.service.DflPlayerService;
+import net.dflmngr.model.service.DflRoundInfoService;
 import net.dflmngr.model.service.DflTeamPlayerService;
 import net.dflmngr.model.service.DflTeamPredictedScoresService;
 import net.dflmngr.model.service.DflTeamService;
 import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.InsAndOutsService;
+import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflPlayerServiceImpl;
+import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamPredictedScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
@@ -45,6 +52,8 @@ public class StartRoundHandler {
 	DflPlayerService dflPlayerService;
 	InsAndOutsService insAndOutsService;
 	DflTeamPlayerService dflTeamPlayerService;
+	DflRoundInfoService dflRoundInfoService;
+	AflFixtureService aflFixtureService;
 	
 	String emailOverride;
 	
@@ -56,6 +65,9 @@ public class StartRoundHandler {
 		dflPlayerService = new DflPlayerServiceImpl();
 		insAndOutsService = new InsAndOutsServiceImpl();
 		dflTeamPlayerService = new DflTeamPlayerServiceImpl();
+		dflRoundInfoService = new DflRoundInfoServiceImpl();
+		aflFixtureService = new AflFixtureServiceImpl();
+		
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
@@ -78,7 +90,28 @@ public class StartRoundHandler {
 				this.emailOverride = emailOveride;
 			}
 			
-			if(!fromScoresCalculator) {
+			loggerUtils.log("info", "Starting round={}", round);
+			
+			DflRoundInfo roundInfo = dflRoundInfoService.get(round);
+			
+			boolean earlyGamesCompleted = false;
+			int earlyGameCompletedCount = 0;
+			
+			for(DflRoundEarlyGames earlyGame : roundInfo.getEarlyGames()) {
+				AflFixture fixture = aflFixtureService.getPlayedGame(earlyGame.getAflRound(), earlyGame.getAflGame());
+				
+				if(fixture != null) {
+					earlyGameCompletedCount++;
+				}
+			}
+			
+			if((roundInfo.getEarlyGames() == null) || (earlyGameCompletedCount == roundInfo.getEarlyGames().size())) {
+				earlyGamesCompleted = true;
+			}
+
+			
+			if(!fromScoresCalculator && earlyGamesCompleted) {
+				loggerUtils.log("info", "No early games or early games completed, sending start round email.");
 				sendFirstGameEmail(round, emailOveride);
 			}
 			
@@ -91,6 +124,8 @@ public class StartRoundHandler {
 			dflPlayerService.close();
 			insAndOutsService.close();
 			dflTeamPlayerService.close();
+			dflRoundInfoService.close();
+			aflFixtureService.close();
 		
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
