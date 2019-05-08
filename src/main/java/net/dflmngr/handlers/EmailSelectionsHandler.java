@@ -33,8 +33,11 @@ import org.jsoup.safety.Whitelist;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflPlayer;
 import net.dflmngr.model.entity.DflTeam;
+import net.dflmngr.model.entity.DflTeamPlayer;
+import net.dflmngr.model.service.DflTeamPlayerService;
 import net.dflmngr.model.service.DflTeamService;
 import net.dflmngr.model.service.GlobalsService;
+import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.utils.DflmngrUtils;
@@ -69,6 +72,7 @@ public class EmailSelectionsHandler {
 	
 	GlobalsService globalsService;
 	DflTeamService dflTeamService;
+	DflTeamPlayerService dflTeamPlayerService;
 	
 	//Session mailSession;
 	
@@ -82,6 +86,7 @@ public class EmailSelectionsHandler {
 	public EmailSelectionsHandler() {
 		globalsService = new GlobalsServiceImpl();
 		dflTeamService = new DflTeamServiceImpl();
+		dflTeamPlayerService = new DflTeamPlayerServiceImpl();
 		
 		isExecutable = false;
 	}
@@ -141,6 +146,7 @@ public class EmailSelectionsHandler {
 			
 			globalsService.close();
 			dflTeamService.close();
+			dflTeamPlayerService.close();
 			
 			loggerUtils.log("info", "Email Selections Handler Completed");
 		} catch (Exception ex) {
@@ -757,14 +763,20 @@ public class EmailSelectionsHandler {
 			if(validationResult.selectedWarning) {
 				messageBody = messageBody + "\tWarning: You have seleted a player who is already selected.  You may be playing short! Players:\n";
 				for(DflPlayer player : validationResult.selectedWarnPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.droppedWarning) {
 				messageBody = messageBody + "\tWarning: You have dropped a player who is not selected.  Your team may not be as you expect or invalid! Players:\n";
 				for(DflPlayer player : validationResult.droppedWarnPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
@@ -772,63 +784,90 @@ public class EmailSelectionsHandler {
 			if(validationResult.emergencyFfWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Full Forward as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgFfPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyFwdWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Forward as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgFwdPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyRckWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Ruck as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgRckPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyMidWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Midfielder as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgMidPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyDefWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Defender as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgDefPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyFbWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Full Back as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgFbPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.duplicateIns) {
 				messageBody = messageBody + "\tWarning: You have selected duplicate ins, one will be ignored.  Ins:\n";
 				for(DflPlayer player : validationResult.dupInPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.duplicateOuts) {
 				messageBody = messageBody + "\tWarning: You have selected duplicate outs, one will be ignored.  Ins:\n";
 				for(DflPlayer player : validationResult.dupInPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.duplicateEmgs) {
 				messageBody = messageBody + "\tWarning: You have selected duplicate emergencies, one will be ignored.  Ins:\n";
 				for(DflPlayer player : validationResult.dupInPlayers) {
-					messageBody = messageBody + "\t\t" + player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+					
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+					
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}	
