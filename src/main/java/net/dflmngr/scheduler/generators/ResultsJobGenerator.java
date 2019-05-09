@@ -85,12 +85,13 @@ public class ResultsJobGenerator {
 	
 	private void processFixtures(int dflRound, List<AflFixture> aflGames) throws Exception {
 		
-		Collections.sort(aflGames);
+		Collections.sort(aflGames, Collections.reverseOrder());
 		
 		DayOfWeek currentGameDay = null;
 		DayOfWeek previousGameDay = null;
 		
 		ZonedDateTime gameStart = null;
+		ZonedDateTime lastGameStart = null;
 		
 		for(AflFixture game : aflGames) {
 			
@@ -102,12 +103,17 @@ public class ResultsJobGenerator {
 			loggerUtils.log("info", "Current Game Day={}; Previous Game Day={};", currentGameDay, previousGameDay);
 			
 			if(currentGameDay != previousGameDay) {
+				boolean lastGameDay = false;
+				if(previousGameDay == null) {
+					lastGameStart = gameStart;
+					lastGameDay = true;
+				}
 				if(currentGameDay == DayOfWeek.SUNDAY || currentGameDay == DayOfWeek.SATURDAY) {
-					loggerUtils.log("info", "Creating weekend run, start time={}", gameStart);
-					createWeekendSchedule(dflRound, gameStart);
+					loggerUtils.log("info", "Creating weekend run, start time={}; lastGameDay={}", gameStart, lastGameDay);
+					createWeekendSchedule(dflRound, gameStart, lastGameDay);
 				} else {
-					loggerUtils.log("info", "Creating weekday run, start time={}", gameStart);
-					createWeekdaySchedule(dflRound, gameStart);
+					loggerUtils.log("info", "Creating weekday run, start time={}; lastGameDay={}", gameStart, lastGameDay);
+					createWeekdaySchedule(dflRound, gameStart, lastGameDay);
 				}
 				
 				previousGameDay = currentGameDay;
@@ -115,33 +121,37 @@ public class ResultsJobGenerator {
 			
 		}
 		
-		loggerUtils.log("info", "Creating final run, start time={}", gameStart);
-		createFinalRunSchedule(dflRound, gameStart);
+		loggerUtils.log("info", "Creating final run, start time={}", lastGameStart);
+		createFinalRunSchedule(dflRound, lastGameStart);
 	}
 	
 	private void createOngoingSchedule() throws Exception {
 		scheduleJob(0, true, false, null);	
 	}
 	
-	private void createWeekendSchedule(int dflRound, ZonedDateTime time) throws Exception {
+	private void createWeekendSchedule(int dflRound, ZonedDateTime time, boolean lastGameDay) throws Exception {
 		time = time.withHour(19);
 		time = time.withMinute(0);
 		scheduleJob(dflRound, false, false, time);
-			
-		time = time.withHour(23);
-		time = time.withMinute(0);
-		scheduleJob(dflRound, false, false, time);	
+		
+		if(!lastGameDay) {
+			time = time.withHour(23);
+			time = time.withMinute(0);
+			scheduleJob(dflRound, false, false, time);
+		}
 	}
 	
-	private void createWeekdaySchedule(int dflRound, ZonedDateTime time) throws Exception {
-		time = time.withHour(23);
-		time = time.withMinute(0);
-		scheduleJob(dflRound, false, false, time);	
+	private void createWeekdaySchedule(int dflRound, ZonedDateTime time, boolean lastGameDay) throws Exception {
+		if(!lastGameDay) {
+			time = time.withHour(23);
+			time = time.withMinute(0);
+			scheduleJob(dflRound, false, false, time);
+		}
 	}
 	
 	private void createFinalRunSchedule(int dflRound, ZonedDateTime time) throws Exception {
-		time = time.plusDays(1);
-		time = time.withHour(9);
+		//time = time.plusDays(1);
+		time = time.withHour(23);
 		time = time.withMinute(0);
 		scheduleJob(dflRound, false, true, time);	
 	}
