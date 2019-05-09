@@ -78,6 +78,9 @@ public class ResultsJobGenerator {
 				loggerUtils.log("info", "Processing fixtures: DFL round={}; fixtures={}", roundInfo.getRound(), dflAflGames);
 				processFixtures(roundInfo.getRound(), dflAflGames);
 				
+				dflRoundInfoService.close();
+				aflFixtureService.close();
+				
 				loggerUtils.log("info", "ResultsJobGenerator completed");
 			}
 		} catch (Exception ex) {
