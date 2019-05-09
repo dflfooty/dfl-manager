@@ -124,18 +124,15 @@ public class ResultsJobGenerator {
 					createWeekdaySchedule(dflRound, gameStart, lastGameDay);
 				}
 				
-				
-				if(game.getGame() == 1) {
-					previousGameDay = null;
-				} else {
-					previousGameDay = currentGameDay;
-				}
+				previousGameDay = currentGameDay;
 			}
 			
 		}
 		
 		loggerUtils.log("info", "Creating final run, start time={}", lastGameStart);
-		createFinalRunSchedule(dflRound, lastGameStart);
+		if(lastGameStart != null) {
+			createFinalRunSchedule(dflRound, lastGameStart);
+		}
 	}
 	
 	private void createOngoingSchedule() throws Exception {
