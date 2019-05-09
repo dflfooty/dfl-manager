@@ -2,6 +2,7 @@ package net.dflmngr.scheduler.generators;
 
 
 import java.time.DayOfWeek;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
 import net.dflmngr.scheduler.JobScheduler;
 import net.dflmngr.utils.CronExpressionCreator;
+import net.dflmngr.utils.DflmngrUtils;
 
 
 public class ResultsJobGenerator {
@@ -93,6 +95,8 @@ public class ResultsJobGenerator {
 		ZonedDateTime gameStart = null;
 		ZonedDateTime lastGameStart = null;
 		
+		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
+		
 		for(AflFixture game : aflGames) {
 			
 			loggerUtils.log("info", "AFL Fixture={}", game);
@@ -102,7 +106,7 @@ public class ResultsJobGenerator {
 			
 			loggerUtils.log("info", "Current Game Day={}; Previous Game Day={};", currentGameDay, previousGameDay);
 			
-			if(currentGameDay != previousGameDay) {
+			if(currentGameDay != previousGameDay && gameStart.isAfter(now)) {
 				boolean lastGameDay = false;
 				if(previousGameDay == null) {
 					lastGameStart = gameStart;
