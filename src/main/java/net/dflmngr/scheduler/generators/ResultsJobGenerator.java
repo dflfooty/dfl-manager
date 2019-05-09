@@ -124,7 +124,12 @@ public class ResultsJobGenerator {
 					createWeekdaySchedule(dflRound, gameStart, lastGameDay);
 				}
 				
-				previousGameDay = currentGameDay;
+				
+				if(game.getGame() == 1) {
+					previousGameDay = null;
+				} else {
+					previousGameDay = currentGameDay;
+				}
 			}
 			
 		}
