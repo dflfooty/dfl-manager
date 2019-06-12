@@ -128,10 +128,9 @@ public class EndRoundHandler {
 
 			defaultSelectedTeams(rounds);
 
-			PredictionHandler predictions = new PredictionHandler();
-			predictions.configureLogging(mdcKey, loggerName, logfile);
-
 			for(int r : rounds) {
+				PredictionHandler predictions = new PredictionHandler();
+				predictions.configureLogging(mdcKey, loggerName, logfile);
 				predictions.execute(r, null, true);
 			}
 

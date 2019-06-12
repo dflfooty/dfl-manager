@@ -9,3 +9,4 @@ dflmngr.iml
 .factorypath
 reports
 /.apt_generated/
+/.apt_generated_tests/
