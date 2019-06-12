@@ -130,7 +130,10 @@ public class EndRoundHandler {
 
 			PredictionHandler predictions = new PredictionHandler();
 			predictions.configureLogging(mdcKey, loggerName, logfile);
-			predictions.execute(round+1, null, true);
+
+			for(int r : rounds) {
+				predictions.execute(r, null, true);
+			}
 
 			MatthewAllenHandler matthewAllenHandler = new MatthewAllenHandler();
 			matthewAllenHandler.configureLogging(mdcKey, loggerName, logfile);
