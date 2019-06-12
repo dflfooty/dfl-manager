@@ -3,17 +3,17 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
 	version="2.1">
-		
+
 	<persistence-unit name="dflmngr" transaction-type="RESOURCE_LOCAL">
-		
+
 		<provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
 		<!--provider>org.hibernate.jpa.HibernatePersistenceProvider</provider-->
-		
+
 		<mapping-file>META-INF/orm.xml</mapping-file>
-				
+
 		<!-- Converters -->
 		<class>net.dflmngr.model.entity.converters.ZonedDateTimeConverter</class>
-		
+
 		<!-- Entities / Model -->
 		<class>net.dflmngr.model.entity.InsAndOuts</class>
 		<class>net.dflmngr.model.entity.AflFixture</class>
@@ -41,11 +41,11 @@
 		<class>net.dflmngr.model.entity.Process</class>
 		<class>net.dflmngr.model.entity.DflBest22</class>
 		<class>net.dflmngr.model.entity.DflSelectionIds</class>
-		
+
 		<shared-cache-mode>NONE</shared-cache-mode>
-		
+
 		<properties>
-			<!--property name="eclipselink.cache.shared.default" value="false"/
+			<!--property name="eclipselink.cache.shared.default" value="false"/>
 			<property name="eclipselink.logging.level.sql" value="FINE"/>
  			<property name="eclipselink.logging.parameters" value="true"/>
  			<property name="hibernate.archive.autodetection" value="class"/>
