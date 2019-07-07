@@ -40,17 +40,17 @@ import net.dflmngr.utils.DflmngrUtils;
 
 public class ScoresCalculatorHandler {
 	private LoggingUtils loggerUtils;
-	
+
 	boolean isExecutable;
-	
+
 	String defaultMdcKey = "batch.name";
 	String defaultLoggerName = "batch-logger";
 	String defaultLogfile = "RoundProgress";
-	
+
 	String mdcKey;
 	String loggerName;
 	String logfile;
-	
+
 	RawPlayerStatsService rawPlayerStatsService;
 	DflPlayerService dflPlayerService;
 	DflTeamPlayerService dflTeamPlayerService;
@@ -60,7 +60,7 @@ public class ScoresCalculatorHandler {
 	DflTeamScoresService dflTeamScoresService;
 	DflRoundInfoService dflRoundInfoService;
 	AflFixtureService aflFixtureService;
-	
+
 	public ScoresCalculatorHandler() {
 		rawPlayerStatsService = new RawPlayerStatsServiceImpl();
 		dflPlayerService = new DflPlayerServiceImpl();
@@ -72,7 +72,7 @@ public class ScoresCalculatorHandler {
 		dflRoundInfoService = new DflRoundInfoServiceImpl();
 		aflFixtureService = new AflFixtureServiceImpl();
 	}
-	
+
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
 		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
@@ -81,24 +81,24 @@ public class ScoresCalculatorHandler {
 		this.logfile = logfile;
 		isExecutable = true;
 	}
-	
+
 	public void execute(int round) {
-		
+
 		try{
 			if(!isExecutable) {
 				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
-			
+
 			loggerUtils.log("info", "ScoresCalculator executing round={} ...", round);
 			loggerUtils.log("info", "Handling player scores");
 			handlePlayerScores(round);
-		
+
 			DflRoundInfo dflRoundInfo = dflRoundInfoService.get(round);
-			 		
+
 			loggerUtils.log("info", "Handling team scores");
 			handleTeamScores(round, dflRoundInfo);
-			
+
 			rawPlayerStatsService.close();
 			dflPlayerService.close();
 			dflTeamPlayerService.close();
@@ -108,57 +108,57 @@ public class ScoresCalculatorHandler {
 			dflTeamScoresService.close();
 			dflRoundInfoService.close();
 			aflFixtureService.close();
-			
+
 			loggerUtils.log("info", "ScoresCalculator completed");
-			
+
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
 	}
-		
+
 	private void handlePlayerScores(int round) {
-				
+
 		Map<String, RawPlayerStats> stats = rawPlayerStatsService.getForRoundWithKey(round);
 		List<DflPlayerScores> scores = new ArrayList<>();
-		
+
 		for (Map.Entry<String, RawPlayerStats> entry : stats.entrySet()) {
 
 			DflPlayerScores playerScores = new DflPlayerScores();
 			String aflPlayerId = entry.getKey();
 			RawPlayerStats playerStats = entry.getValue();
-			
+
 			int score = calculatePlayerScore(playerStats);
-			
+
 			DflPlayer dflPlayer = dflPlayerService.getByAflPlayerId(aflPlayerId);
-			
+
 			if(dflPlayer == null) {
 				loggerUtils.log("info", "Missing afl dfl player mapping: aflPlayerId={};", aflPlayerId);
 			} else {
 				DflTeamPlayer dflTeamPlayer = dflTeamPlayerService.get(dflPlayer.getPlayerId());
-					
+
 				playerScores.setPlayerId(dflPlayer.getPlayerId());
 				playerScores.setRound(round);
 				playerScores.setAflPlayerId(aflPlayerId);
-				
+
 				if(dflTeamPlayer != null) {
 					playerScores.setTeamCode(dflTeamPlayer.getTeamCode());
 					playerScores.setTeamPlayerId(dflTeamPlayer.getTeamPlayerId());
 				}
-				
+
 				playerScores.setScore(score);
-				
+
 				loggerUtils.log("info", "Player score={}", playerScores);
 				scores.add(playerScores);
 			}
 		}
-		
+
 		dflPlayerScoresService.replaceAllForRound(round, scores);
 	}
-	
+
 	private int calculatePlayerScore(RawPlayerStats playerStats) {
-		
+
 		int score = 0;
-		
+
 		int disposals = playerStats.getDisposals();
 		int marks = playerStats.getMarks();
 		int hitOuts = playerStats.getHitouts();
@@ -166,53 +166,53 @@ public class ScoresCalculatorHandler {
 		int fressAgainst = playerStats.getFreesAgainst();
 		int tackles = playerStats.getTackles();
 		int goals = playerStats.getGoals();
-		
+
 		score = disposals + marks + hitOuts + freesFor + (-fressAgainst) + tackles + (goals * 3);
-		
+
 		return score;
 	}
-	
+
 	private void handleTeamScores(int round, DflRoundInfo dflRoundInfo) throws Exception {
-		
+
 		List<DflTeam> teams = dflTeamService.findAll();
 		List<DflTeamScores> scores = new ArrayList<>();
-		
+
 		for(DflTeam team : teams) {
-						
+
 			List<DflSelectedPlayer> selectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, team.getTeamCode());
 			DflTeamScores teamScore = new DflTeamScores();
-			
+
 			int score = calculateTeamScore(selectedTeam, dflRoundInfo);
-			
+
 			teamScore.setTeamCode(team.getTeamCode());
 			teamScore.setRound(round);
 			teamScore.setScore(score);
-			
+
 			loggerUtils.log("info", "Team score={}", teamScore);
 			scores.add(teamScore);
 		}
 
 		dflTeamScoresService.replaceAllForRound(round, scores);
 	}
-	
+
 	private int calculateTeamScore(List<DflSelectedPlayer> selectedTeam, DflRoundInfo dflRoundInfo) throws Exception {
-		
+
 		int teamScore = 0;
-		
+
 		List<DflSelectedPlayer> played22 = new ArrayList<>();
 		List<DflSelectedPlayer> emergencies = new ArrayList<>();
 		List<DflSelectedPlayer> dnpPlayers = new ArrayList<>();
 		List<DflSelectedPlayer> replacedDnpPlayers = new ArrayList<>();
 		Map<Integer, Integer> scores = new HashMap<>();
-		
+
 		Map<Integer, String> playerPositions = new HashMap<>();
 		List<String> benchPositions = new ArrayList<>();
-		
+
 		List<String> playedTeams = new ArrayList<>();
 		int aflRound = 0;
 		for(DflRoundMapping roundMapping : dflRoundInfo.getRoundMapping()) {
 			int currentAflRound = roundMapping.getAflRound();
-			
+
 			if(roundMapping.getAflGame() == 0) {
 				if(aflRound != currentAflRound) {
 					playedTeams.addAll(aflFixtureService.getAflTeamsPlayedForRound(currentAflRound));
@@ -226,26 +226,26 @@ public class ScoresCalculatorHandler {
 				}
 			}
 		}
-		
+
 		int ffCount = 0;
 		int fwdCount = 0;
 		int midCount = 0;
 		int defCount = 0;
 		int fbCount = 0;
 		int rckCount = 0;
-		
+
 		for(DflSelectedPlayer selectedPlayer : selectedTeam) {
 			DflPlayerScoresPK pk = new DflPlayerScoresPK();
 			pk.setPlayerId(selectedPlayer.getPlayerId());
 			pk.setRound(selectedPlayer.getRound());
 			DflPlayerScores playerScore = dflPlayerScoresService.get(pk);
-			
+
 			DflPlayer player = dflPlayerService.get(selectedPlayer.getPlayerId());
-			
+
 			String position = player.getPosition().toLowerCase();
 			playerPositions.put(selectedPlayer.getPlayerId(), position);
-			
-			if(selectedPlayer.isEmergency() == 0) {				
+
+			if(selectedPlayer.isEmergency() == 0) {
 				switch(position) {
 					case "ff" :
 						ffCount++;
@@ -265,11 +265,11 @@ public class ScoresCalculatorHandler {
 					case "fb" :
 						fbCount++;
 						break;
-				}	
+				}
 			}
-			
+
 			selectedPlayer.setReplacementInd(null);
-			
+
 			if(playerScore == null && playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
 				selectedPlayer.setDnp(true);
 				selectedPlayer.setScoreUsed(false);
@@ -290,19 +290,19 @@ public class ScoresCalculatorHandler {
 					played22.add(selectedPlayer);
 				} else {
 					selectedPlayer.setScoreUsed(false);
-					emergencies.add(selectedPlayer);	
+					emergencies.add(selectedPlayer);
 				}
-				
+
 			}
 		}
-		
+
 		loggerUtils.log("info", "Played 22={} -- Size:{}", played22, played22.size());
 		loggerUtils.log("info", "DNPs={} -- Size:{}", dnpPlayers, dnpPlayers.size());
 		loggerUtils.log("info", "Emergencies={} -- Size:{}", emergencies, emergencies.size());
-		
+
 		Comparator<DflSelectedPlayer> emgsComparator = Comparator.comparingInt(DflSelectedPlayer::isEmergency);
 		emergencies.sort(emgsComparator);
-		
+
 		if(ffCount == 2) {
 			benchPositions.add("ff");
 		}
@@ -321,9 +321,9 @@ public class ScoresCalculatorHandler {
 		if(rckCount == 2) {
 			benchPositions.add("rck");
 		}
-		
+
 		loggerUtils.log("info", "Bench positions={}", benchPositions);
-		
+
 		if(!dnpPlayers.isEmpty()) {
 			if(emergencies.isEmpty()) {
 				loggerUtils.log("info", "No emergencies to replace DNPs");
@@ -331,7 +331,7 @@ public class ScoresCalculatorHandler {
 					if(dnpPlayer.isEmergency() == 0) {
 						dnpPlayer.setScoreUsed(true);
 						played22.add(dnpPlayer);
-					} 
+					}
 					replacedDnpPlayers.add(dnpPlayer);
 				}
 				dnpPlayers.removeAll(replacedDnpPlayers);
@@ -339,18 +339,18 @@ public class ScoresCalculatorHandler {
 				loggerUtils.log("info", "Replacing DNPs by position");
 				for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
 					DflSelectedPlayer replacement = null;
-					
+
 					if(dnpPlayer.isEmergency() == 0) {
 						for(DflSelectedPlayer emergency : emergencies) {
 							String dnpPosition = playerPositions.get(dnpPlayer.getPlayerId());
 							String emgPosition = playerPositions.get(emergency.getPlayerId());
-							
+
 							if(dnpPosition.equals(emgPosition)) {
 								replacement = emergency;
 								break;
 							}
 						}
-						
+
 						if(replacement != null) {
 							emergencies.remove(replacement);
 							replacement.setScoreUsed(true);
@@ -373,19 +373,19 @@ public class ScoresCalculatorHandler {
 				dnpPlayers.removeAll(replacedDnpPlayers);
 				if(!dnpPlayers.isEmpty()) {
 					loggerUtils.log("info", "Replacing DNPs by promoting bench players");
-					
+
 					for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
 						DflSelectedPlayer replacement = null;
-						
+
 						String dnpPosition = playerPositions.get(dnpPlayer.getPlayerId());
-						
+
 						for(DflSelectedPlayer emergency : emergencies) {
-							if(benchPositions.contains(dnpPosition)) {
+							if(!benchPositions.contains(dnpPosition)) {
 								replacement = emergency;
 								break;
 							}
 						}
-				
+
 						if(replacement != null) {
 							emergencies.remove(replacement);
 							replacement.setScoreUsed(true);
@@ -409,7 +409,7 @@ public class ScoresCalculatorHandler {
 				dnpPlayers.removeAll(replacedDnpPlayers);
 			}
 		}
-		
+
 		for(DflSelectedPlayer player : played22) {
 			if(!player.isDnp()) {
 				if(scores.containsKey(player.getPlayerId())) {
@@ -419,7 +419,7 @@ public class ScoresCalculatorHandler {
 				}
 			}
 		}
-		
+
 		dflSelectedTeamService.updateAll(played22, false);
 		if(!emergencies.isEmpty()) {
 			dflSelectedTeamService.updateAll(emergencies, false);
@@ -427,7 +427,7 @@ public class ScoresCalculatorHandler {
 		if(!replacedDnpPlayers.isEmpty()) {
 			dflSelectedTeamService.updateAll(replacedDnpPlayers, false);
 		}
-		
+
 		return teamScore;
 	}
 }
