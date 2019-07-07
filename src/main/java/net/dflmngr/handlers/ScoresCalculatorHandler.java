@@ -380,9 +380,46 @@ public class ScoresCalculatorHandler {
 						String dnpPosition = playerPositions.get(dnpPlayer.getPlayerId());
 
 						for(DflSelectedPlayer emergency : emergencies) {
-							if(!benchPositions.contains(dnpPosition)) {
-								replacement = emergency;
-								break;
+							if(benchPositions.size() == 4) {
+								if(benchPositions.contains(dnpPosition)) {
+									replacement = emergency;
+									break;
+								}
+							} else {
+								String emgPosition = playerPositions.get(emergency.getPlayerId());
+
+								switch(emgPosition) {
+									case "ff":
+										if(ffCount < 2) {
+											replacement = emergency;
+										}
+										break;
+									case "fwd":
+										if(fwdCount < 6) {
+											replacement = emergency;
+										}
+										break;
+									case "rck":
+										if(rckCount < 2) {
+											replacement = emergency;
+										}
+										break;
+									case "mid":
+										if(midCount < 6) {
+											replacement = emergency;
+										}
+										break;
+									case "fb":
+										if(fbCount < 2) {
+											replacement = emergency;
+										}
+										break;
+									case "def":
+										if(defCount < 6) {
+											replacement = emergency;
+										}
+										break;
+								}
 							}
 						}
 
