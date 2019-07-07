@@ -10,6 +10,8 @@ import net.dflmngr.logging.LoggingUtils;
 //import net.dflmngr.model.entity.AflFixture;
 //import net.dflmngr.model.entity.DflEarlyInsAndOuts;
 import net.dflmngr.model.entity.DflPlayer;
+import net.dflmngr.model.entity.DflRoundInfo;
+import net.dflmngr.model.entity.DflRoundMapping;
 //import net.dflmngr.model.entity.DflRoundEarlyGames;
 //import net.dflmngr.model.entity.DflRoundInfo;
 import net.dflmngr.model.entity.DflSelectedPlayer;
@@ -37,13 +39,13 @@ import net.dflmngr.validation.SelectedTeamValidation;
 
 public class SelectedTeamValidationHandler {
 	private LoggingUtils loggerUtils;
-		
+
 	boolean isExecutable;
-		
+
 	String defaultMdcKey = "batch.name";
 	String defaultLoggerName = "batch-logger";
 	String defaultLogfile = "SelectedTeamValidationHandler";
-	
+
 	private DflSelectedTeamService dflSelectedTeamService;
 	private DflTeamPlayerService dflTeamPlayerService;
 	private DflPlayerService dflPlayerService;
@@ -52,8 +54,8 @@ public class SelectedTeamValidationHandler {
 	private DflEarlyInsAndOutsService dflEarlyInsAndOutsService;
 	private AflFixtureService aflFixtureService;
 	private DflSelectionIdsService dflSelectionIdsService;
-			
-	public SelectedTeamValidationHandler() {		
+
+	public SelectedTeamValidationHandler() {
 		dflSelectedTeamService = new DflSelectedTeamServiceImpl();
 		dflTeamPlayerService = new DflTeamPlayerServiceImpl();
 		dflPlayerService = new DflPlayerServiceImpl();
@@ -64,31 +66,31 @@ public class SelectedTeamValidationHandler {
 		dflSelectionIdsService = new DflSelectionIdsServiceImpl();
 		isExecutable = false;
 	}
-	
+
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
 		loggerUtils = new LoggingUtils(logfile);
 		isExecutable = true;
 	}
-	
+
 	public SelectedTeamValidation execute(int round, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, ZonedDateTime receivedDate, boolean skipEarlyGames, String selectionId) {
-		
+
 		SelectedTeamValidation validationResult = null;
-		
+
 		try {
 			if(!isExecutable) {
 				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
-			
+
 			loggerUtils.log("info", "Validating selectionds for teamCode={}; round={};", teamCode, round);
-			
+
 			int currentRound = Integer.parseInt(globalsService.getCurrentRound());
 			//DflRoundInfo roundInfo = dflRoundInfoService.get(round);
 			//ZonedDateTime lockoutTime = roundInfo.getHardLockoutTime();
-			
+
 			//boolean earlyGamesCompleted = false;
 			//boolean playedSelections = false;
-			
+
 			/*
 			if(!skipEarlyGames && (roundInfo.getEarlyGames() != null && roundInfo.getEarlyGames().size() > 0)) {
 				loggerUtils.log("info", "Round has early games, doing early game validation");
@@ -103,15 +105,15 @@ public class SelectedTeamValidationHandler {
 						completedCount++;
 					}
 				}
-				
+
 				if(completedCount == earlyGames.size()) {
 					earlyGamesCompleted = true;
 				}
-				
+
 				List<DflEarlyInsAndOuts> earlyInsAndOuts = dflEarlyInsAndOutsService.getByTeamAndRound(round, teamCode);
-				
+
 				playedSelections = checkForPlayedSelections(teamCode, receivedDate, roundInfo, insAndOuts, emergencies, earlyInsAndOuts);
-				
+
 				if(playedSelections) {
 					loggerUtils.log("info", "Early game validation failed");
 					validationResult = new SelectedTeamValidation();
@@ -119,7 +121,7 @@ public class SelectedTeamValidationHandler {
 					validationResult.playedSelections = true;
 				} else {
 					validationResult = standardValidation(round, currentRound, teamCode, insAndOuts, emergencies, receivedDate, lockoutTime);
-					
+
 					if(!earlyGamesCompleted) {
 						loggerUtils.log("info", "Early games not completed, all validation errors will only be warnings.");
 						validationResult.earlyGames = true;
@@ -131,19 +133,19 @@ public class SelectedTeamValidationHandler {
 			}
 			*/
 			validationResult = standardValidation(round, currentRound, teamCode, insAndOuts, emergencies, selectionId);
-						
+
 			validationResult.setRound(round);
 			validationResult.setTeamCode(teamCode);
-			
+
 			if(validationResult.getInsAndOuts() == null) {
 				validationResult.setInsAndOuts(insAndOuts);
 			}
 			if(validationResult.getEmergencies() == null) {
 				validationResult.setEmergencies(emergencies);
 			}
-			
+
 			loggerUtils.log("info", "Validation result={}", validationResult);
-			
+
 			dflSelectedTeamService.close();
 			dflTeamPlayerService.close();
 			dflPlayerService.close();
@@ -151,39 +153,39 @@ public class SelectedTeamValidationHandler {
 			dflRoundInfoService.close();
 			dflEarlyInsAndOutsService.close();
 			aflFixtureService.close();
-			
+
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
-		
+
 		return validationResult;
 	}
-	
+
 	/*
 	private boolean checkForPlayedSelections(String teamCode, ZonedDateTime receivedDate, DflRoundInfo roundInfo, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, List<DflEarlyInsAndOuts> earlyInsAndOuts) {
 		boolean playedSelections = false;
-		
+
 		List<DflRoundEarlyGames> earlyGames = roundInfo.getEarlyGames();
-		
+
 		for(DflRoundEarlyGames earlyGame : earlyGames) {
 			if(receivedDate.isAfter(earlyGame.getStartTime())) {
 				List<Integer> ins = insAndOuts.get("in");
 				List<Integer> outs = insAndOuts.get("out");
-				
+
 				int aflRound = earlyGame.getAflRound();
 				int aflGame = earlyGame.getAflGame();
-				
+
 				AflFixturePK aflFixturePK = new AflFixturePK();
 				aflFixturePK.setRound(aflRound);
 				aflFixturePK.setGame(aflGame);
 				AflFixture aflFixture = aflFixtureService.get(aflFixturePK);
-				
+
 				for(int in : ins) {
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, in);
 					DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
-					
+
 					String mappedTeam = DflmngrUtils.dflAflTeamMap.get(player.getAflClub());
-					
+
 					if(mappedTeam.equals(aflFixture.getHomeTeam()) || mappedTeam.equals(aflFixture.getAwayTeam())) {
 						boolean found = false;
 						for(DflEarlyInsAndOuts earlyInOrOut : earlyInsAndOuts) {
@@ -199,14 +201,14 @@ public class SelectedTeamValidationHandler {
 						}
 					}
 				}
-				
+
 				for(double emg : emergencies) {
 					int emergency = (int) emg;
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, emergency);
 					DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
-					
+
 					String mappedTeam = DflmngrUtils.dflAflTeamMap.get(player.getAflClub());
-					
+
 					if(mappedTeam.equals(aflFixture.getHomeTeam()) || mappedTeam.equals(aflFixture.getAwayTeam())) {
 						boolean found = false;
 						for(DflEarlyInsAndOuts earlyInOrOut : earlyInsAndOuts) {
@@ -222,14 +224,14 @@ public class SelectedTeamValidationHandler {
 						}
 					}
 				}
-				
+
 				if(!playedSelections) {
 					for(int out : outs) {
 						DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, out);
 						DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
-						
-						String mappedTeam = DflmngrUtils.dflAflTeamMap.get(player.getAflClub()); 
-						
+
+						String mappedTeam = DflmngrUtils.dflAflTeamMap.get(player.getAflClub());
+
 						if(mappedTeam.equals(aflFixture.getHomeTeam()) || mappedTeam.equals(aflFixture.getAwayTeam())) {
 							boolean found = false;
 							for(DflEarlyInsAndOuts earlyInOrOut : earlyInsAndOuts) {
@@ -248,47 +250,59 @@ public class SelectedTeamValidationHandler {
 				}
 			}
 		}
-		
+
 		return playedSelections;
 	}
 	*/
 	//private SelectedTeamValidation standardValidation(int round, int currentRound, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, ZonedDateTime receivedDate, ZonedDateTime lockoutTime) {
 	private SelectedTeamValidation standardValidation(int round, int currentRound, String teamCode, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, String selectionId) {
-		
+
 		//SelectedTeamValidation validationResult = null;
 		SelectedTeamValidation validationResult = new SelectedTeamValidation();
-		
+
 		//loggerUtils.log("info", "DFL round={}; Lockout time={};", currentRound, lockoutTime);
 		loggerUtils.log("info", "DFL round={};", currentRound);
-		
+
 		List<DflSelectedPlayer> selectedTeam = null;
-		
+
 		//boolean selectedWarning = false;
 		//boolean droppedWarning = false;
 		validationResult.selectedWarning = false;
 		validationResult.droppedWarning = false;
-		
+
 		List<Integer> checkedIns = new ArrayList<>();
 		List<Integer> checkedOuts = new ArrayList<>();
 		List<Double> checkedEmgs = new ArrayList<>();
-		
+
 		List<DflPlayer> selectedWarnPlayers = new ArrayList<>();
 		List<DflPlayer> droppedWarnPlayers = new ArrayList<>();
-				
+
 		List<DflPlayer> dupInPlayers = new ArrayList<>();
 		List<DflPlayer> dupOutPlayers = new ArrayList<>();
 		List<DflPlayer> dupEmgPlayers = new ArrayList<>();
-		
-		boolean aflRoundComplete = aflFixtureService.getAflRoundComplete(round);
-		
+
+		DflRoundInfo roundInfo = dflRoundInfoService.get(round);
+		List<Integer> aflRounds = new ArrayList<>();
+
+		for(DflRoundMapping mapping : roundInfo.getRoundMapping()) {
+			if(!aflRounds.contains(mapping.getAflRound())) {
+				aflRounds.add(mapping.getAflRound());
+			}
+		}
+
+		boolean aflRoundComplete = true;
+		for(int aflRound : aflRounds) {
+			aflRoundComplete = aflRoundComplete && aflFixtureService.getAflRoundComplete(aflRound);
+		}
+
 		boolean selectionExists = dflSelectionIdsService.selectionIdExists(round, teamCode, selectionId);
-		
+
 		if(round < currentRound) {
 			//validationResult = new SelectedTeamValidation();
 			validationResult.selectionFileMissing = false;
 			validationResult.roundCompleted = true;
 			loggerUtils.log("info", "Team invalid round is completed");
-		
+
 		//} else if(receivedDate.isAfter(lockoutTime)) {
 		} else if(aflRoundComplete) {
 			//validationResult = new SelectedTeamValidation();
@@ -307,9 +321,9 @@ public class SelectedTeamValidationHandler {
 			if(round == 1) {
 				loggerUtils.log("info", "Round 1 only ins.");
 				List<Integer> ins = insAndOuts.get("in");
-				
+
 				selectedTeam = new ArrayList<>();
-				
+
 				for(int in : ins) {
 					if(checkedIns.contains(in)) {
 						loggerUtils.log("info", "Duplicates ins, not included in={}.", in);
@@ -326,24 +340,24 @@ public class SelectedTeamValidationHandler {
 							break;
 						} else {
 							DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-							
+
 							selectedPlayer.setRound(round);
 							selectedPlayer.setTeamCode(teamCode);
 							selectedPlayer.setTeamPlayerId(in);
 							selectedPlayer.setEmergency(0);
 							selectedPlayer.setDnp(false);
-							
+
 							selectedTeam.add(selectedPlayer);
 							loggerUtils.log("info", "Added selectedPlayer={}.", selectedPlayer);
 						}
-						
+
 						checkedIns.add(in);
 					}
 				}
-				
+
 				for(double emg : emergencies) {
 					int emergency = (int) emg;
-					
+
 					if(checkedEmgs.contains(emg) || checkedIns.contains(emergency)) {
 						loggerUtils.log("info", "Duplicate emgergency, not included in={}.", emergency);
 						validationResult.duplicateEmgs = true;
@@ -359,11 +373,11 @@ public class SelectedTeamValidationHandler {
 							break;
 						} else {
 							DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-							
+
 							selectedPlayer.setRound(round);
 							selectedPlayer.setTeamCode(teamCode);
 							selectedPlayer.setTeamPlayerId(emergency);
-							
+
 							int e1e2 = Integer.parseInt(Double.toString(emg).split("\\.")[1].substring(0, 1));
 							//double e1e2 = Math.floor((emg - emergency) * 100) / 100;
 							//if(e1e2 == 0.1) {
@@ -372,19 +386,19 @@ public class SelectedTeamValidationHandler {
 							} else {
 								selectedPlayer.setEmergency(2);
 							}
-							
+
 							selectedPlayer.setDnp(false);
-							
+
 							selectedTeam.add(selectedPlayer);
 							loggerUtils.log("info", "Added selectedPlayer={}, as emergency", selectedPlayer);
 						}
-					
+
 						checkedEmgs.add(emg);
 					}
 				}
 			} else {
 				selectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round-1, teamCode);
-				
+
 				loggerUtils.log("info", "Removeing emergencies from previous round");
 				List<DflSelectedPlayer> playersToRemove = new ArrayList<>();
 				for(DflSelectedPlayer selectedPlayer : selectedTeam) {
@@ -395,10 +409,10 @@ public class SelectedTeamValidationHandler {
 				}
 				selectedTeam.removeAll(playersToRemove);
 				playersToRemove.clear();
-				
+
 				List<Integer> ins = insAndOuts.get("in");
 				List<Integer> outs = insAndOuts.get("out");
-				
+
 				for(int in : ins) {
 					if(checkedIns.contains(in)) {
 						loggerUtils.log("info", "Duplicates ins, not included in={}.", in);
@@ -425,13 +439,13 @@ public class SelectedTeamValidationHandler {
 							}
 							if(!found) {
 								DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-								
+
 								selectedPlayer.setRound(round);
 								selectedPlayer.setTeamCode(teamCode);
 								selectedPlayer.setTeamPlayerId(in);
 								selectedPlayer.setEmergency(0);
 								selectedPlayer.setDnp(false);
-								
+
 								selectedTeam.add(selectedPlayer);
 								loggerUtils.log("info", "Added selectedPlayer={}.", selectedPlayer);
 							} else {
@@ -443,11 +457,11 @@ public class SelectedTeamValidationHandler {
 								}
 							}
 						}
-					
+
 						checkedIns.add(in);
 					}
 				}
-				
+
 				for(int out : outs) {
 					if(checkedOuts.contains(out)) {
 						loggerUtils.log("info", "Duplicates out, not included in={}.", out);
@@ -476,14 +490,14 @@ public class SelectedTeamValidationHandler {
 								validationResult.droppedWarning = true;
 							}
 						}
-						
+
 						checkedOuts.add(out);
 					}
 				}
-								
+
 				for(double emg : emergencies) {
 					int emergency = (int) emg;
-					
+
 					if(checkedEmgs.contains(emg) || checkedIns.contains(emergency)) {
 						loggerUtils.log("info", "Duplicate emgergency, not included emg={}.", emergency);
 						validationResult.duplicateEmgs = true;
@@ -507,11 +521,11 @@ public class SelectedTeamValidationHandler {
 								loggerUtils.log("info", "Emergency emg={}.", emergency);
 							} else {
 								DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-								
+
 								selectedPlayer.setRound(round);
 								selectedPlayer.setTeamCode(teamCode);
 								selectedPlayer.setTeamPlayerId(emergency);
-																
+
 								int e1e2 = Integer.parseInt(Double.toString(emg).split("\\.")[1].substring(0, 1));
 								//double e1e2 = Math.floor((emg - emergency) * 100) / 100;
 								//if(e1e2 == 0.1) {
@@ -520,29 +534,29 @@ public class SelectedTeamValidationHandler {
 								} else {
 									selectedPlayer.setEmergency(2);
 								}
-								
+
 								selectedPlayer.setDnp(false);
-								
+
 								selectedTeam.add(selectedPlayer);
 								loggerUtils.log("info", "Added selectedPlayer={}.", selectedPlayer);
 							}
 						}
-					
+
 						checkedEmgs.add(emg);
 					}
 				}
-				
+
 				selectedTeam.removeAll(playersToRemove);
 			}
-			
+
 			loggerUtils.log("info", "Pre checks PASSED, validating selected team");
-			
+
 			insAndOuts.replace("in", checkedIns);
 			insAndOuts.replace("out", checkedOuts);
-			
+
 			validationResult.setInsAndOuts(insAndOuts);
 			validationResult.setEmergencies(checkedEmgs);
-			
+
 			if(validationResult.selectedWarning) {
 				validationResult.selectedWarnPlayers = selectedWarnPlayers;
 			}
@@ -558,36 +572,36 @@ public class SelectedTeamValidationHandler {
 			if(validationResult.duplicateEmgs) {
 				validationResult.dupEmgPlayers = dupEmgPlayers;
 			}
-			
+
 			//validationResult = validateTeam(teamCode, selectedTeam, insAndOuts, emergencies, selectedWarning, droppedWarning);
 			validationResult = validateTeam(teamCode, selectedTeam, validationResult);
-			
+
 			if(!selectionId.equalsIgnoreCase("noid")) {
 				DflSelectionIds selectionIds = new DflSelectionIds();
 				selectionIds.setRound(round);
 				selectionIds.setTeamCode(teamCode);
 				selectionIds.setSelectionId(selectionId);
-				
+
 				dflSelectionIdsService.insert(selectionIds);
 			}
 		}
-		
+
 		return validationResult;
 	}
-	
+
 	//private SelectedTeamValidation validateTeam(String teamCode, List<DflSelectedPlayer> selectedTeam, Map<String, List<Integer>> insAndOuts, List<Double> emergencies, boolean selectedWarning, boolean droppedWarning) {
 	private SelectedTeamValidation validateTeam(String teamCode, List<DflSelectedPlayer> selectedTeam, SelectedTeamValidation validationResult) {
-		
+
 		//SelectedTeamValidation validationResult = new SelectedTeamValidation();
-		
+
 		validationResult.selectionFileMissing = false;
 		validationResult.roundCompleted = false;
 		validationResult.lockedOut = false;
 		validationResult.teamPlayerCheckOk = true;
-		
+
 		//validationResult.selectedWarning = selectedWarning;
 		//validationResult.droppedWarning = droppedWarning;
-		
+
 		int ffCount = 0;
 		int fwdCount = 0;
 		int midCount = 0;
@@ -595,30 +609,30 @@ public class SelectedTeamValidationHandler {
 		int fbCount = 0;
 		int rckCount = 0;
 		int benchCount = 0;
-		
+
 		List<DflPlayer> ffPlayers = new ArrayList<>();
 		List<DflPlayer> fwdPlayers = new ArrayList<>();
 		List<DflPlayer> midPlayers = new ArrayList<>();
 		List<DflPlayer> defPlayers = new ArrayList<>();
 		List<DflPlayer> fbPlayers = new ArrayList<>();
 		List<DflPlayer> rckPlayers = new ArrayList<>();
-		
+
 		List<String> emergencyPositions = new ArrayList<>();
 		List<DflPlayer> emgPlayers = new ArrayList<>();
-		
+
 		List<DflPlayer> emgFfPlayers = new ArrayList<>();
 		List<DflPlayer> emgFwdPlayers = new ArrayList<>();
 		List<DflPlayer> emgMidPlayers = new ArrayList<>();
 		List<DflPlayer> emgDefPlayers = new ArrayList<>();
 		List<DflPlayer> emgFbPlayers = new ArrayList<>();
 		List<DflPlayer> emgRckPlayers = new ArrayList<>();
-						
+
 		for(DflSelectedPlayer selectedPlayer : selectedTeam) {
 			DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(selectedPlayer.getTeamCode(), selectedPlayer.getTeamPlayerId());
-			DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());		
+			DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
 
 			String position = player.getPosition().toLowerCase();
-			
+
 			if(selectedPlayer.isEmergency() == 0) {
 				switch(position) {
 					case "ff" :
@@ -651,10 +665,10 @@ public class SelectedTeamValidationHandler {
 				emgPlayers.add(player);
 			}
 		}
-		
+
 		loggerUtils.log("info", "Position counts: ffCount={}; fwdCount={}; midCount={}; defCount={}; fbCount={}; rckCount={}, emergencyPositions={};",
 						ffCount, fwdCount, midCount, defCount, fbCount, rckCount, emergencyPositions);
-			
+
 		if(ffCount <= 2) {
 			validationResult.ffCheckOk = true;
 			validationResult.ffPlayers = ffPlayers;
@@ -679,7 +693,7 @@ public class SelectedTeamValidationHandler {
 			validationResult.rckCheckOk = true;
 			validationResult.rckPlayers = rckPlayers;
 		}
-		
+
 		if(ffCount == 2) {
 			benchCount++;
 		}
@@ -698,13 +712,13 @@ public class SelectedTeamValidationHandler {
 		if(rckCount == 2) {
 			benchCount++;
 		}
-		
+
 		loggerUtils.log("info", "Bench count={};", benchCount);
-		
+
 		if(benchCount <= 4) {
 			validationResult.benchCheckOk = true;
 		}
-		
+
 		for(String position : emergencyPositions) {
 			switch(position) {
 				case "ff" :
@@ -727,7 +741,7 @@ public class SelectedTeamValidationHandler {
 					break;
 			}
 		}
-		
+
 		if(ffCount > 2 || fwdCount > 6 || midCount > 6 || defCount > 6 || fbCount > 2 || rckCount > 2) {
 			List<Double> emgs = validationResult.getEmergencies();
 			for(DflPlayer player : emgPlayers) {
@@ -736,21 +750,21 @@ public class SelectedTeamValidationHandler {
 						if(ffCount > 2) {
 							validationResult.emergencyFfWarning = true;
 							emgFfPlayers.add(player);
-														
+
 							loggerUtils.log("info", "Invalid emergency, player={};", player);
-							
+
 							int emg1 = 0;
 							int emg2 = 0;
-							
+
 							if(emgs.size() >= 1) {
 								emg1 = emgs.get(0).intValue();
 							}
 							if(emgs.size() >= 2) {
 								emg2 = emgs.get(1).intValue();
 							}
-							
+
 							DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-							
+
 							if(emg1 == teamPlayer.getTeamPlayerId()) {
 								emgs.remove(0);
 								loggerUtils.log("info", "Removed emergency 1, player={};", teamPlayer);
@@ -765,21 +779,21 @@ public class SelectedTeamValidationHandler {
 						if(fwdCount > 6) {
 							validationResult.emergencyFwdWarning = true;
 							emgFwdPlayers.add(player);
-														
+
 							loggerUtils.log("info", "Invalid emergency, player={};", player);
-							
+
 							int emg1 = 0;
 							int emg2 = 0;
-							
+
 							if(emgs.size() >= 1) {
 								emg1 = emgs.get(0).intValue();
 							}
 							if(emgs.size() >= 2) {
 								emg2 = emgs.get(1).intValue();
 							}
-							
+
 							DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-							
+
 							if(emg1 == teamPlayer.getTeamPlayerId()) {
 								emgs.remove(0);
 								loggerUtils.log("info", "Removed emergency 1, player={};", teamPlayer);
@@ -794,21 +808,21 @@ public class SelectedTeamValidationHandler {
 						if(rckCount > 2) {
 							validationResult.emergencyRckWarning = true;
 							emgRckPlayers.add(player);
-							
+
 							loggerUtils.log("info", "Invalid emergency, player={};", player);
-							
+
 							int emg1 = 0;
 							int emg2 = 0;
-							
+
 							if(emgs.size() >= 1) {
 								emg1 = emgs.get(0).intValue();
 							}
 							if(emgs.size() >= 2) {
 								emg2 = emgs.get(1).intValue();
 							}
-							
+
 							DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-							
+
 							if(emg1 == teamPlayer.getTeamPlayerId()) {
 								emgs.remove(0);
 								loggerUtils.log("info", "Removed emergency 1, player={};", teamPlayer);
@@ -823,21 +837,21 @@ public class SelectedTeamValidationHandler {
 						if(midCount > 6) {
 							validationResult.emergencyMidWarning = true;
 							emgMidPlayers.add(player);
-														
+
 							loggerUtils.log("info", "Invalid emergency, player={};", player);
-							
+
 							int emg1 = 0;
 							int emg2 = 0;
-							
+
 							if(emgs.size() >= 1) {
 								emg1 = emgs.get(0).intValue();
 							}
 							if(emgs.size() >= 2) {
 								emg2 = emgs.get(1).intValue();
 							}
-							
+
 							DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-							
+
 							if(emg1 == teamPlayer.getTeamPlayerId()) {
 								emgs.remove(0);
 								loggerUtils.log("info", "Removed emergency 1, player={};", teamPlayer);
@@ -852,21 +866,21 @@ public class SelectedTeamValidationHandler {
 						if(defCount > 6) {
 							validationResult.emergencyDefWarning = true;
 							emgDefPlayers.add(player);
-														
+
 							loggerUtils.log("info", "Invalid emergency, player={};", player);
-							
+
 							int emg1 = 0;
 							int emg2 = 0;
-							
+
 							if(emgs.size() >= 1) {
 								emg1 = emgs.get(0).intValue();
 							}
 							if(emgs.size() >= 2) {
 								emg2 = emgs.get(1).intValue();
 							}
-							
+
 							DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-							
+
 							if(emg1 == teamPlayer.getTeamPlayerId()) {
 								emgs.remove(0);
 								loggerUtils.log("info", "Removed emergency 1, player={};", teamPlayer);
@@ -881,21 +895,21 @@ public class SelectedTeamValidationHandler {
 						if(fbCount > 2) {
 							validationResult.emergencyFbWarning = true;
 							emgFbPlayers.add(player);
-														
+
 							loggerUtils.log("info", "Invalid emergency, player={};", player);
-							
+
 							int emg1 = 0;
 							int emg2 = 0;
-							
+
 							if(emgs.size() >= 1) {
 								emg1 = emgs.get(0).intValue();
 							}
 							if(emgs.size() >= 2) {
 								emg2 = emgs.get(1).intValue();
 							}
-							
+
 							DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-							
+
 							if(emg1 == teamPlayer.getTeamPlayerId()) {
 								emgs.remove(0);
 								loggerUtils.log("info", "Removed emergency 1, player={};", teamPlayer);
@@ -907,11 +921,11 @@ public class SelectedTeamValidationHandler {
 						}
 						break;
 				}
-				
+
 				validationResult.setEmergencies(emgs);
 			}
 		}
-		
+
 		if(validationResult.emergencyFfWarning) {
 			validationResult.emgFfPlayers = emgFfPlayers;
 		}
@@ -930,7 +944,7 @@ public class SelectedTeamValidationHandler {
 		if(validationResult.emergencyFbWarning) {
 			validationResult.emgFbPlayers = emgFbPlayers;
 		}
-			
+
 		return validationResult;
 	}
 }
