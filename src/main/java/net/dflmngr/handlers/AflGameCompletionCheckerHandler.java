@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -137,7 +136,7 @@ public class AflGameCompletionCheckerHandler {
 		try {
 			driver.get(statsUrl);
 
-			System.out.println(driver.getPageSource());
+			String pageSrc = driver.getPageSource();
 
 			//if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
 				if(driver.findElement(By.className("styles__State-lxmyn6-2")).getText().equals("Full Time")) {
