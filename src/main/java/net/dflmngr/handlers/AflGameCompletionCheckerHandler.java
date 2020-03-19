@@ -137,7 +137,7 @@ public class AflGameCompletionCheckerHandler {
 			driver.get(statsUrl);
 
 			//if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
-				if(driver.findElement(By.className("styles_State-lxmyn6-2")).getText().equals("Full Time")) {
+				if(driver.findElement(By.className("styles__State-lxmyn6-2")).getText().equals("Full Time")) {
 				gameCompleted = true;
 			} else {
 				gameCompleted = false;
