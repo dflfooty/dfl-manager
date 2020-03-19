@@ -1,7 +1,7 @@
 package net.dflmngr.handlers;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+//import java.text.DateFormat;
+// java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +33,7 @@ public class AflPlayerLoaderHandler {
 	private GlobalsService globalsService;
 	private DflUnmatchedPlayerService dflUnmatchedPlayerService;
 
-	private DateFormat df = new SimpleDateFormat("dd.MM.yy");
+	//private DateFormat df = new SimpleDateFormat("dd.MM.yy");
 
 	public AflPlayerLoaderHandler() {
 
