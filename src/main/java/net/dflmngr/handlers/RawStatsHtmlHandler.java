@@ -126,7 +126,7 @@ public class RawStatsHtmlHandler {
         List<WebElement> statsRecs;
         List<RawPlayerStats> teamStats = new ArrayList<>();
 
-        driver.getPageSource();
+        System.out.println(driver.getPageSource());
 
         if (homeORaway.equals("h")) {
             statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(0).findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
