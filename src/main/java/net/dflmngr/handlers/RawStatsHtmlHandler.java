@@ -126,12 +126,14 @@ public class RawStatsHtmlHandler {
         List<WebElement> statsRecs;
         List<RawPlayerStats> teamStats = new ArrayList<>();
 
+        driver.getPageSource();
+
         if (homeORaway.equals("h")) {
-            statsRecs = driver.findElement(By.className("fiso-mcfootball-match-player-stats-tables")).findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
+            statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(0).findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
             loggerUtils.log("info", "Found home team stats for: round={}; aflTeam={}; ", round, aflTeam);
         } else {
-            driver.findElement(By.className("fiso-mcfootball-match-player-stats-button-row")).findElements(By.tagName("button")).get(1).click();
-            statsRecs = driver.findElement(By.className("fiso-mcfootball-match-player-stats-tables")).findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
+            //driver.findElement(By.className("fiso-mcfootball-match-player-stats-button-row")).findElements(By.tagName("button")).get(1).click();
+            statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(1).findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
             loggerUtils.log("info", "Found away team stats for: round={}; aflTeam={}; ", round, aflTeam);
         }
 
