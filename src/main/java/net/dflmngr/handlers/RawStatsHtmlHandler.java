@@ -5,8 +5,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.ProxyConfig;
 import com.gargoylesoftware.htmlunit.WebClient;
 
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -65,6 +68,14 @@ public class RawStatsHtmlHandler {
         int webdriverWait = globalsService.getWebdriverWait();
 
         // WebDriver driver = new PhantomJSDriver();
+
+        BrowserVersion browserVersion =
+                 new BrowserVersion.BrowserVersionBuilder(BrowserVersion.CHROME)
+                     .setApplicationName("DFLManager")
+                     .setApplicationVersion("1.0")
+                     .setUserAgent("DFLManager/1.0 Stat Retriever")
+                     .build();
+
         WebDriver driver = new HtmlUnitDriver(BrowserVersion.CHROME) {
             @Override
             protected WebClient newWebClient(BrowserVersion version) {
@@ -75,6 +86,33 @@ public class RawStatsHtmlHandler {
                 return webClient;
             }
         };
+
+        boolean useProxy = Boolean.parseBoolean(System.getenv("USE_PROXY"));
+
+        if(useProxy) {
+            loggerUtils.log("info", "Using HTTP Proxy");
+            driver = new HtmlUnitDriver(browserVersion) {
+                @Override
+                protected WebClient newWebClient(BrowserVersion version) {
+                    WebClient webClient = super.newWebClient(version);
+                    webClient.getOptions().setThrowExceptionOnScriptError(false);
+                    webClient.getOptions().setCssEnabled(false);
+                    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+
+                    String fixieUrl = System.getenv("FIXIE_URL");
+
+                    String[] fixieValues = fixieUrl.split("[/(:\\/@)/]+");
+                    String fixieUser = fixieValues[1];
+                    String fixiePassword = fixieValues[2];
+                    String fixieHost = fixieValues[3];
+                    int fixiePort = Integer.parseInt(fixieValues[4]);
+
+                    webClient.getOptions().setProxyConfig(new ProxyConfig(fixieHost, fixiePort));
+                    webClient.getCredentialsProvider().setCredentials(new AuthScope(fixieHost, fixiePort), new UsernamePasswordCredentials(fixieUser, fixiePassword));
+                    return webClient;
+                }
+            };
+        }
 
         driver.manage().timeouts().implicitlyWait(webdriverWait, TimeUnit.SECONDS);
         driver.manage().timeouts().pageLoadTimeout(webdriverTimeout, TimeUnit.SECONDS);
@@ -126,7 +164,7 @@ public class RawStatsHtmlHandler {
         List<WebElement> statsRecs;
         List<RawPlayerStats> teamStats = new ArrayList<>();
 
-        System.out.println(driver.getPageSource());
+        //System.out.println(driver.getPageSource());
 
         if (homeORaway.equals("h")) {
             statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(0).findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
