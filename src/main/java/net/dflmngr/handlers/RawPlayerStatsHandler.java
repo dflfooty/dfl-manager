@@ -179,7 +179,7 @@ public class RawPlayerStatsHandler {
 			String gameStr = String.format("%02d", fixture.getGame());
 
 			//String fullStatsUrl = statsUrl + "/" + year + "/" + aflRound + "/" + homeTeam.toLowerCase() + "-v-" + awayTeam.toLowerCase();
-			String fullStatsUrl = statsUrl + "/AFL" + year + roundStr + gameStr + "/stats";
+			String fullStatsUrl = statsUrl + "/AFL" + year + roundStr + gameStr + "/playerstats";
 
 			loggerUtils.log("info", "AFL stats URL: {}", fullStatsUrl);
 
