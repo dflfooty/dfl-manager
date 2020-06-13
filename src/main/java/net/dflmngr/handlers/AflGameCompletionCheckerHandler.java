@@ -10,6 +10,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
@@ -176,8 +177,10 @@ public class AflGameCompletionCheckerHandler {
 			//String pageSrc = driver.getPageSource();
 
 			//if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
-			if(driver.findElements(By.className("styles__State-lxmyn6-2")).size() != 0) {
-				if(driver.findElement(By.className("styles__State-lxmyn6-2")).getText().equals("Full Time")) {
+
+			if(driver.findElements(By.className("styles__Scoreboard-sc-14r16wm-0")).size() != 0) {
+				WebElement scorecard = driver.findElement(By.className("styles__Scoreboard-sc-14r16wm-0"));
+				if(scorecard.findElement(By.className("styles__State-lxmyn6-2")).getText().equals("Full Time")) {
 					gameCompleted = true;
 				} else {
 					gameCompleted = false;
