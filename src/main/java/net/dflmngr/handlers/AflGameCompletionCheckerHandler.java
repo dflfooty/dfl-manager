@@ -6,11 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.ProxyConfig;
 import com.gargoylesoftware.htmlunit.WebClient;
 
 import net.dflmngr.logging.LoggingUtils;
@@ -114,12 +117,19 @@ public class AflGameCompletionCheckerHandler {
 
 	private boolean checkGame(String statsUrl) throws Exception {
 
-		boolean gameCompleted;
+		boolean gameCompleted = false;
 
 		int webdriverTimeout = globalsService.getWebdriverTimeout();
 		int webdriverWait = globalsService.getWebdriverWait();
 
-		WebDriver driver = new HtmlUnitDriver(BrowserVersion.CHROME) {
+		BrowserVersion browserVersion =
+                 new BrowserVersion.BrowserVersionBuilder(BrowserVersion.CHROME)
+                     .setApplicationName("DFLManager")
+                     .setApplicationVersion("1.0")
+                     .setUserAgent("DFLManager/1.0 Game Completion Checker")
+                     .build();
+
+		WebDriver driver = new HtmlUnitDriver(browserVersion) {
 	        @Override
 	        protected WebClient newWebClient(BrowserVersion version) {
 	            WebClient webClient = super.newWebClient(version);
@@ -130,17 +140,48 @@ public class AflGameCompletionCheckerHandler {
 	        }
 		};
 
+        boolean useProxy = Boolean.parseBoolean(System.getenv("USE_PROXY"));
+
+        if(useProxy) {
+            loggerUtils.log("info", "Using HTTP Proxy");
+            driver = new HtmlUnitDriver(browserVersion) {
+                @Override
+                protected WebClient newWebClient(BrowserVersion version) {
+                    WebClient webClient = super.newWebClient(version);
+                    webClient.getOptions().setThrowExceptionOnScriptError(false);
+                    webClient.getOptions().setCssEnabled(false);
+                    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+
+                    String fixieUrl = System.getenv("FIXIE_URL");
+
+                    String[] fixieValues = fixieUrl.split("[/(:\\/@)/]+");
+                    String fixieUser = fixieValues[1];
+                    String fixiePassword = fixieValues[2];
+                    String fixieHost = fixieValues[3];
+                    int fixiePort = Integer.parseInt(fixieValues[4]);
+
+                    webClient.getOptions().setProxyConfig(new ProxyConfig(fixieHost, fixiePort));
+                    webClient.getCredentialsProvider().setCredentials(new AuthScope(fixieHost, fixiePort), new UsernamePasswordCredentials(fixieUser, fixiePassword));
+                    return webClient;
+                }
+            };
+        }
+
 		driver.manage().timeouts().implicitlyWait(webdriverWait, TimeUnit.SECONDS);
 		driver.manage().timeouts().pageLoadTimeout(webdriverTimeout, TimeUnit.SECONDS);
 
 		try {
 			driver.get(statsUrl);
 
-			String pageSrc = driver.getPageSource();
+			//String pageSrc = driver.getPageSource();
 
 			//if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
+			if(driver.findElements(By.className("styles__State-lxmyn6-2")).size() != 0) {
 				if(driver.findElement(By.className("styles__State-lxmyn6-2")).getText().equals("Full Time")) {
-				gameCompleted = true;
+					gameCompleted = true;
+				} else {
+					gameCompleted = false;
+				}
 			} else {
 				gameCompleted = false;
 			}
