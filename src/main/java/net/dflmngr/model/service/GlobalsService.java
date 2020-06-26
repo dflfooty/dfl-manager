@@ -7,11 +7,11 @@ import net.dflmngr.model.entity.Globals;
 import net.dflmngr.model.entity.keys.GlobalsPK;
 
 public interface GlobalsService extends GenericService<Globals, GlobalsPK> {
-	
+
 	public Map<String, String> getValueAndParams(String code, String group);
 	public String getValue(String group, String code);
 	public String getCurrentYear();
-	public List<String> getAflFixtureUrl(); 
+	public List<String> getAflFixtureUrl();
 	public String getGroundTimeZone(String ground);
 	public Map<String, String> getGround(String groundName);
 	public List<String> getTeamCodes();
@@ -36,4 +36,5 @@ public interface GlobalsService extends GenericService<Globals, GlobalsPK> {
 	public Map<String, String> getDflFixtureOrder();
 	public boolean getSendMedalReports(int currentRound);
 	public String getOnlineBaseUrl();
+	public int getUseAverage(String teamCode);
 }

@@ -9,6 +9,7 @@ import java.util.Map;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.entity.DflPlayer;
+import net.dflmngr.model.entity.DflPlayerPredictedScores;
 import net.dflmngr.model.entity.DflPlayerScores;
 import net.dflmngr.model.entity.DflRoundInfo;
 import net.dflmngr.model.entity.DflRoundMapping;
@@ -19,6 +20,7 @@ import net.dflmngr.model.entity.DflTeamScores;
 import net.dflmngr.model.entity.RawPlayerStats;
 import net.dflmngr.model.entity.keys.DflPlayerScoresPK;
 import net.dflmngr.model.service.AflFixtureService;
+import net.dflmngr.model.service.DflPlayerPredictedScoresService;
 import net.dflmngr.model.service.DflPlayerScoresService;
 import net.dflmngr.model.service.DflPlayerService;
 import net.dflmngr.model.service.DflRoundInfoService;
@@ -26,8 +28,10 @@ import net.dflmngr.model.service.DflSelectedTeamService;
 import net.dflmngr.model.service.DflTeamPlayerService;
 import net.dflmngr.model.service.DflTeamScoresService;
 import net.dflmngr.model.service.DflTeamService;
+import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.RawPlayerStatsService;
 import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
+import net.dflmngr.model.service.impl.DflPlayerPredictedScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflPlayerScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
@@ -35,6 +39,7 @@ import net.dflmngr.model.service.impl.DflSelectedTeamServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamScoresServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
+import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.model.service.impl.RawPlayerStatsServiceImpl;
 import net.dflmngr.utils.DflmngrUtils;
 
@@ -60,6 +65,8 @@ public class ScoresCalculatorHandler {
 	DflTeamScoresService dflTeamScoresService;
 	DflRoundInfoService dflRoundInfoService;
 	AflFixtureService aflFixtureService;
+	GlobalsService globalsService;
+	DflPlayerPredictedScoresService dflPlayerPredictedScoresService;
 
 	public ScoresCalculatorHandler() {
 		rawPlayerStatsService = new RawPlayerStatsServiceImpl();
@@ -71,6 +78,8 @@ public class ScoresCalculatorHandler {
 		dflTeamScoresService = new DflTeamScoresServiceImpl();
 		dflRoundInfoService = new DflRoundInfoServiceImpl();
 		aflFixtureService = new AflFixtureServiceImpl();
+		globalsService = new GlobalsServiceImpl();
+		dflPlayerPredictedScoresService = new DflPlayerPredictedScoresServiceImpl();
 	}
 
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
@@ -96,8 +105,10 @@ public class ScoresCalculatorHandler {
 
 			DflRoundInfo dflRoundInfo = dflRoundInfoService.get(round);
 
+			Map<Integer, DflPlayerPredictedScores> predictedScores = dflPlayerPredictedScoresService.getForRoundWithKey(round);
+
 			loggerUtils.log("info", "Handling team scores");
-			handleTeamScores(round, dflRoundInfo);
+			handleTeamScores(round, dflRoundInfo, predictedScores);
 
 			rawPlayerStatsService.close();
 			dflPlayerService.close();
@@ -108,6 +119,8 @@ public class ScoresCalculatorHandler {
 			dflTeamScoresService.close();
 			dflRoundInfoService.close();
 			aflFixtureService.close();
+			globalsService.close();
+			dflPlayerPredictedScoresService.close();
 
 			loggerUtils.log("info", "ScoresCalculator completed");
 
@@ -172,7 +185,7 @@ public class ScoresCalculatorHandler {
 		return score;
 	}
 
-	private void handleTeamScores(int round, DflRoundInfo dflRoundInfo) throws Exception {
+	private void handleTeamScores(int round, DflRoundInfo dflRoundInfo, Map<Integer, DflPlayerPredictedScores> predictedScores) throws Exception {
 
 		List<DflTeam> teams = dflTeamService.findAll();
 		List<DflTeamScores> scores = new ArrayList<>();
@@ -182,7 +195,7 @@ public class ScoresCalculatorHandler {
 			List<DflSelectedPlayer> selectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, team.getTeamCode());
 			DflTeamScores teamScore = new DflTeamScores();
 
-			int score = calculateTeamScore(selectedTeam, dflRoundInfo);
+			int score = calculateTeamScore(selectedTeam, dflRoundInfo, predictedScores);
 
 			teamScore.setTeamCode(team.getTeamCode());
 			teamScore.setRound(round);
@@ -195,7 +208,7 @@ public class ScoresCalculatorHandler {
 		dflTeamScoresService.replaceAllForRound(round, scores);
 	}
 
-	private int calculateTeamScore(List<DflSelectedPlayer> selectedTeam, DflRoundInfo dflRoundInfo) throws Exception {
+	private int calculateTeamScore(List<DflSelectedPlayer> selectedTeam, DflRoundInfo dflRoundInfo, Map<Integer, DflPlayerPredictedScores> predictedScores) throws Exception {
 
 		int teamScore = 0;
 
@@ -271,10 +284,17 @@ public class ScoresCalculatorHandler {
 			selectedPlayer.setReplacementInd(null);
 
 			if(playerScore == null && playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
-				selectedPlayer.setDnp(true);
-				selectedPlayer.setScoreUsed(false);
-				selectedPlayer.setHasPlayed(true);
-				dnpPlayers.add(selectedPlayer);
+				int round = globalsService.getUseAverage(player.getAflClub());
+
+				if(round == selectedPlayer.getRound()) {
+					int score = predictedScores.get(selectedPlayer.getPlayerId()).getPredictedScore();
+					scores.put(selectedPlayer.getPlayerId(), score);
+				} else {
+					selectedPlayer.setDnp(true);
+					selectedPlayer.setScoreUsed(false);
+					selectedPlayer.setHasPlayed(true);
+					dnpPlayers.add(selectedPlayer);
+				}
 			} else {
 				if(playerScore != null) {
 					scores.put(selectedPlayer.getPlayerId(), playerScore.getScore());
