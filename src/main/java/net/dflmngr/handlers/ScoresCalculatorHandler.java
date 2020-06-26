@@ -283,17 +283,27 @@ public class ScoresCalculatorHandler {
 
 			selectedPlayer.setReplacementInd(null);
 
-			if(playerScore == null && playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
-				int round = globalsService.getUseAverage(player.getAflClub());
-
-				if(round == selectedPlayer.getRound()) {
-					int score = predictedScores.get(selectedPlayer.getPlayerId()).getPredictedScore();
-					scores.put(selectedPlayer.getPlayerId(), score);
-				} else {
+			if(playerScore == null) {
+				if(playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
 					selectedPlayer.setDnp(true);
 					selectedPlayer.setScoreUsed(false);
 					selectedPlayer.setHasPlayed(true);
 					dnpPlayers.add(selectedPlayer);
+				} else {
+					int round = globalsService.getUseAverage(player.getAflClub());
+
+					if(round == selectedPlayer.getRound()) {
+						int score = predictedScores.get(selectedPlayer.getPlayerId()).getPredictedScore();
+						scores.put(selectedPlayer.getPlayerId(), score);
+
+						if(selectedPlayer.isEmergency() == 0) {
+							selectedPlayer.setScoreUsed(true);
+							played22.add(selectedPlayer);
+						} else {
+							selectedPlayer.setScoreUsed(false);
+							emergencies.add(selectedPlayer);
+						}
+					}
 				}
 			} else {
 				if(playerScore != null) {
