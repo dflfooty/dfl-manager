@@ -443,7 +443,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		value = getValue(teamCode, groupCode);
 
-		if(value != null) {
+		if(value != null && value.length() > 0) {
 			round = Integer.parseInt(value);
 		}
 
