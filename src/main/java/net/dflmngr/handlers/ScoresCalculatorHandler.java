@@ -296,6 +296,8 @@ public class ScoresCalculatorHandler {
 						int score = predictedScores.get(selectedPlayer.getPlayerId()).getPredictedScore();
 						scores.put(selectedPlayer.getPlayerId(), score);
 
+						selectedPlayer.setHasPlayed(true);
+
 						if(selectedPlayer.isEmergency() == 0) {
 							selectedPlayer.setScoreUsed(true);
 							played22.add(selectedPlayer);
