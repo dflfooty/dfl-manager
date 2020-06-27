@@ -284,12 +284,16 @@ public class ScoresCalculatorHandler {
 			selectedPlayer.setReplacementInd(null);
 
 			if(playerScore == null) {
+				loggerUtils.log("info", "Selected player: team={} teamPlayerId={} playerId={} has no score recorded",
+								selectedPlayer.getTeamCode(), selectedPlayer.getTeamPlayerId(), selectedPlayer.getPlayerId());
 				if(playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
+					loggerUtils.log("info", "AFL team as player marking as DNP");
 					selectedPlayer.setDnp(true);
 					selectedPlayer.setScoreUsed(false);
 					selectedPlayer.setHasPlayed(true);
 					dnpPlayers.add(selectedPlayer);
 				} else {
+					loggerUtils.log("info", "Checking if average will be used");
 					int round = globalsService.getUseAverage(player.getAflClub());
 
 					if(round == selectedPlayer.getRound()) {
@@ -297,6 +301,8 @@ public class ScoresCalculatorHandler {
 						scores.put(selectedPlayer.getPlayerId(), score);
 
 						selectedPlayer.setHasPlayed(true);
+
+						loggerUtils.log("info", "Using average score={}", score);
 
 						if(selectedPlayer.isEmergency() == 0) {
 							selectedPlayer.setScoreUsed(true);
@@ -308,9 +314,13 @@ public class ScoresCalculatorHandler {
 					}
 				}
 			} else {
-				if(playerScore != null) {
-					scores.put(selectedPlayer.getPlayerId(), playerScore.getScore());
-				}
+				loggerUtils.log("info", "Selected player: team={} teamPlayerId={} playerId={} has score recorded",
+								selectedPlayer.getTeamCode(), selectedPlayer.getTeamPlayerId(), selectedPlayer.getPlayerId());
+
+				loggerUtils.log("info", "Using score={}", playerScore.getScore());
+
+				scores.put(selectedPlayer.getPlayerId(), playerScore.getScore());
+
 				if(playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
 					selectedPlayer.setHasPlayed(true);
 				} else {
