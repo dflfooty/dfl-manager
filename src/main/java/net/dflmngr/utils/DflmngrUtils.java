@@ -12,37 +12,37 @@ import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 
 public class DflmngrUtils {
-	
+
 	//public static String nowStr = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 	public static String getNowStr() {
-		
+
 		return new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
-		
+
 	}
-	
+
 	public static final String defaultTimezone;
 	static
 	{
 			GlobalsService globalsService = new GlobalsServiceImpl();
-			defaultTimezone = globalsService.getGroundTimeZone("default");	
+			defaultTimezone = globalsService.getGroundTimeZone("default");
 	};
-	
+
 	public static final SimpleDateFormat dateDbFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-	
+
 	/*
 	public static Date applyDefaultTimezone(Date date) throws Exception {
 		GlobalsService globalsService = new GlobalsServiceImpl();
 		String defaultTimezone = globalsService.getGroundTimeZone("default");
-		
+
 		SimpleDateFormat formatter = new SimpleDateFormat("EEEE, MMMM dd h:mma yyyy");
 		formatter.setTimeZone(TimeZone.getTimeZone(defaultTimezone));
-		
+
 		String defaultDateStr = formatter.format(date);
 		Date defaultDate = formatter.parse(defaultDateStr);
 
 		return defaultDate;
 	}*/
-	
+
 	public static final Map<String, Integer> weekDaysInt;
 	static
 	{
@@ -55,7 +55,7 @@ public class DflmngrUtils {
 	    weekDaysInt.put("Saturday", Calendar.SATURDAY);
 	    weekDaysInt.put("Sunday", Calendar.SUNDAY);
 	};
-	
+
 	public static final Map<Integer, String> weekDaysString;
 	static
 	{
@@ -68,7 +68,7 @@ public class DflmngrUtils {
 	    weekDaysString.put(Calendar.SATURDAY, "Saturday");
 	    weekDaysString.put(Calendar.SUNDAY, "Sunday");
 	};
-	
+
 	public static final Map<String, Integer> AMPM;
 	static
 	{
@@ -87,7 +87,7 @@ public class DflmngrUtils {
 		dflAflTeamMap.put("Carl", "CARL");
 		dflAflTeamMap.put("Coll", "COLL");
 		dflAflTeamMap.put("Ess", "ESS");
-		dflAflTeamMap.put("Freo", "FRE");
+		dflAflTeamMap.put("Freo", "FREO");
 		dflAflTeamMap.put("Geel", "GEEL");
 		dflAflTeamMap.put("Gold", "GCFC");
 		dflAflTeamMap.put("GWS", "GWS");
@@ -98,9 +98,9 @@ public class DflmngrUtils {
 		dflAflTeamMap.put("Rich", "RICH");
 		dflAflTeamMap.put("StK", "STK");
 		dflAflTeamMap.put("Syd", "SYD");
-		dflAflTeamMap.put("WCE", "WCE");	
+		dflAflTeamMap.put("WCE", "WCE");
 	}
-	
+
 	public static final Map<String, String> aflDflTeamMap;
 	static
 	{
@@ -122,7 +122,7 @@ public class DflmngrUtils {
 		aflDflTeamMap.put("RICH", "Rich");
 		aflDflTeamMap.put("STK", "StK");
 		aflDflTeamMap.put("SYD", "Syd");
-		aflDflTeamMap.put("WCE", "WCE");	
+		aflDflTeamMap.put("WCE", "WCE");
 	}
-	
+
 }

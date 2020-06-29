@@ -6,6 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.entity.DflPlayer;
@@ -508,5 +516,32 @@ public class ScoresCalculatorHandler {
 		}
 
 		return teamScore;
+	}
+
+	public static void main(String[] args) {
+
+		Options options = new Options();
+		Option roundOpt  = Option.builder("r").argName("round").hasArg().desc("round to run on").type(Number.class).required().build();
+		options.addOption(roundOpt);
+
+		try {
+			int round = 0;
+
+			CommandLineParser parser = new DefaultParser();
+			CommandLine cli = parser.parse(options, args);
+
+			round = ((Number)cli.getParsedOptionValue("r")).intValue();
+
+			//ndiProvider.bind();
+
+			ScoresCalculatorHandler scoresCalculatorHandler = new ScoresCalculatorHandler();
+			scoresCalculatorHandler.configureLogging("batch.name", "batch-logger", ("ScoresCalculatorHandler_R" + round));
+			scoresCalculatorHandler.execute(round);
+		} catch (ParseException ex) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp( "ScoresCalculatorHandler", options);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 }
