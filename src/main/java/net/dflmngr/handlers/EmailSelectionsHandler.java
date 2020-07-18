@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,6 +21,7 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Part;
+import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.Transport;
@@ -41,7 +43,7 @@ import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.utils.DflmngrUtils;
-import net.dflmngr.utils.oauth2.AccessTokenFromRefreshToken;
+//import net.dflmngr.utils.oauth2.AccessTokenFromRefreshToken;
 import net.dflmngr.utils.oauth2.OAuth2Authenticator;
 import net.dflmngr.validation.SelectedTeamValidation;
 import net.freeutils.tnef.Attachment;
@@ -49,13 +51,13 @@ import net.freeutils.tnef.TNEFInputStream;
 
 public class EmailSelectionsHandler {
 	private LoggingUtils loggerUtils;
-	
+
 	boolean isExecutable;
-	
+
 	String defaultMdcKey = "batch.name";
 	String defaultLoggerName = "batch-logger";
 	String defaultLogfile = "Selections";
-	
+
 	String mdcKey;
 	String loggerName;
 	String logfile;
@@ -67,30 +69,30 @@ public class EmailSelectionsHandler {
 	private int outgoingMailPort;
 	private String mailUsername;
 	private String mailPassword;
-	
+
 	private String emailOveride;
-	
+
 	GlobalsService globalsService;
 	DflTeamService dflTeamService;
 	DflTeamPlayerService dflTeamPlayerService;
-	
+
 	//Session mailSession;
-	
+
 	boolean selectionsFileAttached;
-	
+
 	//Map <String, Boolean> responses;
-	
+
 	List<SelectedTeamValidation> validationResults;
 	Map<String, String> selectionsIdsCurrent;
-	
+
 	public EmailSelectionsHandler() {
 		globalsService = new GlobalsServiceImpl();
 		dflTeamService = new DflTeamServiceImpl();
 		dflTeamPlayerService = new DflTeamPlayerServiceImpl();
-		
+
 		isExecutable = false;
 	}
-	
+
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
 		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
@@ -99,22 +101,22 @@ public class EmailSelectionsHandler {
 		this.logfile = logfile;
 		isExecutable = true;
 	}
-	
+
 	public void execute() {
 		try {
 			if(!isExecutable) {
 				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
-			
+
 			//this.responses = new HashMap<>();
 			validationResults = new ArrayList<>();
 			selectionsIdsCurrent = new HashMap<>();
 
 			loggerUtils.log("info", "Email Selections Handler is executing ....");
-			
+
 			Map<String, String> emailConfig = globalsService.getEmailConfig();
-			
+
 			this.dflmngrEmailAddr = emailConfig.get("dflmngrEmailAddr");
 			this.incomingMailHost = emailConfig.get("incomingMailHost");
 			this.incomingMailPort = Integer.parseInt(emailConfig.get("incomingMailPort"));
@@ -122,76 +124,83 @@ public class EmailSelectionsHandler {
 			this.outgoingMailPort = Integer.parseInt(emailConfig.get("outgoingMailPort"));
 			this.mailUsername = emailConfig.get("mailUsername");
 			this.mailPassword = emailConfig.get("mailPassword");
-			
+
 			this.emailOveride = "";
-			
+
 			if(!System.getenv("ENV").equals("production")) {
 				this.dflmngrEmailAddr = System.getenv("DFL_MNGR_EMAIL");
 				this.mailUsername = System.getenv("DFL_MNGR_EMAIL");
 				this.emailOveride = System.getenv("EMAIL_OVERIDE");
 			}
-						
+
 			loggerUtils.log("info", "Email config: dflmngrEmailAddr={}; incomingMailHost={}; incomingMailPort={}; outgoingMailHost={}; outgoingMailHost={}; mailUsername={}; mailPassword={}",
 						dflmngrEmailAddr, incomingMailHost, incomingMailPort, outgoingMailHost, outgoingMailPort, mailUsername, mailPassword);
-			
+
 			//configureMail();
-			
+
 			OAuth2Authenticator.initialize();
 
 			processSelections();
-			
+
 			loggerUtils.log("info", "Sending responses");
-			
+
 			sendResponses();
-			
+
 			globalsService.close();
 			dflTeamService.close();
 			dflTeamPlayerService.close();
-			
+
 			loggerUtils.log("info", "Email Selections Handler Completed");
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
 	}
-		
+
 	private void processSelections() throws Exception {
-				
-		String oauthToken = AccessTokenFromRefreshToken.getAccessToken();
-		Store store = OAuth2Authenticator.connectToImap(incomingMailHost, incomingMailPort, mailUsername, oauthToken, false);
-		
+
+		//String oauthToken = AccessTokenFromRefreshToken.getAccessToken();
+		//Store store = OAuth2Authenticator.connectToImap(incomingMailHost, incomingMailPort, mailUsername, oauthToken, false);
+
+		Properties properties = new Properties();
+		properties.setProperty("mail.imap.ssl.enable", "true");
+
+		Session session = Session.getDefaultInstance(properties);
+		Store store = session.getStore("imap");
+		store.connect(incomingMailHost, incomingMailPort, mailUsername, mailPassword);
+
 		Folder inbox = store.getFolder("Inbox");
 		inbox.open(Folder.READ_WRITE);
-		
+
 		Message[] messages = inbox.getMessages();
-		
+
 		loggerUtils.log("info", "Opended inbox: messages={}", messages.length);
-		
+
 		for(int i = 0; i < messages.length; i++) {
-			
+
 			loggerUtils.log("info", "Handling message {}", i);
-						
+
 			SelectedTeamValidation validationResult = null;
-			
+
 			selectionsFileAttached = false;
-			
+
 			try {
-				
+
 				String from = InternetAddress.toString(messages[i].getFrom());
 				String contentType = messages[i].getContentType();
-				
+
 				if (contentType.contains("multipart")) {
 					Multipart multipart = (Multipart) messages[i].getContent();
-					
-					
-								
+
+
+
 					for(int j = 0; j < multipart.getCount(); j++) {
 						BodyPart part = multipart.getBodyPart(j);
-						
+
 						Instant instant = messages[i].getReceivedDate().toInstant();
 						ZonedDateTime receivedDate = ZonedDateTime.ofInstant(instant, ZoneId.of(DflmngrUtils.defaultTimezone));
-						
+
 						validationResult = scanEmailPartsAndValidate(part, receivedDate, from);
-						
+
 						if(validationResult != null) {
 							break;
 						}
@@ -208,7 +217,7 @@ public class EmailSelectionsHandler {
 					if(validationResult.isValid()) {
 						TeamInsOutsLoaderHandler selectionsLoader = new TeamInsOutsLoaderHandler();
 						selectionsLoader.configureLogging(mdcKey, loggerName, logfile);
-						
+
 						if(validationResult.earlyGames) {
 							loggerUtils.log("info", "Early Games any validation error is a warning .... Saving ins and outs to early tables in DB");
 							selectionsLoader.execute(validationResult.getTeamCode(), validationResult.getRound(), validationResult.getInsAndOuts().get("in"),
@@ -240,36 +249,36 @@ public class EmailSelectionsHandler {
 				}
 			}
 		}
-		
+
 		loggerUtils.log("info", "Moving messages to Processed folder");
 		Folder processedMessages = store.getFolder("Processed");
 		inbox.copyMessages(messages, processedMessages);
-		
+
 		for(int i = 0; i < messages.length; i++) {
 			messages[i].setFlag(Flags.Flag.DELETED, true);
 		}
-		
+
 		inbox.expunge();
-		
+
 		inbox.close(true);
 		store.close();
 	}
-	
+
 
 	private SelectedTeamValidation scanEmailPartsAndValidate(BodyPart part, ZonedDateTime receivedDate, String from) throws Exception {
-		
+
 		SelectedTeamValidation validationResult = null;
-		
+
 		Object content = part.getContent();
-		
+
 	    if(content instanceof InputStream || content instanceof String) {
-	    	
+
 	    	if(part.isMimeType("text/plain")) {
 	    		String text = ((String)content).trim();
 	    		if(text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
 	    			text = text.substring(0, text.indexOf("[end]"));
 	    			String[] lines = text.split("\\R+");
-	    			
+
 					loggerUtils.log("info", "Message from {}, has selection in text body", from);
 					selectionsFileAttached = true;
 					validationResult = handleSelectionEmailText(lines, receivedDate, "noid");
@@ -278,29 +287,29 @@ public class EmailSelectionsHandler {
 	    		} else if(text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
 	    			text = text.substring(text.indexOf("[start id="), text.indexOf("[end]"));
 	    			String[] lines = text.split("\\R+");
-	    			
+
 	    			String idLine = lines[0];
 	    			String id = idLine.split("=")[1].trim().replaceAll("]", "");
-	    			
+
 					loggerUtils.log("info", "Message from {}, has selection in text body", from);
 					selectionsFileAttached = true;
 					validationResult = handleSelectionEmailText(lines, receivedDate, id);
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 	    		}
-	    	} else if (part.isMimeType("text/html")) {	    		
+	    	} else if (part.isMimeType("text/html")) {
 	    		Document document = Jsoup.parse((String) content);
 	    	    document.outputSettings(new Document.OutputSettings().prettyPrint(false));//makes html() preserve linebreaks and spacing
 	    	    document.select("br").append("\\n");
 	    	    document.select("p").prepend("\\n\\n");
 	    	    String s = document.body().html().replaceAll("\\\\n", "\n");
 	    	    String text = Jsoup.clean(s, "", Whitelist.none(), new Document.OutputSettings().prettyPrint(false)).trim();
-	    		
-	    		
+
+
 	    		if(text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
 	    			text = text.substring(0, text.indexOf("[end]"));
 	    			String[] lines = text.split("\\R+");
-	    			
+
 					loggerUtils.log("info", "Message from {}, has selection in html body", from);
 					selectionsFileAttached = true;
 					validationResult = handleSelectionEmailText(lines, receivedDate, "noid");
@@ -309,10 +318,10 @@ public class EmailSelectionsHandler {
 	    		} else if(text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
 	    			text = text.substring(text.indexOf("[start id="), text.indexOf("[end]"));
 	    			String[] lines = text.split("\\R+");
-	    			
+
 	    			String idLine = lines[0];
 	    			String id = idLine.split("=")[1].trim().replaceAll("]", "");
-	    			
+
 					loggerUtils.log("info", "Message from {}, has selection in text body", from);
 					selectionsFileAttached = true;
 					validationResult = handleSelectionEmailText(lines, receivedDate, id);
@@ -320,7 +329,7 @@ public class EmailSelectionsHandler {
 					validationResults.add(validationResult);
 	    		}
 	    	}
-	    	
+
 	    	if(validationResult == null) {
 		        if(Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || Part.INLINE.equalsIgnoreCase(part.getDisposition()) || (part.getFileName() != null && !part.getFileName().isEmpty())) {
 					String attachementName = part.getFileName();
@@ -342,7 +351,7 @@ public class EmailSelectionsHandler {
 		        }
 	    	}
 	    }
-	    
+
 	    if(validationResult == null) {
 		    if(content instanceof Multipart) {
 	            Multipart multipart = (Multipart) content;
@@ -354,16 +363,16 @@ public class EmailSelectionsHandler {
 	                }
 	            }
 		    }
-	    }   
-	    
+	    }
+
 	    return validationResult;
 	}
 
-	
+
 	private SelectedTeamValidation handleTNEFMessage(InputStream inputStream, String from, ZonedDateTime receivedDate) throws Exception {
 
 		SelectedTeamValidation validationResult = null;
-		
+
 		TNEFInputStream tnefInputSteam = new TNEFInputStream(inputStream);
 		net.freeutils.tnef.Message message = new net.freeutils.tnef.Message(tnefInputSteam);
 
@@ -375,16 +384,16 @@ public class EmailSelectionsHandler {
 					loggerUtils.log("info", "Message from {}, has selection attachment", from);
 					validationResult = handleSelectionFile(attachment.getRawData(), receivedDate);
 				}
-			} 
+			}
 		}
-		
+
 		message.close();
-		
+
 		return validationResult;
 	}
-	
+
 	private SelectedTeamValidation handleSelectionFile(InputStream inputStream, ZonedDateTime receivedDate) throws Exception {
-		
+
 		String line = "";
 		String teamCode = "";
 		int round = 0;
@@ -392,11 +401,11 @@ public class EmailSelectionsHandler {
 		List<Integer> outs = new ArrayList<>();
 		List<Double> emgs = new ArrayList<>();
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
-		
+
 		loggerUtils.log("info", "Moving messages to Processed folder");
-		
+
 		while((line = reader.readLine()) != null) {
-				
+
 			if(line.toLowerCase().contains("[team]")) {
 				while(reader.ready()) {
 					line = reader.readLine().trim();
@@ -410,7 +419,7 @@ public class EmailSelectionsHandler {
 				}
 				loggerUtils.log("info", "Selections for team: {}", teamCode);
 			}
-			
+
 			if(line.toLowerCase().contains("[round]")) {
 				while(reader.ready()) {
 					line = reader.readLine().trim();
@@ -424,7 +433,7 @@ public class EmailSelectionsHandler {
 				}
 				loggerUtils.log("info", "Selections for round: {}", round);
 			}
-			
+
 			if(line.toLowerCase().contains("[in]")) {
 				while(reader.ready()) {
 					line = reader.readLine().trim();
@@ -440,7 +449,7 @@ public class EmailSelectionsHandler {
 				}
 				loggerUtils.log("info", "Selection in: {}", ins);
 			}
-			
+
 			if(line.toLowerCase().contains("[out]")) {
 				while(reader.ready()) {
 					line = reader.readLine().trim();
@@ -456,7 +465,7 @@ public class EmailSelectionsHandler {
 				}
 				loggerUtils.log("info", "Selection out: {}", outs);
 			}
-			
+
 			if(line.toLowerCase().contains("[emg]")) {
 				int emgCount = 1;
 				while(reader.ready()) {
@@ -479,38 +488,38 @@ public class EmailSelectionsHandler {
 					}
 				}
 				loggerUtils.log("info", "Selection emergencies: {}", emgs);
-			}	
+			}
 		}
-		
+
 		//TeamSelectionLoaderHandler selectionsLoader = new TeamSelectionLoaderHandler();
 		//selectionsLoader.execute(teamCode, round, ins, outs);
-		
+
 		Map<String, List<Integer>> insAndOuts = new HashMap<>();
 		insAndOuts.put("in", ins);
 		insAndOuts.put("out", outs);
-				
+
 		SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
 		validationHandler.configureLogging(mdcKey, loggerName, logfile);
 		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false, "noid");
-		
+
 		return validationResult;
 	}
-	
+
 	private SelectedTeamValidation handleSelectionEmailText(String [] emailLines, ZonedDateTime receivedDate, String id) throws Exception {
-		
+
 		String line = "";
 		String teamCode = "";
 		int round = 0;
 		List<Integer> ins = new ArrayList<>();
 		List<Integer> outs = new ArrayList<>();
 		List<Double> emgs = new ArrayList<>();
-		
+
 		loggerUtils.log("info", "Moving messages to Processed folder");
-		
-		for(int i = 0; i < emailLines.length; i++) { 
-				
+
+		for(int i = 0; i < emailLines.length; i++) {
+
 			line = emailLines[i];
-				
+
 			if(line.toLowerCase().contains("[team]")) {
 				while(i < emailLines.length) {
 					line = emailLines[i++].trim();
@@ -524,7 +533,7 @@ public class EmailSelectionsHandler {
 				}
 				loggerUtils.log("info", "Selections for team: {}", teamCode);
 			}
-			
+
 			if(line.toLowerCase().contains("[round]")) {
 				while(i < emailLines.length) {
 					line = emailLines[i++].trim();
@@ -538,7 +547,7 @@ public class EmailSelectionsHandler {
 				}
 				loggerUtils.log("info", "Selections for round: {}", round);
 			}
-			
+
 			if(line.toLowerCase().contains("[in]")) {
 				while(i < emailLines.length) {
 					line = emailLines[i++].trim();
@@ -559,7 +568,7 @@ public class EmailSelectionsHandler {
 				}
 				loggerUtils.log("info", "Selection in: {}", ins);
 			}
-			
+
 			if(line.toLowerCase().contains("[out]")) {
 				while(i < emailLines.length) {
 					line = emailLines[i++].trim();
@@ -580,7 +589,7 @@ public class EmailSelectionsHandler {
 				}
 				loggerUtils.log("info", "Selection out: {}", outs);
 			}
-			
+
 			if(line.toLowerCase().contains("[emg]")) {
 				int emgCount = 1;
 				while(i < emailLines.length) {
@@ -607,11 +616,11 @@ public class EmailSelectionsHandler {
 					}
 				}
 				loggerUtils.log("info", "Selection emergencies: {}", emgs);
-			}	
+			}
 		}
-		
+
 		boolean idHandledThisBatch = false;
-		
+
 		if(selectionsIdsCurrent.containsKey(id)) {
 			String team = selectionsIdsCurrent.get(id);
 			if(team.equalsIgnoreCase(teamCode)) {
@@ -622,9 +631,9 @@ public class EmailSelectionsHandler {
 		} else {
 			selectionsIdsCurrent.put(id, teamCode);
 		}
-		
+
 		SelectedTeamValidation validationResult = null;
-		
+
 		if(idHandledThisBatch) {
 			validationResult = new SelectedTeamValidation();
 			validationResult.selectionFileMissing = false;
@@ -636,7 +645,7 @@ public class EmailSelectionsHandler {
 			Map<String, List<Integer>> insAndOuts = new HashMap<>();
 			insAndOuts.put("in", ins);
 			insAndOuts.put("out", outs);
-			
+
 			SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
 			validationHandler.configureLogging(mdcKey, loggerName, logfile);
 			validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false, id);
@@ -644,85 +653,103 @@ public class EmailSelectionsHandler {
 
 		return validationResult;
 	}
-	
+
 	private int getPlayerNo(String line) {
-		
+
 		int playerNo;
 		String playerNoStr;
-				
+
 		Pattern pattern = Pattern.compile("[\\s:\\-\\.]");
 		Matcher matcher = pattern.matcher(line);
-		
+
 		if(matcher.find()) {
 			int i = matcher.start();
 			playerNoStr = line.substring(0, i);
 		} else {
 			playerNoStr = line;
 		}
-		
+
 		try {
 			playerNo = Integer.parseInt(playerNoStr);
 		} catch (NumberFormatException e) {
 			loggerUtils.log("info", "Error parsing player number, number format exception ... oh well.  Error={}", e.getMessage());
 			playerNo = 0;
 		}
-		
+
 		return playerNo;
 	}
-	
+
 	/*
 	private double getPlayerNoForEmgs(String line) {
-		
+
 		double playerNo;
 		String playerNoStr;
-				
+
 		Pattern pattern = Pattern.compile("[\\s:\\-]");
 		Matcher matcher = pattern.matcher(line);
-		
+
 		if(matcher.find()) {
 			int i = matcher.start();
 			playerNoStr = line.substring(0, i);
 		} else {
 			playerNoStr = line;
 		}
-		
+
 		try {
 			playerNo = Double.parseDouble(playerNoStr);
 		} catch (NumberFormatException e) {
 			loggerUtils.log("info", "Error parsing player number, number format exception ... oh well.  Error={}", e.getMessage());
 			playerNo = 0;
 		}
-		
+
 		return playerNo;
 	}
 	*/
-	
+
 	private void sendResponses() throws Exception {
-		
-		
+
+
 		//for (Map.Entry<String, Boolean> response : this.responses.entrySet()) {
 		for(SelectedTeamValidation validationResult : validationResults) {
 
 			String to = "";
-			
+
 			if(!System.getenv("ENV").equals("production")) {
 				to = this.emailOveride;
 			} else {
 				to = validationResult.getFrom();
 			}
-			
+
 			String teamCode = validationResult.getTeamCode();
-			
-			Session session = null;
+
+			Properties properties = new Properties();
+			// Setup mail server
+			properties.setProperty("mail.smtp.host", outgoingMailHost);
+			properties.setProperty("mail.smtp.port", String.valueOf(outgoingMailPort));
+			properties.setProperty("mail.smtp.starttls.enable", "true");
+			//properties.setProperty("mail.smtp.ssl.enable", "true");
+			properties.setProperty("mail.smtp.auth", "true");
+
+			//properties.setProperty("mail.smtp.socketFactory.port", String.valueOf(outgoingMailPort));
+			//properties.put("mail.smtp.socketFactory.fallback", "false");
+			//properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+
+			Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
+				protected PasswordAuthentication getPasswordAuthentication() {
+					return new PasswordAuthentication(mailUsername, mailPassword);
+				}
+			});
+
+			//Session session = null;
 			MimeMessage message = new MimeMessage(session);
 			message.setFrom(new InternetAddress(this.dflmngrEmailAddr));
 			message.addRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
-			
+
 			loggerUtils.log("info", "Creating response message: to={}; from={};", to, this.dflmngrEmailAddr);
-			
-			
+
+
 			//boolean isSuccess = response.getValue();
-			
+
 			//if(isSuccess) {
 			if(validationResult.isValid()) {
 				if(teamCode != null && !teamCode.equals("")) {
@@ -741,150 +768,152 @@ public class EmailSelectionsHandler {
 				loggerUtils.log("info", "Message is for FAILURE");
 				setFailureMessage(message, validationResult);
 			}
-						
+
 			loggerUtils.log("info", "Sending message");
 			//Transport.send(message);
-			
-			String oauthToken = AccessTokenFromRefreshToken.getAccessToken();
-			Transport smptTransport = OAuth2Authenticator.connectToSmtp(outgoingMailHost, outgoingMailPort, mailUsername, oauthToken, false);
-			smptTransport.sendMessage(message, message.getAllRecipients());
+
+			//String oauthToken = AccessTokenFromRefreshToken.getAccessToken();
+			//Transport smptTransport = OAuth2Authenticator.connectToSmtp(outgoingMailHost, outgoingMailPort, mailUsername, oauthToken, false);
+			//smptTransport.sendMessage(message, message.getAllRecipients());
+
+			Transport.send(message, message.getAllRecipients());
 		}
 	}
-	
+
 	private void setSuccessMessage(Message message, SelectedTeamValidation validationResult) throws Exception {
 		message.setSubject("Selections received - SUCCESS!");
-		
+
 		String messageBody = "Coach, \n\n" +
 							 "Your selections have been stored in the database ....\n";
-		
+
 		if(validationResult.areWarnings()) {
 			messageBody = messageBody + "\n";
-			
+
 			if(validationResult.selectedWarning) {
 				messageBody = messageBody + "\tWarning: You have seleted a player who is already selected.  You may be playing short! Players:\n";
 				for(DflPlayer player : validationResult.selectedWarnPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.droppedWarning) {
 				messageBody = messageBody + "\tWarning: You have dropped a player who is not selected.  Your team may not be as you expect or invalid! Players:\n";
 				for(DflPlayer player : validationResult.droppedWarnPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
-			
+
 			if(validationResult.emergencyFfWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Full Forward as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgFfPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyFwdWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Forward as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgFwdPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyRckWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Ruck as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgRckPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyMidWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Midfielder as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgMidPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyDefWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Defender as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgDefPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.emergencyFbWarning) {
 				messageBody = messageBody + "\tWarning: You have selcted a Full Back as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
 				for(DflPlayer player : validationResult.emgFbPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.duplicateIns) {
 				messageBody = messageBody + "\tWarning: You have selected duplicate ins, one will be ignored.  Ins:\n";
 				for(DflPlayer player : validationResult.dupInPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.duplicateOuts) {
 				messageBody = messageBody + "\tWarning: You have selected duplicate outs, one will be ignored.  Ins:\n";
 				for(DflPlayer player : validationResult.dupInPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
 			}
 			if(validationResult.duplicateEmgs) {
 				messageBody = messageBody + "\tWarning: You have selected duplicate emergencies, one will be ignored.  Ins:\n";
 				for(DflPlayer player : validationResult.dupInPlayers) {
-					
+
 					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-					
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + 
+
+					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " +
 								  player.getPosition() + " " + player.getPosition() + "\n";
 				}
-			}	
+			}
 		}
-				
+
 		messageBody = messageBody + "\n\nHave a nice day. \n\n"  +
 									"DFL Manager Admin";
-		
+
 		message.setContent(messageBody, "text/plain");
 	}
-	
+
 	private void setFailureMessage(Message message, SelectedTeamValidation validationResult) throws Exception {
 		message.setSubject("Selections received - FAILED!");
-		
+
 		String messageBody = "Coach,\n\n" +
 							 "Your selections have not been stored in the database .... The reasons for this are:\n";
-		
+
 		if(validationResult.playedSelections) {
 			messageBody = messageBody + "\t- You have selected/dropped a player who has already played and was not included in your previous selections.\n";
 		} else if(validationResult.selectionFileMissing) {
@@ -923,15 +952,15 @@ public class EmailSelectionsHandler {
 				messageBody = messageBody + "\t- You have too many on the bench.\n";
 			}
 		}
-		
+
 		messageBody = messageBody + "\nPlease check your selections.txt file and try again.  " +
 				 "If it fails again, send an email to the google group and maybe if you are lucky someone will sort it out.\n\n" +
 				 "DFL Manager Admin";
-						
+
 		message.setContent(messageBody, "text/plain");
 	}
-	
-	
+
+
 	// internal testing
 	public static void main(String[] args) {
 		try {
