@@ -35,20 +35,21 @@ import javax.mail.URLName;
  * OAuth2 SASL provider.
  */
 public class OAuth2Authenticator {
-	//private static final Logger logger = Logger.getLogger(OAuth2Authenticator.class.getName());
+	// private static final Logger logger =
+	// Logger.getLogger(OAuth2Authenticator.class.getName());
 
 	public static final class OAuth2Provider extends Provider {
 		private static final long serialVersionUID = 1L;
 
 		public OAuth2Provider() {
-			super("Google OAuth2 Provider", 1.0, "Provides the XOAUTH2 SASL Mechanism");
+			super("Google OAuth2 Provider", "1.0", "Provides the XOAUTH2 SASL Mechanism");
 			put("SaslClientFactory.XOAUTH2", "net.dflmngr.utils.oauth2.OAuth2SaslClientFactory");
 		}
 	}
 
 	/**
-	 * Installs the OAuth2 SASL provider. This must be called exactly once
-	 * before calling other methods on this class.
+	 * Installs the OAuth2 SASL provider. This must be called exactly once before
+	 * calling other methods on this class.
 	 */
 	public static void initialize() {
 		Security.addProvider(new OAuth2Provider());
@@ -58,18 +59,13 @@ public class OAuth2Authenticator {
 	 * Connects and authenticates to an IMAP server with OAuth2. You must have
 	 * called {@code initialize}.
 	 *
-	 * @param host
-	 *            Hostname of the imap server, for example {@code
+	 * @param host       Hostname of the imap server, for example {@code
 	 *     imap.googlemail.com}.
-	 * @param port
-	 *            Port of the imap server, for example 993.
-	 * @param userEmail
-	 *            Email address of the user to authenticate, for example
-	 *            {@code oauth@gmail.com}.
-	 * @param oauthToken
-	 *            The user's OAuth token.
-	 * @param debug
-	 *            Whether to enable debug logging on the IMAP connection.
+	 * @param port       Port of the imap server, for example 993.
+	 * @param userEmail  Email address of the user to authenticate, for example
+	 *                   {@code oauth@gmail.com}.
+	 * @param oauthToken The user's OAuth token.
+	 * @param debug      Whether to enable debug logging on the IMAP connection.
 	 *
 	 * @return An authenticated IMAPStore that can be used for IMAP operations.
 	 */
@@ -93,21 +89,15 @@ public class OAuth2Authenticator {
 	 * Connects and authenticates to an SMTP server with OAuth2. You must have
 	 * called {@code initialize}.
 	 *
-	 * @param host
-	 *            Hostname of the smtp server, for example {@code
+	 * @param host       Hostname of the smtp server, for example {@code
 	 *     smtp.googlemail.com}.
-	 * @param port
-	 *            Port of the smtp server, for example 587.
-	 * @param userEmail
-	 *            Email address of the user to authenticate, for example
-	 *            {@code oauth@gmail.com}.
-	 * @param oauthToken
-	 *            The user's OAuth token.
-	 * @param debug
-	 *            Whether to enable debug logging on the connection.
+	 * @param port       Port of the smtp server, for example 587.
+	 * @param userEmail  Email address of the user to authenticate, for example
+	 *                   {@code oauth@gmail.com}.
+	 * @param oauthToken The user's OAuth token.
+	 * @param debug      Whether to enable debug logging on the connection.
 	 *
-	 * @return An authenticated SMTPTransport that can be used for SMTP
-	 *         operations.
+	 * @return An authenticated SMTPTransport that can be used for SMTP operations.
 	 */
 	public static SMTPTransport connectToSmtp(String host, int port, String userEmail, String oauthToken, boolean debug)
 			throws Exception {
@@ -142,10 +132,12 @@ public class OAuth2Authenticator {
 
 		initialize();
 
-		//IMAPStore imapStore = connectToImap("imap.gmail.com", 993, email, oauthToken, true);
+		// IMAPStore imapStore = connectToImap("imap.gmail.com", 993, email, oauthToken,
+		// true);
 		connectToImap("imap.gmail.com", 993, email, oauthToken, true);
 		System.out.println("Successfully authenticated to IMAP.\n");
-		//SMTPTransport smtpTransport = connectToSmtp("smtp.gmail.com", 587, email, oauthToken, true);
+		// SMTPTransport smtpTransport = connectToSmtp("smtp.gmail.com", 587, email,
+		// oauthToken, true);
 		connectToSmtp("smtp.gmail.com", 587, email, oauthToken, true);
 		System.out.println("Successfully authenticated to SMTP.");
 	}
