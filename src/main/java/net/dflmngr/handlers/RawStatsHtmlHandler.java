@@ -46,21 +46,25 @@ public class RawStatsHtmlHandler {
         isExecutable = true;
     }
 
-    public List<RawPlayerStats> execute(int round, String homeTeam, String awayTeam, String statsUrl, boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) throws Exception {
+    public List<RawPlayerStats> execute(int round, String homeTeam, String awayTeam, String statsUrl,
+            boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) throws Exception {
 
         if (!isExecutable) {
             configureLogging(defaultLogfile);
             loggerUtils.log("info", "Default logging configured");
         }
 
-        loggerUtils.log("info", "Loading Stats HTML: round={}, homeTeam={} awayTeam={} url={}", round, homeTeam, awayTeam, statsUrl);
-        List<RawPlayerStats> stats = downloadStats(round, homeTeam, awayTeam, statsUrl, includeHomeTeam, includeAwayTeam, scrapingStatus);
+        loggerUtils.log("info", "Loading Stats HTML: round={}, homeTeam={} awayTeam={} url={}", round, homeTeam,
+                awayTeam, statsUrl);
+        List<RawPlayerStats> stats = downloadStats(round, homeTeam, awayTeam, statsUrl, includeHomeTeam,
+                includeAwayTeam, scrapingStatus);
         loggerUtils.log("info", "Finished Loading Stats HTML");
 
         return stats;
     }
 
-    private List<RawPlayerStats> downloadStats(int round, String homeTeam, String awayTeam, String statsUrl, boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) throws Exception {
+    private List<RawPlayerStats> downloadStats(int round, String homeTeam, String awayTeam, String statsUrl,
+            boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) throws Exception {
 
         List<RawPlayerStats> playerStats = new ArrayList<>();
 
@@ -69,12 +73,9 @@ public class RawStatsHtmlHandler {
 
         // WebDriver driver = new PhantomJSDriver();
 
-        BrowserVersion browserVersion =
-                 new BrowserVersion.BrowserVersionBuilder(BrowserVersion.CHROME)
-                     .setApplicationName("DFLManager")
-                     .setApplicationVersion("1.0")
-                     .setUserAgent("DFLManager/1.0 Stat Retriever")
-                     .build();
+        BrowserVersion browserVersion = new BrowserVersion.BrowserVersionBuilder(BrowserVersion.CHROME)
+                .setApplicationName("DFLManager").setApplicationVersion("1.0")
+                .setUserAgent("DFLManager/1.0 Stat Retriever").build();
 
         WebDriver driver = new HtmlUnitDriver(BrowserVersion.CHROME) {
             @Override
@@ -89,7 +90,7 @@ public class RawStatsHtmlHandler {
 
         boolean useProxy = Boolean.parseBoolean(System.getenv("USE_PROXY"));
 
-        if(useProxy) {
+        if (useProxy) {
             loggerUtils.log("info", "Using HTTP Proxy");
             driver = new HtmlUnitDriver(browserVersion) {
                 @Override
@@ -108,7 +109,8 @@ public class RawStatsHtmlHandler {
                     int fixiePort = Integer.parseInt(fixieValues[4]);
 
                     webClient.getOptions().setProxyConfig(new ProxyConfig(fixieHost, fixiePort));
-                    webClient.getCredentialsProvider().setCredentials(new AuthScope(fixieHost, fixiePort), new UsernamePasswordCredentials(fixieUser, fixiePassword));
+                    webClient.getCredentialsProvider().setCredentials(new AuthScope(fixieHost, fixiePort),
+                            new UsernamePasswordCredentials(fixieUser, fixiePassword));
                     return webClient;
                 }
             };
@@ -151,7 +153,8 @@ public class RawStatsHtmlHandler {
         return playerStats;
     }
 
-    private List<RawPlayerStats> getStats(int round, String aflTeam, String homeORaway, WebDriver driver, boolean isLive, String scrapingStatus) throws Exception {
+    private List<RawPlayerStats> getStats(int round, String aflTeam, String homeORaway, WebDriver driver,
+            boolean isLive, String scrapingStatus) throws Exception {
 
         /*
          * if(isLive) {
@@ -164,14 +167,16 @@ public class RawStatsHtmlHandler {
         List<WebElement> statsRecs;
         List<RawPlayerStats> teamStats = new ArrayList<>();
 
-        //System.out.println(driver.getPageSource());
+        // System.out.println(driver.getPageSource());
 
         if (homeORaway.equals("h")) {
-            statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(0).findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
+            statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(0)
+                    .findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
             loggerUtils.log("info", "Found home team stats for: round={}; aflTeam={}; ", round, aflTeam);
         } else {
-            //driver.findElement(By.className("fiso-mcfootball-match-player-stats-button-row")).findElements(By.tagName("button")).get(1).click();
-            statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(1).findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
+            // driver.findElement(By.className("fiso-mcfootball-match-player-stats-button-row")).findElements(By.tagName("button")).get(1).click();
+            statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(1)
+                    .findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
             loggerUtils.log("info", "Found away team stats for: round={}; aflTeam={}; ", round, aflTeam);
         }
 
@@ -203,9 +208,9 @@ public class RawStatsHtmlHandler {
 
             teamStats.add(playerStats);
 
-            if (teamStats.size() == 22) {
-                break;
-            }
+            // if (teamStats.size() == 22) {
+            // break;
+            // }
         }
 
         return teamStats;
@@ -230,6 +235,6 @@ public class RawStatsHtmlHandler {
             e.printStackTrace();
         }
 
-		System.exit(0);
-	}
+        System.exit(0);
+    }
 }
