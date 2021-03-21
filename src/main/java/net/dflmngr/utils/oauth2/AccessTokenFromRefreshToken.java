@@ -26,7 +26,7 @@ public class AccessTokenFromRefreshToken {
 
 		try {
 
-			URL url = new URL("https://accounts.google.com/o/oauth2/token");
+			URL url = new URL("https://oauth2.googleapis.com/token");
 
 			Map<String, Object> params = new LinkedHashMap<>();
 			params.put("client_id", System.getenv("GOOGLE_CLIENT_ID"));
@@ -51,7 +51,7 @@ public class AccessTokenFromRefreshToken {
 			conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
 			conn.setRequestProperty("Content-language", "en-US");
 			conn.setDoOutput(true);
-			
+
 			DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
 			wr.write(postDataBytes);
 			wr.close();
