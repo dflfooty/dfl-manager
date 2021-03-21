@@ -44,7 +44,7 @@
             "request": "launch",
             "mainClass": "net.dflmngr.handlers.AflPlayerLoaderHtmlHandler",
             "projectName": "dflmngr",
-            "args": "RICH https://www.fanfooty.com.au/aflteams/richmondtigers/"
+            "args": "ADEL https://www.fanfooty.com.au/aflteams/adelaidecrows/"
         },
         {
             "type": "java",
