@@ -21,7 +21,6 @@ import javax.mail.internet.MimeMultipart;
 
 import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
-import net.dflmngr.utils.oauth2.AccessTokenFromRefreshToken;
 import net.dflmngr.utils.oauth2.OAuth2Authenticator;
 
 public class EmailUtils {

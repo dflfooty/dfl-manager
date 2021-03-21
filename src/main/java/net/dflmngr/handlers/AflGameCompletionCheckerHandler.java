@@ -57,8 +57,8 @@ public class AflGameCompletionCheckerHandler {
 	}
 
 	public void execute() {
-		try{
-			if(!isExecutable) {
+		try {
+			if (!isExecutable) {
 				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
@@ -67,7 +67,7 @@ public class AflGameCompletionCheckerHandler {
 
 			List<AflFixture> incompleteFixtures = aflFixtureService.getIncompleteFixtures();
 
-			if(incompleteFixtures != null && !incompleteFixtures.isEmpty()) {
+			if (incompleteFixtures != null && !incompleteFixtures.isEmpty()) {
 				ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
 
 				loggerUtils.log("info", "Incomplete AFL fixtures, fixtures={}", incompleteFixtures);
@@ -77,20 +77,21 @@ public class AflGameCompletionCheckerHandler {
 				String year = globalsService.getCurrentYear();
 				String statsUrl = globalsService.getAflStatsUrl();
 
-				for(AflFixture fixture : incompleteFixtures) {
-					//String homeTeam = fixture.getHomeTeam();
-					//String awayTeam = fixture.getAwayTeam();
-					//String aflRound = Integer.toString(fixture.getRound());
+				for (AflFixture fixture : incompleteFixtures) {
+					// String homeTeam = fixture.getHomeTeam();
+					// String awayTeam = fixture.getAwayTeam();
+					// String aflRound = Integer.toString(fixture.getRound());
 
 					String roundStr = String.format("%02d", fixture.getRound());
 					String gameStr = String.format("%02d", fixture.getGame());
 
-					//String fullStatsUrl = statsUrl + "/" + year + "/" + aflRound + "/" + homeTeam.toLowerCase() + "-v-" + awayTeam.toLowerCase();
+					// String fullStatsUrl = statsUrl + "/" + year + "/" + aflRound + "/" +
+					// homeTeam.toLowerCase() + "-v-" + awayTeam.toLowerCase();
 					String fullStatsUrl = statsUrl + "/AFL" + year + roundStr + gameStr;
 
 					loggerUtils.log("info", "Checking for complete fixute at URL={}", fullStatsUrl);
 
-					if(checkGame(fullStatsUrl)) {
+					if (checkGame(fullStatsUrl)) {
 						fixture.setEndTime(now);
 						completeFixtures.add(fixture);
 						loggerUtils.log("info", "Fixture complete, fixture={}", fixture);
@@ -99,7 +100,7 @@ public class AflGameCompletionCheckerHandler {
 					}
 				}
 
-				if(!completeFixtures.isEmpty()) {
+				if (!completeFixtures.isEmpty()) {
 					aflFixtureService.updateAll(completeFixtures, false);
 				}
 			} else {
@@ -123,75 +124,79 @@ public class AflGameCompletionCheckerHandler {
 		int webdriverTimeout = globalsService.getWebdriverTimeout();
 		int webdriverWait = globalsService.getWebdriverWait();
 
-		BrowserVersion browserVersion =
-                 new BrowserVersion.BrowserVersionBuilder(BrowserVersion.CHROME)
-                     .setApplicationName("DFLManager")
-                     .setApplicationVersion("1.0")
-                     .setUserAgent("DFLManager/1.0 Game Completion Checker")
-                     .build();
+		BrowserVersion browserVersion = new BrowserVersion.BrowserVersionBuilder(BrowserVersion.CHROME)
+				.setApplicationName("DFLManager").setApplicationVersion("1.0")
+				.setUserAgent("DFLManager/1.0 Game Completion Checker").build();
 
 		WebDriver driver = new HtmlUnitDriver(browserVersion) {
-	        @Override
-	        protected WebClient newWebClient(BrowserVersion version) {
-	            WebClient webClient = super.newWebClient(version);
-	            webClient.getOptions().setThrowExceptionOnScriptError(false);
-	            webClient.getOptions().setCssEnabled(false);
-	            webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-	            return webClient;
-	        }
+			@Override
+			protected WebClient newWebClient(BrowserVersion version) {
+				WebClient webClient = super.newWebClient(version);
+				webClient.getOptions().setThrowExceptionOnScriptError(false);
+				webClient.getOptions().setCssEnabled(false);
+				webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+				return webClient;
+			}
 		};
 
-        boolean useProxy = Boolean.parseBoolean(System.getenv("USE_PROXY"));
+		boolean useProxy = Boolean.parseBoolean(System.getenv("USE_PROXY"));
 
-        if(useProxy) {
-            loggerUtils.log("info", "Using HTTP Proxy");
-            driver = new HtmlUnitDriver(browserVersion) {
-                @Override
-                protected WebClient newWebClient(BrowserVersion version) {
-                    WebClient webClient = super.newWebClient(version);
-                    webClient.getOptions().setThrowExceptionOnScriptError(false);
-                    webClient.getOptions().setCssEnabled(false);
-                    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+		if (useProxy) {
+			loggerUtils.log("info", "Using HTTP Proxy");
+			driver = new HtmlUnitDriver(browserVersion) {
+				@Override
+				protected WebClient newWebClient(BrowserVersion version) {
+					WebClient webClient = super.newWebClient(version);
+					webClient.getOptions().setThrowExceptionOnScriptError(false);
+					webClient.getOptions().setCssEnabled(false);
+					webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 
-                    String fixieUrl = System.getenv("FIXIE_URL");
+					String fixieUrl = System.getenv("FIXIE_URL");
 
-                    String[] fixieValues = fixieUrl.split("[/(:\\/@)/]+");
-                    String fixieUser = fixieValues[1];
-                    String fixiePassword = fixieValues[2];
-                    String fixieHost = fixieValues[3];
-                    int fixiePort = Integer.parseInt(fixieValues[4]);
+					String[] fixieValues = fixieUrl.split("[/(:\\/@)/]+");
+					String fixieUser = fixieValues[1];
+					String fixiePassword = fixieValues[2];
+					String fixieHost = fixieValues[3];
+					int fixiePort = Integer.parseInt(fixieValues[4]);
 
-                    webClient.getOptions().setProxyConfig(new ProxyConfig(fixieHost, fixiePort));
-                    webClient.getCredentialsProvider().setCredentials(new AuthScope(fixieHost, fixiePort), new UsernamePasswordCredentials(fixieUser, fixiePassword));
-                    return webClient;
-                }
-            };
-        }
+					webClient.getOptions().setProxyConfig(new ProxyConfig(fixieHost, fixiePort));
+					webClient.getCredentialsProvider().setCredentials(new AuthScope(fixieHost, fixiePort),
+							new UsernamePasswordCredentials(fixieUser, fixiePassword));
+					return webClient;
+				}
+			};
+		}
 
 		driver.manage().timeouts().implicitlyWait(webdriverWait, TimeUnit.SECONDS);
 		driver.manage().timeouts().pageLoadTimeout(webdriverTimeout, TimeUnit.SECONDS);
 
-		try {
-			driver.get(statsUrl);
+		for (int i = 1; i <= 5; i++) {
+			try {
+				loggerUtils.log("info", "AflGameCompletionChecker attempt: {}", i);
+				driver.get(statsUrl);
 
-			//String pageSrc = driver.getPageSource();
+				// String pageSrc = driver.getPageSource();
 
-			//if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
+				// if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
 
-			if(driver.findElements(By.className("styles__Scoreboard-sc-14r16wm-0")).size() != 0) {
-				WebElement scorecard = driver.findElement(By.className("styles__Scoreboard-sc-14r16wm-0"));
-				if(scorecard.findElement(By.className("styles__State-lxmyn6-2")).getText().equals("Full Time")) {
-					gameCompleted = true;
+				if (driver.findElements(By.className("styles__Scoreboard-sc-14r16wm-0")).size() != 0) {
+					WebElement scorecard = driver.findElement(By.className("styles__Scoreboard-sc-14r16wm-0"));
+					if (scorecard.findElement(By.className("styles__State-lxmyn6-2")).getText().equals("Full Time")) {
+						gameCompleted = true;
+					} else {
+						gameCompleted = false;
+					}
+					loggerUtils.log("info", "Page loaded - Game completed: {}", gameCompleted);
+					break;
 				} else {
 					gameCompleted = false;
+					loggerUtils.log("info", "Page failed to load");
 				}
-			} else {
-				gameCompleted = false;
+			} catch (Exception ex) {
+				throw new Exception("Error Loading page, URL:" + statsUrl, ex);
+			} finally {
+				driver.quit();
 			}
-		} catch (Exception ex) {
-			throw new Exception("Error Loading page, URL:" + statsUrl, ex);
-		} finally {
-			driver.quit();
 		}
 
 		return gameCompleted;

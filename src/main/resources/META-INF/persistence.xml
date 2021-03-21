@@ -45,10 +45,10 @@
 		<shared-cache-mode>NONE</shared-cache-mode>
 
 		<properties>
-			<!--property name="eclipselink.cache.shared.default" value="false"/>
+			<!--property name="eclipselink.cache.shared.default" value="false"/>-->
 			<property name="eclipselink.logging.level.sql" value="FINE"/>
  			<property name="eclipselink.logging.parameters" value="true"/>
- 			<property name="hibernate.archive.autodetection" value="class"/>
+ 			<!--<property name="hibernate.archive.autodetection" value="class"/>
             <property name="hibernate.show_sql" value="false"/>
             <property name="hibernate.format_sql" value="false"/-->
 
