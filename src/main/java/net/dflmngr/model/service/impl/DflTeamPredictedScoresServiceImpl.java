@@ -35,6 +35,15 @@ public class DflTeamPredictedScoresServiceImpl extends
 		return teamPredictedScore;
 	}
 
+	public DflTeamPredictedScores getTeamPredictedScoreForRoundNoDefault(String teamCode, int round) {
+		DflTeamPredictedScoresPK pk = new DflTeamPredictedScoresPK();
+		pk.setRound(round);
+		pk.setTeamCode(teamCode);
+		DflTeamPredictedScores teamPredictedScore = get(pk);
+
+		return teamPredictedScore;
+	}
+
 	public List<DflTeamPredictedScores> getForRound(int round) {
 		List<DflTeamPredictedScores> teamPredictedScores = dao.findForRound(round);
 		return teamPredictedScores;
@@ -58,7 +67,7 @@ public class DflTeamPredictedScoresServiceImpl extends
 
 	public void replaceTeamForRound(int round, String teamCode, DflTeamPredictedScores predictedScore) {
 		dao.beginTransaction();
-		DflTeamPredictedScores preidction = getTeamPredictedScoreForRound(teamCode, round);
+		DflTeamPredictedScores preidction = getTeamPredictedScoreForRoundNoDefault(teamCode, round);
 		if (preidction != null) {
 			delete(preidction);
 		}

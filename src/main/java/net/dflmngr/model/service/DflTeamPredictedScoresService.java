@@ -6,11 +6,19 @@ import java.util.Map;
 import net.dflmngr.model.entity.DflTeamPredictedScores;
 import net.dflmngr.model.entity.keys.DflTeamPredictedScoresPK;
 
-public interface DflTeamPredictedScoresService extends GenericService<DflTeamPredictedScores, DflTeamPredictedScoresPK> {
+public interface DflTeamPredictedScoresService
+		extends GenericService<DflTeamPredictedScores, DflTeamPredictedScoresPK> {
 	public DflTeamPredictedScores getTeamPredictedScoreForRound(String teamCode, int round);
+
+	public DflTeamPredictedScores getTeamPredictedScoreForRoundNoDefault(String teamCode, int round);
+
 	public List<DflTeamPredictedScores> getForRound(int round);
+
 	public Map<String, DflTeamPredictedScores> getForRoundWithKey(int round);
+
 	List<DflTeamPredictedScores> getAllForRound(int round);
-	public void replaceTeamForRound(int round, String teamCode,  DflTeamPredictedScores predictedScore);
+
+	public void replaceTeamForRound(int round, String teamCode, DflTeamPredictedScores predictedScore);
+
 	public void replaceAllForRound(int round, List<DflTeamPredictedScores> predictedScores);
 }
