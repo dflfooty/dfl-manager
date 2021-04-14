@@ -250,12 +250,13 @@ public class EndRoundHandler {
 						team.getTeamCode());
 				List<DflSelectedPlayer> previousSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round - 1,
 						team.getTeamCode());
-				List<DflSelectedPlayer> updatedSelectedTeam = new ArrayList<>();
 
 				if (currentSelectedTeam == null || currentSelectedTeam.isEmpty()) {
 
 					loggerUtils.log("info", "No currently selected team.  Defaulting team. teamCode={}; round={};",
 							team.getTeamCode(), round);
+
+					List<DflSelectedPlayer> updatedSelectedTeam = new ArrayList<>();
 
 					/*
 					 * for(DflSelectedPlayer selectedPlayer : previousSelectedTeam) {
@@ -396,9 +397,9 @@ public class EndRoundHandler {
 							updatedSelectedTeam.add(selectedPlayer);
 						}
 					}
-				}
 
-				dflSelectedTeamService.replaceTeamForRound(round, team.getTeamCode(), updatedSelectedTeam);
+					dflSelectedTeamService.replaceTeamForRound(round, team.getTeamCode(), updatedSelectedTeam);
+				}
 			}
 		}
 
