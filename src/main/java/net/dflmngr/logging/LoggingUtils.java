@@ -8,24 +8,11 @@ public class LoggingUtils {
 	
 	private Logger logger;
 	
-	//private String loggerName;
 	private String loggerKey;
 	private String logFileBase;
 
 	private String process;
 	private boolean stdoutLogging;
-
-	/*
-	public LoggingUtils(String loggerName, String loggerKey, String logFileBase) {
-		this.loggerName = loggerName;
-		this.loggerKey = loggerKey;
-		this.logFileBase = logFileBase;
-
-		this.stdoutLogging = false;
-		
-		logger = LoggerFactory.getLogger(this.loggerName);
-	}
-	*/
 
 	public LoggingUtils(String process) {
 		this.process = process;
@@ -35,7 +22,6 @@ public class LoggingUtils {
 	
 	public void log(String level, String msg, Object...arguments) {
 
-		//String callingClass = Thread.currentThread().getStackTrace()[2].getClassName();
 		String callingClass = Thread.currentThread().getStackTrace()[2].getClassName();
 		String callingClassShort = callingClass.substring(callingClass.lastIndexOf(".")+1, callingClass.length());
 		String callingMethod = Thread.currentThread().getStackTrace()[2].getMethodName();
@@ -53,6 +39,7 @@ public class LoggingUtils {
 			switch (level) {
 				case "info" : logger.info(loggerMsg, arguments); break;
 				case "error" : logger.error(loggerMsg, arguments); break;
+				default : logger.debug(loggerMsg, arguments); break;
 			}
 		} catch (Exception ex) {
 			logger.error("Error in ... ", ex);

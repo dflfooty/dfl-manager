@@ -13,7 +13,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflAdamGoodes;
 import net.dflmngr.model.entity.DflPlayer;
@@ -58,7 +57,6 @@ public class AdamGoodesHandler {
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -166,8 +164,6 @@ public class AdamGoodesHandler {
 			CommandLine cli = parser.parse(options, args);
 			
 			round = ((Number)cli.getParsedOptionValue("r")).intValue();
-							
-			//JndiProvider.bind();
 				
 			AdamGoodesHandler adamGoodesHandler = new AdamGoodesHandler();
 			adamGoodesHandler.configureLogging("batch.name", "batch-logger", ("AdamGoodesHandler_R" + round));

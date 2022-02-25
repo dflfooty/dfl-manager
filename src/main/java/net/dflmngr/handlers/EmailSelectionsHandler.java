@@ -3,6 +3,7 @@ package net.dflmngr.handlers;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -30,7 +31,7 @@ import javax.mail.internet.MimeMessage;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.safety.Whitelist;
+import org.jsoup.safety.Safelist;
 
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflPlayer;
@@ -43,7 +44,6 @@ import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.utils.DflmngrUtils;
-//import net.dflmngr.utils.oauth2.AccessTokenFromRefreshToken;
 import net.dflmngr.utils.oauth2.OAuth2Authenticator;
 import net.dflmngr.validation.SelectedTeamValidation;
 import net.freeutils.tnef.Attachment;
@@ -76,11 +76,7 @@ public class EmailSelectionsHandler {
 	DflTeamService dflTeamService;
 	DflTeamPlayerService dflTeamPlayerService;
 
-	// Session mailSession;
-
 	boolean selectionsFileAttached;
-
-	// Map <String, Boolean> responses;
 
 	List<SelectedTeamValidation> validationResults;
 	Map<String, String> selectionsIdsCurrent;
@@ -94,7 +90,6 @@ public class EmailSelectionsHandler {
 	}
 
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		// loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -109,7 +104,6 @@ public class EmailSelectionsHandler {
 				loggerUtils.log("info", "Default logging configured");
 			}
 
-			// this.responses = new HashMap<>();
 			validationResults = new ArrayList<>();
 			selectionsIdsCurrent = new HashMap<>();
 
@@ -138,8 +132,6 @@ public class EmailSelectionsHandler {
 					dflmngrEmailAddr, incomingMailHost, incomingMailPort, outgoingMailHost, outgoingMailPort,
 					mailUsername, mailPassword);
 
-			// configureMail();
-
 			OAuth2Authenticator.initialize();
 
 			processSelections();
@@ -159,10 +151,6 @@ public class EmailSelectionsHandler {
 	}
 
 	private void processSelections() throws Exception {
-
-		// String oauthToken = AccessTokenFromRefreshToken.getAccessToken();
-		// Store store = OAuth2Authenticator.connectToImap(incomingMailHost,
-		// incomingMailPort, mailUsername, oauthToken, false);
 
 		Properties properties = new Properties();
 		properties.setProperty("mail.imap.ssl.enable", "true");
@@ -242,7 +230,6 @@ public class EmailSelectionsHandler {
 				loggerUtils.log("error", "Error in ... ", ex);
 				try {
 					String from = InternetAddress.toString(messages[i].getFrom());
-					// this.responses.put(from, false);
 					validationResult = new SelectedTeamValidation();
 					validationResult.unknownError = true;
 					validationResult.selectionFileMissing = false;
@@ -311,7 +298,7 @@ public class EmailSelectionsHandler {
 				document.select("br").append("\\n");
 				document.select("p").prepend("\\n\\n");
 				String s = document.body().html().replaceAll("\\\\n", "\n");
-				String text = Jsoup.clean(s, "", Whitelist.none(), new Document.OutputSettings().prettyPrint(false))
+				String text = Jsoup.clean(s, "", Safelist.none(), new Document.OutputSettings().prettyPrint(false))
 						.trim();
 
 				if (text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
@@ -412,7 +399,7 @@ public class EmailSelectionsHandler {
 		List<Integer> ins = new ArrayList<>();
 		List<Integer> outs = new ArrayList<>();
 		List<Double> emgs = new ArrayList<>();
-		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
 		loggerUtils.log("info", "Moving messages to Processed folder");
 
