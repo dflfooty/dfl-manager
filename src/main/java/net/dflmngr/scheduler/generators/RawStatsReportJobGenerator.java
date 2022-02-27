@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.entity.DflRoundInfo;
@@ -21,28 +20,24 @@ import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
 import net.dflmngr.scheduler.JobScheduler;
 import net.dflmngr.utils.CronExpressionCreator;
-//import net.dflmngr.webservice.CallDflmngrWebservices;
 
 public class RawStatsReportJobGenerator {
 	private LoggingUtils loggerUtils;
 	
 	private static String jobName = "RawStatsReport";
-	private static String jobGroup = "Reports";
+	private static String jobGroup = "StatsReports";
 	private static String jobClass = "net.dflmngr.scheduler.jobs.RawStatsReportJob";
 	
 	DflRoundInfoService dflRoundInfoService;
 	AflFixtureService aflFixtureService;
 	
-	private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-YYYY");
-	private static SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-YYYY");
+	private SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
 	
 	public RawStatsReportJobGenerator() {
-		//loggerUtils = new LoggingUtils("batch-logger", "batch.name", "RawStatsReportJobGenerator");
 		loggerUtils = new LoggingUtils("RawStatsReportJobGenerator");
 		
-		try {
-			//JndiProvider.bind();
-			
+		try {			
 			dflRoundInfoService = new DflRoundInfoServiceImpl();
 			aflFixtureService = new AflFixtureServiceImpl();
 		} catch (Exception ex) {
@@ -98,8 +93,6 @@ public class RawStatsReportJobGenerator {
 			
 			loggerUtils.log("info", "AFL Fixture={}", game);
 			
-			//startTimeCal = Calendar.getInstance();
-			//startTimeCal.setTime(game.getStart());
 			startTimeCal = GregorianCalendar.from(game.getStartTime());
 			currentGameDay = startTimeCal.get(Calendar.DAY_OF_WEEK);
 			
@@ -155,7 +148,6 @@ public class RawStatsReportJobGenerator {
 		jobParams.put("ROUND", round);
 		jobParams.put("IS_FINAL", isFinal);
 		
-		//CallDflmngrWebservices.scheduleJob(jobName, jobGroup, jobClass, jobParams, cronExpression.getCronExpression(), false, loggerUtils);
 		JobScheduler.schedule(jobName, jobGroup, jobClass, jobParams, cronExpression.getCronExpression(), false);
 	}
 	

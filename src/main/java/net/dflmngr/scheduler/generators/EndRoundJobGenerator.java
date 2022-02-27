@@ -1,7 +1,6 @@
 package net.dflmngr.scheduler.generators;
 
 import java.time.DayOfWeek;
-//import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
@@ -25,7 +24,7 @@ public class EndRoundJobGenerator {
 	GlobalsService globalsService;
 	
 	private static String jobName = "EndRoundJob";
-	private static String jobGroup = "Ongoing";
+	private static String jobGroup = "EndRound";
 	private static String jobClass = "net.dflmngr.scheduler.jobs.EndRoundJob";
 	
 	public EndRoundJobGenerator() {
@@ -42,6 +41,8 @@ public class EndRoundJobGenerator {
 	public void execute() {
 		try {
 			loggerUtils.log("infp", "Executing EndRoundJobGenerator ....");
+
+			JobScheduler.deleteGroup(jobGroup);
 			
 			List<DflRoundInfo> dflRounds = dflRoundInfoService.findAll();
 			
@@ -63,7 +64,6 @@ public class EndRoundJobGenerator {
 		
 		CronExpressionCreator cronExpression = new CronExpressionCreator();
 		
-		//ZonedDateTime runTime = time.withZoneSameInstant(ZoneId.of("UTC")).with(TemporalAdjusters.nextOrSame(DayOfWeek.WEDNESDAY));
 		ZonedDateTime runTime = time.with(TemporalAdjusters.nextOrSame(DayOfWeek.WEDNESDAY));
 		runTime = runTime.withHour(16).withMinute(0);
 		
@@ -73,7 +73,6 @@ public class EndRoundJobGenerator {
 		Map<String, Object> jobParams = new HashMap<>();
 		jobParams.put("ROUND", round);
 		
-		//CallDflmngrWebservices.scheduleJob(jobName, jobGroup, jobClass, jobParams, cronExpression.getCronExpression(), false, loggerUtils);
 		JobScheduler.schedule(jobName, jobGroup, jobClass, jobParams, cronExpression.getCronExpression(), false);
 	}
 	

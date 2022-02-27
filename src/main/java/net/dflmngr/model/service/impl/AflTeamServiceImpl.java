@@ -13,4 +13,9 @@ public class AflTeamServiceImpl extends GenericServiceImpl<AflTeam, String> impl
 		dao = new AflTeamDaoImpl();
 		super.setDao(dao);
 	}
+
+	public AflTeam getAflTeamByName(String name) {
+		AflTeam team = dao.findAflTeamByName(name);
+		return team;
+	}
 }

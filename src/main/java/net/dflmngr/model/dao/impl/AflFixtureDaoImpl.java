@@ -2,7 +2,8 @@ package net.dflmngr.model.dao.impl;
 
 import java.time.ZonedDateTime;
 import java.util.List;
-
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 
 import net.dflmngr.model.dao.AflFixtureDao;
@@ -72,6 +73,20 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
 		
 		return entitys;
+	}
+
+	public int findMaxAflRound() {
+		criteriaBuilder = entityManager.getCriteriaBuilder();
+		CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
+		entity = criteriaQuery.from(entityClass);
+
+		Expression<Integer> maxRound = criteriaBuilder.max(entity.get(AflFixture_.round));
+		Predicate startTimeNotNull = criteriaBuilder.isNotNull(entity.get(AflFixture_.startTime));
+
+		criteriaQuery.select(maxRound).where(startTimeNotNull);
+		Integer maxAflRound = entityManager.createQuery(criteriaQuery).getSingleResult();
+
+		return maxAflRound;
 	}
 	
 }

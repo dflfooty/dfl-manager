@@ -1,6 +1,5 @@
 package net.dflmngr.scheduler.generators;
 
-
 import java.time.DayOfWeek;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -31,7 +30,7 @@ public class ResultsJobGenerator {
 	private static String jobNameRoundProgress = "RoundProgress";
 	private static String jobNameResults = "Results";
 	private static String jobNameOngoingResults = "OngoingResults";
-	private static String jobGroup = "Ongoing";
+	private static String jobGroup = "Results";
 	private static String jobClass = "net.dflmngr.scheduler.jobs.ResultsJob";
 	
 	DflRoundInfoService dflRoundInfoService;
@@ -52,6 +51,8 @@ public class ResultsJobGenerator {
 		
 		try {
 			loggerUtils.log("info","Executing ResultsJobGenerator ....");
+
+			JobScheduler.deleteGroup(jobGroup);
 			
 			createOngoingSchedule();
 			
@@ -160,7 +161,6 @@ public class ResultsJobGenerator {
 	}
 	
 	private void createFinalRunSchedule(int dflRound, ZonedDateTime time) throws Exception {
-		//time = time.plusDays(1);
 		time = time.withHour(23);
 		time = time.withMinute(0);
 		scheduleJob(dflRound, false, true, time);	

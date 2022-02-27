@@ -52,12 +52,7 @@ public class DflFixtureGeneratorHandler {
 			
 			loggerUtils.log("info", "Generating DFL Fixture");
 			generateFixture();
-			
-			loggerUtils.log("info", "Calculating DFL round info");
-			DflRoundInfoCalculatorHandler dflRoundInfoCalculator = new DflRoundInfoCalculatorHandler();
-			dflRoundInfoCalculator.configureLogging(mdcKey, loggerName, logfile);
-			dflRoundInfoCalculator.execute();
-			
+						
 			loggerUtils.log("info", "DflFixtureGeneratorHandler completed");
 			
 		} catch (Exception ex) {

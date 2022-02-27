@@ -24,7 +24,7 @@ public class StartRoundJobGenerator {
 	GlobalsService globalsService;
 	
 	private static String jobName = "StartRoundJob";
-	private static String jobGroup = "Ongoing";
+	private static String jobGroup = "StartRound";
 	private static String jobClass = "net.dflmngr.scheduler.jobs.StartRoundJob";
 	
 	public StartRoundJobGenerator() {
@@ -42,6 +42,8 @@ public class StartRoundJobGenerator {
 	public void execute() {
 		try {
 			loggerUtils.log("infp", "Executing StartRoundJobGenerator ....");
+
+			JobScheduler.deleteGroup(jobGroup);
 			
 			List<DflRoundInfo> dflRounds = dflRoundInfoService.findAll();
 			

@@ -8,11 +8,10 @@ public class EmailSelectionsJobGenerator {
 	private LoggingUtils loggerUtils;
 	
 	private static String jobName = "EmailSelections";
-	private static String jobGroup = "Ongoing";
+	private static String jobGroup = "Selections";
 	private static String jobClass = "net.dflmngr.scheduler.jobs.EmailSelectionsJob";
 	
 	public EmailSelectionsJobGenerator() {
-		//loggerUtils = new LoggingUtils("batch-logger", "batch.name", "EmailSelectionsJobGenerator");
 		loggerUtils = new LoggingUtils("EmailSelectionsJobGenerator");
 		loggerUtils.log("info", "EmailSelectionsJobGenerator Starting ...");
 	}
@@ -22,7 +21,7 @@ public class EmailSelectionsJobGenerator {
 		loggerUtils.log("info", "EmailSelectionsJobGenerator Executing ...");
 		
 		try {
-			//CallDflmngrWebservices.scheduleJob(jobName, jobGroup, jobClass, null, "0 0/15 * 1/1 * ? *", false, loggerUtils);
+			JobScheduler.deleteGroup(jobGroup);
 			JobScheduler.schedule(jobName, jobGroup, jobClass, null, "0 0/15 * 1/1 * ? *", false);
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ...", ex);

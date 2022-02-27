@@ -1,6 +1,7 @@
 package net.dflmngr.model.service.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,11 +102,9 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 		aflFixtureUrl.add(valueAndParams.get("value"));
 
 		String params = valueAndParams.get("params");
-
 		String[] parts = params.split(";");
-		aflFixtureUrl.add(parts[0]);
-		aflFixtureUrl.add(parts[1]);
-		aflFixtureUrl.add(parts[2]);
+
+		aflFixtureUrl.addAll(Arrays.asList(parts));
 
 		return aflFixtureUrl;
 	}

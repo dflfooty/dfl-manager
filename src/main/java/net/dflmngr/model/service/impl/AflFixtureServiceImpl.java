@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 //import java.util.TimeZone;
-
+import java.util.stream.Collectors;
 import net.dflmngr.model.dao.AflFixtureDao;
 import net.dflmngr.model.dao.impl.AflFixtureDaoImpl;
 import net.dflmngr.model.entity.AflFixture;
@@ -59,21 +59,7 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		List<AflFixture> playedFixtures = new ArrayList<>();
 		List<AflFixture> aflFixtures = dao.findAflFixturesForRound(round);
 		
-		//Date now = new Date();
-		//Calendar nowCal = Calendar.getInstance();
-		//nowCal.setTime(now);
-		//ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
-		
 		for(AflFixture fixture : aflFixtures) {
-			
-			//Calendar startCal = Calendar.getInstance();
-			//startCal.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
-			//startCal.setTime(DflmngrUtils.dateDbFormat.parse(fixture.getStart()));
-			//startCal.add(Calendar.HOUR_OF_DAY, 3);
-			//ZonedDateTime gameEndTime = fixture.getStartTime().plusHours(3);
-						
-			//if(nowCal.after(startCal)) {
-			//if(now.isAfter(gameEndTime)) {
 			if(fixture.getEndTime() != null) {
 				playedFixtures.add(fixture);
 			}
@@ -92,25 +78,7 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		aflFixturePK.setGame(game);
 		
 		AflFixture fixture = get(aflFixturePK);
-		
-		//Date now = new Date();
-		//Calendar nowCal = Calendar.getInstance();
-		//nowCal.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
-		//nowCal.setTime(now);
-		//ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
-		
-		
-		//Calendar startCal = Calendar.getInstance();
-		//startCal.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
-		//startCal.setTime(DflmngrUtils.dateDbFormat.parse(fixture.getStart()));
-		//startCal.add(Calendar.HOUR_OF_DAY, 3);
-		//ZonedDateTime gameEndTime = fixture.getStartTime().plusHours(3);
-		
-		//if(nowCal.after(startCal)) {
-		//if(now.isAfter(gameEndTime)) {
-		//	playedFixture = fixture;
-		//}
-		
+
 		if(fixture.getEndTime() != null) {
 			playedFixture = fixture;
 		}
@@ -170,5 +138,31 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		}
 		
 		return complete;
+	}
+
+	public void updateLoadedFixtures(List<AflFixture> updatedFixtures) {
+		Map<String, AflFixture> updatedFixturesData = updatedFixtures.stream()
+		.collect(Collectors.toMap(item -> (item.getRound() + "-" + item.getGame()), item -> item));
+
+		List<AflFixture> currentFixtures = dao.findAll();
+		List<AflFixture> saveFixtures = new ArrayList<>();
+
+		for(AflFixture fixture : currentFixtures) {
+			String key = fixture.getRound() + "-" + fixture.getGame();
+			AflFixture updatedFixture = updatedFixturesData.get(key);
+
+			fixture.setHomeTeam(updatedFixture.getHomeTeam());
+			fixture.setAwayTeam(updatedFixture.getAwayTeam());
+			fixture.setStartTime(updatedFixture.getStartTime());
+			
+			saveFixtures.add(fixture);
+		}
+
+		updateAll(saveFixtures, false);
+	}
+
+	public int getMaxAflRound() {
+		int maxAflRound = dao.findMaxAflRound();
+		return maxAflRound;
 	}
 }

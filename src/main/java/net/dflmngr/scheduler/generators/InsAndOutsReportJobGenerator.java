@@ -3,7 +3,6 @@ package net.dflmngr.scheduler.generators;
 import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
-//import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflRoundEarlyGames;
 import net.dflmngr.model.entity.DflRoundInfo;
@@ -22,7 +20,6 @@ import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.scheduler.JobScheduler;
 import net.dflmngr.utils.CronExpressionCreator;
 import net.dflmngr.utils.DflmngrUtils;
-//import net.dflmngr.webservice.CallDflmngrWebservices;
 
 public class InsAndOutsReportJobGenerator {
 	private LoggingUtils loggerUtils;
@@ -31,34 +28,32 @@ public class InsAndOutsReportJobGenerator {
 	GlobalsService globalsService;
 	
 	private static String jobName = "InsOutsReport";
-	private static String jobGroup = "Reports";
+	private static String jobGroup = "InsOutsReports";
 	private static String jobClass = "net.dflmngr.scheduler.jobs.InsAndOutsReportJob";
 	
-	private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-YYYY");
-	private static SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
+	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-YYYY");
+	private SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
 	
 	
 	public InsAndOutsReportJobGenerator() {
 		
-		//loggerUtils = new LoggingUtils("batch-logger", "batch.name", "InsAndOutsReportJobGenerator");
 		loggerUtils = new LoggingUtils("InsAndOutsReportJobGenerator");
 		
 		try {
-			//JndiProvider.bind();
-			
 			dflRoundInfoService = new DflRoundInfoServiceImpl();
 			globalsService = new GlobalsServiceImpl();
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
 	}
-	
-	
+		
 	public void execute() {
 		
 		try {
 			
 			loggerUtils.log("infp", "Executing InsAndOutsReportJobGenerator ....");
+
+			JobScheduler.deleteGroup(jobGroup);
 			
 			List<DflRoundInfo> dflRounds = dflRoundInfoService.findAll();
 			
@@ -85,10 +80,7 @@ public class InsAndOutsReportJobGenerator {
 	private void createReportJobEntryForFull(int round, ZonedDateTime time) throws Exception {
 		
 		CronExpressionCreator cronExpression = new CronExpressionCreator();
-		
-		//Calendar timeCal = Calendar.getInstance();
 		Calendar timeCal = GregorianCalendar.from(time);
-		//timeCal.setTime(time);
 		
 		int mins = timeCal.get(Calendar.MINUTE) + 10;
 		if(mins >= 60) {
@@ -105,7 +97,6 @@ public class InsAndOutsReportJobGenerator {
 		jobParams.put("ROUND", round);
 		jobParams.put("REPORT_TYPE","Full");
 		
-		//CallDflmngrWebservices.scheduleJob(jobName, jobGroup, jobClass, jobParams, cronExpression.getCronExpression(), false, loggerUtils);
 		JobScheduler.schedule(jobName, jobGroup, jobClass, jobParams, cronExpression.getCronExpression(), false);
 	}
 	
@@ -143,7 +134,6 @@ public class InsAndOutsReportJobGenerator {
 			jobParams.put("ROUND", round);
 			jobParams.put("REPORT_TYPE","Partial");
 			
-			//CallDflmngrWebservices.scheduleJob(jobName, jobGroup, jobClass, jobParams, cronExpression.getCronExpression(), false, loggerUtils);
 			JobScheduler.schedule(jobName, jobGroup, jobClass, jobParams, cronExpression.getCronExpression(), false);
 		}
 	}
