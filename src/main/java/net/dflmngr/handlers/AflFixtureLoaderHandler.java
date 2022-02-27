@@ -65,7 +65,6 @@ public class AflFixtureLoaderHandler {
 			
 			loggerUtils.log("info", "Saveing data to DB");
 			
-			//aflFixtureService.insertAll(allGames, false);
 			aflFixtureService.updateLoadedFixtures(allGames);
 			
 			loggerUtils.log("info", "AflFixtureLoader Complete");

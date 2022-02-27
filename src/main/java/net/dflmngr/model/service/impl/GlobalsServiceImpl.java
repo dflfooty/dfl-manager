@@ -101,10 +101,12 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		aflFixtureUrl.add(valueAndParams.get("value"));
 
-		String params = valueAndParams.get("params");
-		String[] parts = params.split(";");
+		if(valueAndParams.containsKey("params")) {
+			String params = valueAndParams.get("params");
+			String[] parts = params.split(";");
 
-		aflFixtureUrl.addAll(Arrays.asList(parts));
+			aflFixtureUrl.addAll(Arrays.asList(parts));
+		}
 
 		return aflFixtureUrl;
 	}
