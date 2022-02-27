@@ -141,20 +141,25 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 	}
 
 	public void updateLoadedFixtures(List<AflFixture> updatedFixtures) {
-		Map<String, AflFixture> updatedFixturesData = updatedFixtures.stream()
-		.collect(Collectors.toMap(item -> (item.getRound() + "-" + item.getGame()), item -> item));
-
-		List<AflFixture> currentFixtures = dao.findAll();
 		List<AflFixture> saveFixtures = new ArrayList<>();
 
-		for(AflFixture fixture : currentFixtures) {
-			String key = fixture.getRound() + "-" + fixture.getGame();
-			AflFixture updatedFixture = updatedFixturesData.get(key);
+		for(AflFixture updatedFixture : updatedFixtures) {
+			AflFixturePK aflFixturePK = new AflFixturePK();
+			aflFixturePK.setRound(updatedFixture.getRound());
+			aflFixturePK.setGame(updatedFixture.getGame());
+
+			AflFixture fixture = get(aflFixturePK);
+			if(fixture == null) {
+				fixture = new AflFixture();
+
+				fixture.setRound(updatedFixture.getRound());
+				fixture.setGame(updatedFixture.getGame());
+			}
 
 			fixture.setHomeTeam(updatedFixture.getHomeTeam());
 			fixture.setAwayTeam(updatedFixture.getAwayTeam());
 			fixture.setStartTime(updatedFixture.getStartTime());
-			
+
 			saveFixtures.add(fixture);
 		}
 
