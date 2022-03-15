@@ -33,23 +33,16 @@ public class AflPlayerLoaderHandler {
 	private GlobalsService globalsService;
 	private DflUnmatchedPlayerService dflUnmatchedPlayerService;
 
-	//private DateFormat df = new SimpleDateFormat("dd.MM.yy");
-
 	public AflPlayerLoaderHandler() {
 
-		//loggerUtils = new LoggingUtils("batch-logger", "batch.name", "AflPlayerLoader");
 		loggerUtils = new LoggingUtils("AflPlayerLoader");
 
 		try {
-
-			//JndiProvider.bind();
-
 			aflTeamService = new AflTeamServiceImpl();
 			aflPlayerService = new AflPlayerServiceImpl();
 			dflPlayerService = new DflPlayerServiceImpl();
 			globalsService = new GlobalsServiceImpl();
 			dflUnmatchedPlayerService = new DflUnmatchedPlayerServiceImpl();
-
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
@@ -78,23 +71,29 @@ public class AflPlayerLoaderHandler {
 		List<AflPlayer> aflPlayers = new ArrayList<>();
 
 		AflPlayerLoaderHtmlHandler playerHtmlLoader = new AflPlayerLoaderHtmlHandler();
+		boolean useOfficalPlayers = globalsService.getUseOfficalPlayers();
+
+		loggerUtils.log("info", "Using official AFL player lists: {}", useOfficalPlayers);
 
 		for(AflTeam team : aflTeams) {
 
 			loggerUtils.log("info", "Working on team: {}", team.getTeamId());
 
-			String teamListUrlS = team.getWebsite() + "/" + team.getSeniorUri();
+			String teamListUrlS = useOfficalPlayers ? team.getOfficialWebsite() + "/" + team.getOfficialSeniorUri() : team.getWebsite() + "/" + team.getSeniorUri();
+
 			loggerUtils.log("info", "Senior list URL: {}", teamListUrlS);
 
-			aflPlayers.addAll(playerHtmlLoader.execute(team.getTeamId(), teamListUrlS));
+			aflPlayers.addAll(playerHtmlLoader.execute(team.getTeamId(), teamListUrlS, useOfficalPlayers));
 
 			loggerUtils.log("info", "Seniors added to list");
 
-			if(team.getRookieUri() != null && !team.getRookieUri().equals("")) {
-				String teamListUrlR = team.getWebsite() + "/" + team.getRookieUri();
+			if((!useOfficalPlayers && team.getRookieUri() != null && !team.getRookieUri().equals("")) ||
+				(useOfficalPlayers && team.getOfficialRookieUri() != null && !team.getOfficialRookieUri().equals("")) ) {
+
+				String teamListUrlR = useOfficalPlayers ? team.getOfficialWebsite() + "/" + team.getOfficialRookieUri() : team.getWebsite() + "/" + team.getRookieUri();
 				loggerUtils.log("info", "Rookie list URL: {}", teamListUrlS);
 
-				aflPlayers.addAll(playerHtmlLoader.execute(team.getTeamId(), teamListUrlR));
+				aflPlayers.addAll(playerHtmlLoader.execute(team.getTeamId(), teamListUrlR, useOfficalPlayers));
 
 				loggerUtils.log("info", "Rookies added to list");
 			} else {
@@ -109,6 +108,8 @@ public class AflPlayerLoaderHandler {
 
 		loggerUtils.log("info", "Creating afl-dfl player cross references");
 		crossRefAflDflPlayers(aflPlayers);
+
+		loggerUtils.log("info", "AFL players loaded");
 	}
 
 	private List<AflPlayer> removeDuplicates(List<AflPlayer> aflPlayers) {
@@ -156,12 +157,6 @@ public class AflPlayerLoaderHandler {
 				dflPlayerUpdates.put(aflPlayerId, dflPlayer);
 				aflPlayerUpdates.put(dflPlayerId, aflPlayer);
 
-				//dflPlayer.setAflPlayerId(aflPlayerId);
-				//aflPlayer.setDflPlayerId(dflPlayerId);
-
-				//dflPlayerService.update(dflPlayer);
-				//aflPlayerService.update(aflPlayer);
-
 				dflPlayerCrossRefs.remove(aflPlayerCrossRef);
 			} else {
 				loggerUtils.log("info", "Unmatched AFL player: {}", aflPlayer);
@@ -198,16 +193,7 @@ public class AflPlayerLoaderHandler {
 					dflPlayerUpdates.put(aflPlayerId, dflPlayer);
 					aflPlayerUpdates.put(dflPlayerId, aflPlayer);
 
-					//player.setAflPlayerId(aflPlayerId);
-					//aflPlayer.setDflPlayerId(dflPlayerId);
-
-					//dflPlayerService.update(player);
-					//aflPlayerService.update(aflPlayer);
-
-		    		//dflPlayerCrossRefs.remove(crossRef);
-
 		    		matched = true;
-		    		break;
 		    	}
 
 		    	if(!matched) {
@@ -224,16 +210,7 @@ public class AflPlayerLoaderHandler {
 						dflPlayerUpdates.put(aflPlayerId, dflPlayer);
 						aflPlayerUpdates.put(dflPlayerId, aflPlayer);
 
-						//player.setAflPlayerId(aflPlayerId);
-						//aflPlayer.setDflPlayerId(dflPlayerId);
-
-						//dflPlayerService.update(player);
-						//aflPlayerService.update(aflPlayer);
-
-			    		//dflPlayerCrossRefs.remove(crossRef);
-
 			    		matched = true;
-			    		break;
 		    		}
 		    	}
 
@@ -251,19 +228,13 @@ public class AflPlayerLoaderHandler {
 						dflPlayerUpdates.put(aflPlayerId, dflPlayer);
 						aflPlayerUpdates.put(dflPlayerId, aflPlayer);
 
-						//player.setAflPlayerId(aflPlayerId);
-						//aflPlayer.setDflPlayerId(dflPlayerId);
-
-						//dflPlayerService.update(player);
-						//aflPlayerService.update(aflPlayer);
-
-			    		//dflPlayerCrossRefs.remove(crossRef);
-
 			    		matched = true;
-			    		break;
 		    		}
 		    	}
 
+				if(matched) {
+					break;
+				}
 		    }
 
 		    if(!matched) {

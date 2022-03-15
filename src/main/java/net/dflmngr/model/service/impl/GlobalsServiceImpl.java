@@ -451,4 +451,13 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		return round;
 	}
+
+	public boolean getUseOfficalPlayers() {
+		String code = "useOfficialPlayers";
+		String groupCode = "aflRef";
+
+		String value = getValue(code, groupCode);
+
+		return Boolean.parseBoolean(value);
+	}
 }

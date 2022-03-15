@@ -22,6 +22,15 @@ public class AflTeam {
 	
 	@Column(name = "rookie_uri")
 	String rookieUri;
+
+	@Column(name = "official_website")
+	String officialWebsite;
+
+	@Column(name = "official_senior_uri")
+	String officialSeniorUri;
+	
+	@Column(name = "official_rookie_uri")
+	String officialRookieUri;
 	
 	public String getTeamId() {
 		return teamId;
@@ -59,11 +68,31 @@ public class AflTeam {
 	public void setRookieUri(String rookieUri) {
 		this.rookieUri = rookieUri;
 	}
-	
+	public String getOfficialWebsite() {
+		return officialWebsite;
+	}
+	public void setOfficialWebsite(String officialWebsite) {
+		this.officialWebsite = officialWebsite;
+	}
+	public String getOfficialSeniorUri() {
+		return officialSeniorUri;
+	}
+	public void setOffcialSeniorUri(String officialSeniorUri) {
+		this.officialSeniorUri = officialSeniorUri;
+	}
+	public String getOfficialRookieUri() {
+		return officialRookieUri;
+	}
+	public void setOfficialRookieUri(String officialRookieUri) {
+		this.officialRookieUri = officialRookieUri;
+	}
+
 	@Override
 	public String toString() {
-		return "AflTeam [teamId=" + teamId + ", name=" + name + ", nickname=" + nickname + ", website=" + website
-				+ ", seniorUri=" + seniorUri + ", rookieUri=" + rookieUri + "]";
+		return "AflTeam [name=" + name + ", nickname=" + nickname + ", officialSeniorUri="
+				+ officialSeniorUri + ", officialRookieUri=" + officialRookieUri + ", officialWebsite="
+				+ officialWebsite + ", rookieUri=" + rookieUri + ", seniorUri=" + seniorUri
+				+ ", teamId=" + teamId + ", website=" + website + "]";
 	}
 	
 	@Override
@@ -72,6 +101,9 @@ public class AflTeam {
 		int result = 1;
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + ((nickname == null) ? 0 : nickname.hashCode());
+		result = prime * result + ((officialSeniorUri == null) ? 0 : officialSeniorUri.hashCode());
+		result = prime * result + ((officialRookieUri == null) ? 0 : officialRookieUri.hashCode());
+		result = prime * result + ((officialWebsite == null) ? 0 : officialWebsite.hashCode());
 		result = prime * result + ((rookieUri == null) ? 0 : rookieUri.hashCode());
 		result = prime * result + ((seniorUri == null) ? 0 : seniorUri.hashCode());
 		result = prime * result + ((teamId == null) ? 0 : teamId.hashCode());
@@ -97,6 +129,21 @@ public class AflTeam {
 			if (other.nickname != null)
 				return false;
 		} else if (!nickname.equals(other.nickname))
+			return false;
+		if (officialSeniorUri == null) {
+			if (other.officialSeniorUri != null)
+				return false;
+		} else if (!officialSeniorUri.equals(other.officialSeniorUri))
+			return false;
+		if (officialRookieUri == null) {
+			if (other.officialRookieUri != null)
+				return false;
+		} else if (!officialRookieUri.equals(other.officialRookieUri))
+			return false;
+		if (officialWebsite == null) {
+			if (other.officialWebsite != null)
+				return false;
+		} else if (!officialWebsite.equals(other.officialWebsite))
 			return false;
 		if (rookieUri == null) {
 			if (other.rookieUri != null)

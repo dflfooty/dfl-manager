@@ -12,20 +12,42 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflPlayer;
+import net.dflmngr.model.service.GlobalsService;
+import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 
 public class AflPlayerLoaderHtmlHandler {
 	private LoggingUtils loggerUtils;
 
+	GlobalsService globalsService;
+
 	public AflPlayerLoaderHtmlHandler() {
 		loggerUtils = new LoggingUtils("AflPlayerLoader");
+
+		globalsService = new GlobalsServiceImpl();
 	}
 
-	public List<AflPlayer> execute(String teamId, String url) throws Exception {
+	public List<AflPlayer> execute(String teamId, String url, boolean useOfficialPlayers) throws Exception {
 
 		loggerUtils.log("info", "Loading Afl Players HTML: teamId={}, aflRound={} url={}", teamId, url);
+
+		List<AflPlayer> aflPlayers = useOfficialPlayers
+			? officialPlayerLoad(teamId, url)
+			: unofficialPlayerLoad(teamId, url);
+
+		loggerUtils.log("info", "Finished Loading Afl Players HTML");
+
+		return aflPlayers;
+	}
+
+	private List<AflPlayer> unofficialPlayerLoad(String teamId, String url) throws Exception {
 
 		List<AflPlayer> aflPlayers;
 
@@ -34,57 +56,80 @@ public class AflPlayerLoaderHtmlHandler {
 
 		aflPlayers = loadPlayers(teamId, doc);
 
-		loggerUtils.log("info", "Finished Loading Afl Players HTML");
+		return aflPlayers;
+	}
+
+	private List<AflPlayer> officialPlayerLoad(String teamId, String url) {
+		List<AflPlayer> aflPlayers;
+
+		WebDriverManager.chromedriver().setup();
+
+		ChromeOptions chromeOptions = new ChromeOptions();
+        chromeOptions.addArguments("--no-sandbox");
+        chromeOptions.addArguments("--disable-gpu");
+        chromeOptions.addArguments("--headless");
+
+		WebDriver driver = new ChromeDriver(chromeOptions);
+
+		int webdriverTimeout = globalsService.getWebdriverTimeout();
+		int webdriverWait = globalsService.getWebdriverWait();
+		driver.manage().timeouts().implicitlyWait(webdriverWait, TimeUnit.SECONDS);
+		driver.manage().timeouts().pageLoadTimeout(webdriverTimeout, TimeUnit.SECONDS);
+
+		driver.get(url);
+
+		aflPlayers = loadOfficialPlayers(teamId, driver);
+
+		driver.quit();
 
 		return aflPlayers;
 	}
 
-	/*
-	 * private List<AflPlayer> loadPlayers(String teamId, Document doc) {
-	 * 
-	 * List<AflPlayer> aflPlayers = new ArrayList<>();
-	 * 
-	 * Element playerList = doc.getElementsByClass("squad-list").get(0);
-	 * 
-	 * int noJumper = 99;
-	 * 
-	 * Elements playerRecs = playerList.getElementsByTag("li"); for(Element
-	 * playerRec : playerRecs) {
-	 * 
-	 * AflPlayer aflPlayer = new AflPlayer();
-	 * 
-	 * aflPlayer.setTeamId(teamId);
-	 * 
-	 * String jumperNoString =
-	 * playerRec.getElementsByClass("player-item__jumper-number").get(0).text();
-	 * if(StringUtils.isNumeric(jumperNoString)) {
-	 * aflPlayer.setJumperNo(Integer.parseInt(jumperNoString)); } else {
-	 * aflPlayer.setJumperNo(noJumper); noJumper--; }
-	 * 
-	 * aflPlayer.setPlayerId(aflPlayer.getTeamId()+aflPlayer.getJumperNo());
-	 * 
-	 * String playerFirstName =
-	 * playerRec.getElementsByClass("player-item__name").get(0).ownText().trim();
-	 * String playerSecondName =
-	 * playerRec.getElementsByClass("player-item__last-name").get(0).ownText().trim(
-	 * );
-	 * 
-	 * aflPlayer.setName(playerFirstName + " " + playerSecondName);
-	 * aflPlayer.setFirstName(playerFirstName);
-	 * aflPlayer.setSecondName(playerSecondName);
-	 * 
-	 * //aflPlayer.setHeight(Integer.parseInt(playerData.get(2).text()));
-	 * //aflPlayer.setWeight(Integer.parseInt(playerData.get(3).text()));
-	 * //aflPlayer.setDob(df.parse(playerData.get(4).text()));
-	 * 
-	 * loggerUtils.log("info", "Extraced player data: {}", aflPlayer);
-	 * 
-	 * aflPlayers.add(aflPlayer); }
-	 * 
-	 * return aflPlayers;
-	 * 
-	 * }
-	 */
+	private List<AflPlayer> loadOfficialPlayers(String teamId, WebDriver driver) {
+
+		List<AflPlayer> aflPlayers = new ArrayList<>();
+
+		List<WebElement> teamList = driver.findElements(By.className("squad-list__item"));
+
+		int noJumper = 99;
+
+		for(WebElement teamPlayer : teamList) {
+            AflPlayer aflPlayer = new AflPlayer();
+			aflPlayer.setTeamId(teamId);
+
+			List<WebElement> hasJumper = teamPlayer.findElements(By.className("player-item__jumper-number"));
+			String jumperNoString = "";
+			if(!hasJumper.isEmpty()) {
+				jumperNoString = teamPlayer.findElement(By.className("player-item__jumper-number")).getText();
+			}
+			if (StringUtils.isNumeric(jumperNoString)) {
+				aflPlayer.setJumperNo(Integer.parseInt(jumperNoString));
+			} else {
+				aflPlayer.setJumperNo(noJumper);
+				noJumper--;
+			}
+
+            String firstName = teamPlayer.findElement(By.className("player-item__name")).getAttribute("textContent").trim();
+
+            List<WebElement> nameChilds = teamPlayer.findElement(By.className("player-item__name")).findElements(By.xpath("./*"));
+            for(WebElement child : nameChilds) {
+                firstName = firstName.replaceFirst(child.getAttribute("textContent"), "").trim();
+            }
+            aflPlayer.setFirstName(firstName);
+
+			String secondName = teamPlayer.findElement(By.className("player-item__last-name")).getAttribute("textContent").trim();
+			aflPlayer.setSecondName(secondName);
+
+			aflPlayer.setName(firstName + " " + secondName);
+			aflPlayer.setPlayerId(aflPlayer.getTeamId() + aflPlayer.getJumperNo());
+
+			loggerUtils.log("info", "Extraced player data: {}", aflPlayer);
+
+            aflPlayers.add(aflPlayer);
+        }
+
+		return aflPlayers;
+	}
 
 	private List<AflPlayer> loadPlayers(String teamId, Document doc) {
 
@@ -186,11 +231,12 @@ public class AflPlayerLoaderHtmlHandler {
 
 		String teamId = args[0];
 		String url = args[1];
+		boolean useOfficial = Boolean.parseBoolean(args[2]);
 
 		AflPlayerLoaderHtmlHandler handler = new AflPlayerLoaderHtmlHandler();
 
 		try {
-			List<AflPlayer> players = handler.execute(teamId, url);
+			List<AflPlayer> players = handler.execute(teamId, url, useOfficial);
 			System.out.println(players);
 		} catch (Exception e) {
 			e.printStackTrace();

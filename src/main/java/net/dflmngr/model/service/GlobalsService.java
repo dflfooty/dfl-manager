@@ -37,4 +37,5 @@ public interface GlobalsService extends GenericService<Globals, GlobalsPK> {
 	public boolean getSendMedalReports(int currentRound);
 	public String getOnlineBaseUrl();
 	public int getUseAverage(String teamCode);
+	public boolean getUseOfficalPlayers();
 }
