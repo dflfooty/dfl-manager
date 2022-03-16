@@ -1,6 +1,7 @@
 package net.dflmngr.handlers;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,7 +39,6 @@ public class TeamInsOutsLoaderHandler {
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -251,7 +251,8 @@ public class TeamInsOutsLoaderHandler {
 			List<DflSelectedPlayer> selectedTeam = new ArrayList<>();
 			List<Integer> selectedPlayerIds = new ArrayList<>();
 			
-			Map<Integer, DflSelectedPlayer> previousSelectedTeamMap = previousSelectedTeam.stream().collect(Collectors.toMap(player -> player.getPlayerId(), player -> player));
+			Map<Integer, DflSelectedPlayer> previousSelectedTeamMap = (previousSelectedTeam == null) 
+				? new HashMap<>() :	previousSelectedTeam.stream().collect(Collectors.toMap(player -> player.getPlayerId(), player -> player));
 			
 			for(DflSelectedPlayer tmpSelectedPlayer : tmpSelectedTeam) {
 				if(selectedPlayerIds.contains(tmpSelectedPlayer.getPlayerId())) {

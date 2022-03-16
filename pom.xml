@@ -37,6 +37,12 @@
 				<artifactId>org.eclipse.persistence.jpa</artifactId>
 				<version>2.7.4</version>
 		</dependency>
+		<!--<dependency>
+      <groupId>org.eclipse.persistence</groupId>
+      <artifactId>org.eclipse.persistence.jpa.modelgen.processor</artifactId>
+			<version>2.7.4</version>
+      <scope>provided</scope>
+    </dependency>-->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -132,7 +138,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				  <configuration>
-            <annotationProcessorPaths>
+            <!--<annotationProcessorPaths>
                 <annotationProcessorPath>
                     <groupId>org.eclipse.persistence</groupId>
                     <artifactId>org.eclipse.persistence.jpa.modelgen.processor</artifactId>
@@ -141,8 +147,35 @@
             </annotationProcessorPaths>
             <compilerArgs>
                 <arg>-Aeclipselink.persistencexml=src/main/resources/META-INF/persistence.xml</arg>
-            </compilerArgs>
+            </compilerArgs>-->
+						<compilerArgument>-proc:none</compilerArgument>
         </configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.bsc.maven</groupId>
+				<artifactId>maven-processor-plugin</artifactId>
+				<version>4.5</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>process</goal>
+						</goals>
+						<phase>generate-sources</phase>
+						<configuration>
+							<processors>
+								<processor>org.eclipse.persistence.internal.jpa.modelgen.CanonicalModelProcessor</processor>
+							</processors>
+							<compilerArguments>-Aeclipselink.persistencexml=src/main/resources/META-INF/persistence.xml</compilerArguments>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.eclipse.persistence</groupId>
+						<artifactId>org.eclipse.persistence.jpa.modelgen.processor</artifactId>
+						<version>2.7.4</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			<plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -158,7 +191,7 @@
             </goals>
             <configuration>
               <sources>
-                <source>target/generated-sources/annotations</source>
+                <source>target/generated-sources/apt</source>
               </sources>
             </configuration>
           </execution>
