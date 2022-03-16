@@ -186,22 +186,24 @@ public class SelectionsHandler {
 				}
 			}
 		} else {
-			for(DflSelectedPlayer prevSelectedPlayer : previousSelectedTeam) {
-				DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-				selectedPlayer.setPlayerId(prevSelectedPlayer.getPlayerId());
-				selectedPlayer.setRound(round);
-				selectedPlayer.setTeamCode(teamCode);
-				selectedPlayer.setTeamPlayerId(prevSelectedPlayer.getTeamPlayerId());
-				selectedPlayer.setDnp(false);
-				selectedPlayer.setEmergency(prevSelectedPlayer.isEmergency());
+			if(previousSelectedTeam != null) {
+				for(DflSelectedPlayer prevSelectedPlayer : previousSelectedTeam) {
+					DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+					selectedPlayer.setPlayerId(prevSelectedPlayer.getPlayerId());
+					selectedPlayer.setRound(round);
+					selectedPlayer.setTeamCode(teamCode);
+					selectedPlayer.setTeamPlayerId(prevSelectedPlayer.getTeamPlayerId());
+					selectedPlayer.setDnp(false);
+					selectedPlayer.setEmergency(prevSelectedPlayer.isEmergency());
 
-				if(prevSelectedPlayer.isEmergency() != 0) {
-					selectedPlayer.setScoreUsed(false);
-				} else {
-					selectedPlayer.setScoreUsed(true);
+					if(prevSelectedPlayer.isEmergency() != 0) {
+						selectedPlayer.setScoreUsed(false);
+					} else {
+						selectedPlayer.setScoreUsed(true);
+					}
+
+					selectedTeam.add(selectedPlayer);
 				}
-
-				selectedTeam.add(selectedPlayer);
 			}
 		}
 
