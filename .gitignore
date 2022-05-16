@@ -12,3 +12,4 @@ reports
 /.apt_generated_tests/
 .vscode/launch.json
 .vscode/settings.json
+.attach_pid*

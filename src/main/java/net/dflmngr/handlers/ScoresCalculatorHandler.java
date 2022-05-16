@@ -91,7 +91,6 @@ public class ScoresCalculatorHandler {
 	}
 
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -531,8 +530,6 @@ public class ScoresCalculatorHandler {
 			CommandLine cli = parser.parse(options, args);
 
 			round = ((Number)cli.getParsedOptionValue("r")).intValue();
-
-			//ndiProvider.bind();
 
 			ScoresCalculatorHandler scoresCalculatorHandler = new ScoresCalculatorHandler();
 			scoresCalculatorHandler.configureLogging("batch.name", "batch-logger", ("ScoresCalculatorHandler_R" + round));
