@@ -4,6 +4,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.service.AflFixtureService;
@@ -63,13 +69,34 @@ public class AflFixtureLoaderHandler {
 		
 	// For internal testing
 	public static void main(String[] args) {
+
+		Options options = new Options();
+		Option all = new Option("all", "All rounds");
+		options.addOption(all);
+
 		try {
+
+			boolean allRounds = false;
+
+			CommandLineParser parser = new DefaultParser();
+			CommandLine cli = parser.parse(options, args);
 			
+			if(cli.hasOption("all")) {
+				allRounds = true;
+			}
+
 			AflFixtureLoaderHandler testing = new AflFixtureLoaderHandler();				
 			List<Integer> testRounds = new ArrayList<>();
 			
-			for(int i = 1; i < 24; i++) {
-				testRounds.add(i);
+			if(allRounds) {
+				for(int i = 1; i < 24; i++) {
+					testRounds.add(i);
+				}
+			} else {
+				int startAtRound = Integer.parseInt(testing.globalsService.getCurrentRound()) + 1;
+				for(int i = startAtRound; i < 24; i++) {
+					testRounds.add(i);
+				}
 			}
 			
 			testing.execute(testRounds);
