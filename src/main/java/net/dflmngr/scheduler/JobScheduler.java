@@ -5,11 +5,14 @@ import static org.quartz.TriggerBuilder.*;
 import static org.quartz.CronScheduleBuilder.*;
 
 import java.io.InputStream;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.quartz.CronExpression;
 import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -136,20 +139,31 @@ public class JobScheduler {
 			if(isImmediate) {
 				trigger = newTrigger().withIdentity(jobTriggerKey, group).startNow().forJob(job).build();
 			} else {
-				trigger = newTrigger().withIdentity(jobTriggerKey, group).withSchedule(cronSchedule(cronStr).inTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone))).forJob(job).build();
+				boolean valid = CronExpression.isValidExpression(cronStr);
+				if(valid) {
+					CronExpression cronExpression = new CronExpression(cronStr);
+					cronExpression.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
+					Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
+					Date currentDate = calendar.getTime();
+					valid = cronExpression.getNextValidTimeAfter(currentDate) != null;
+				}
+				if(valid) {
+					trigger = newTrigger().withIdentity(jobTriggerKey, group).withSchedule(cronSchedule(cronStr).inTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone))).forJob(job).build();
+				}
 			}
 
-			boolean mayFire = trigger.mayFireAgain();
-			loggerUtils.log("info", "###### Will Fire: {} ######", mayFire);
+			if(trigger != null) {
+				Properties schedulerProperties = getSchedulerConfig();
+				StdSchedulerFactory factory = new StdSchedulerFactory();
+				factory.initialize(schedulerProperties);
+				Scheduler scheduler = factory.getScheduler();
+				scheduler.scheduleJob(job, trigger);
 
-			Properties schedulerProperties = getSchedulerConfig();
-			StdSchedulerFactory factory = new StdSchedulerFactory();
-			factory.initialize(schedulerProperties);
-			Scheduler scheduler = factory.getScheduler();
-			scheduler.scheduleJob(job, trigger);
-
-			if(!scheduler.isShutdown()) {
-				scheduler.shutdown();
+				if(!scheduler.isShutdown()) {
+					scheduler.shutdown();
+				}
+			} else {
+				loggerUtils.log("info", "Job not scheduled as it will not run");
 			}
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
