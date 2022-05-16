@@ -139,6 +139,9 @@ public class JobScheduler {
 				trigger = newTrigger().withIdentity(jobTriggerKey, group).withSchedule(cronSchedule(cronStr).inTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone))).forJob(job).build();
 			}
 
+			boolean mayFire = trigger.mayFireAgain();
+			loggerUtils.log("info", "###### Will Fire: {} ######", mayFire);
+
 			Properties schedulerProperties = getSchedulerConfig();
 			StdSchedulerFactory factory = new StdSchedulerFactory();
 			factory.initialize(schedulerProperties);
