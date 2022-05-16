@@ -181,6 +181,9 @@ public class SelectionsHandler {
 						selectedPlayer.setScoreUsed(true);
 					}
 
+					selectedPlayer.setHasPlayed(false);
+					selectedPlayer.setReplacementInd(null);
+
 					selectedTeam.add(selectedPlayer);
 					selectedPlayerIds.add(tmpSelectedPlayer.getPlayerId());
 				}

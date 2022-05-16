@@ -103,12 +103,13 @@ public class RawStatsHtmlHandler {
                     String fixieUrl = System.getenv("FIXIE_URL");
 
                     String[] fixieValues = fixieUrl.split("[/(:\\/@)/]+");
+                    String fixieScheme = fixieValues[0];
                     String fixieUser = fixieValues[1];
                     String fixiePassword = fixieValues[2];
                     String fixieHost = fixieValues[3];
                     int fixiePort = Integer.parseInt(fixieValues[4]);
 
-                    webClient.getOptions().setProxyConfig(new ProxyConfig(fixieHost, fixiePort));
+                    webClient.getOptions().setProxyConfig(new ProxyConfig(fixieHost, fixiePort, fixieScheme));
                     webClient.getCredentialsProvider().setCredentials(new AuthScope(fixieHost, fixiePort),
                             new UsernamePasswordCredentials(fixieUser, fixiePassword));
                     return webClient;
