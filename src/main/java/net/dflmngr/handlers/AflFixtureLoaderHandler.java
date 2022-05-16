@@ -1,21 +1,9 @@
 package net.dflmngr.handlers;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import io.github.bonigarcia.wdm.WebDriverManager;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.service.AflFixtureService;

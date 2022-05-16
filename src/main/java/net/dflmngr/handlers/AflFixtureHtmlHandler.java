@@ -69,6 +69,7 @@ public class AflFixtureHtmlHandler {
         chromeOptions.addArguments("--no-sandbox");
         chromeOptions.addArguments("--disable-gpu");
         chromeOptions.addArguments("--headless");
+        chromeOptions.addArguments("--disable-dev-shm-usage");
 
 		WebDriver driver = new ChromeDriver(chromeOptions);
 
