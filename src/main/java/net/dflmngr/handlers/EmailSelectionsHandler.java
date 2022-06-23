@@ -187,7 +187,7 @@ public class EmailSelectionsHandler {
 
 						Instant instant = messages[i].getReceivedDate().toInstant();
 						ZonedDateTime receivedDate = ZonedDateTime.ofInstant(instant,
-								ZoneId.of(DflmngrUtils.defaultTimezone));
+								ZoneId.of(DflmngrUtils.DEFAULT_TIMEZONE));
 
 						validationResult = scanEmailPartsAndValidate(part, receivedDate, from);
 
@@ -491,10 +491,6 @@ public class EmailSelectionsHandler {
 			}
 		}
 
-		// TeamSelectionLoaderHandler selectionsLoader = new
-		// TeamSelectionLoaderHandler();
-		// selectionsLoader.execute(teamCode, round, ins, outs);
-
 		Map<String, List<Integer>> insAndOuts = new HashMap<>();
 		insAndOuts.put("in", ins);
 		insAndOuts.put("out", outs);
@@ -685,28 +681,8 @@ public class EmailSelectionsHandler {
 		return playerNo;
 	}
 
-	/*
-	 * private double getPlayerNoForEmgs(String line) {
-	 * 
-	 * double playerNo; String playerNoStr;
-	 * 
-	 * Pattern pattern = Pattern.compile("[\\s:\\-]"); Matcher matcher =
-	 * pattern.matcher(line);
-	 * 
-	 * if(matcher.find()) { int i = matcher.start(); playerNoStr = line.substring(0,
-	 * i); } else { playerNoStr = line; }
-	 * 
-	 * try { playerNo = Double.parseDouble(playerNoStr); } catch
-	 * (NumberFormatException e) { loggerUtils.log("info",
-	 * "Error parsing player number, number format exception ... oh well.  Error={}"
-	 * , e.getMessage()); playerNo = 0; }
-	 * 
-	 * return playerNo; }
-	 */
-
 	private void sendResponses() throws Exception {
 
-		// for (Map.Entry<String, Boolean> response : this.responses.entrySet()) {
 		for (SelectedTeamValidation validationResult : validationResults) {
 
 			String to = "";
@@ -724,14 +700,7 @@ public class EmailSelectionsHandler {
 			properties.setProperty("mail.smtp.host", outgoingMailHost);
 			properties.setProperty("mail.smtp.port", String.valueOf(outgoingMailPort));
 			properties.setProperty("mail.smtp.starttls.enable", "true");
-			// properties.setProperty("mail.smtp.ssl.enable", "true");
 			properties.setProperty("mail.smtp.auth", "true");
-
-			// properties.setProperty("mail.smtp.socketFactory.port",
-			// String.valueOf(outgoingMailPort));
-			// properties.put("mail.smtp.socketFactory.fallback", "false");
-			// properties.put("mail.smtp.socketFactory.class",
-			// "javax.net.ssl.SSLSocketFactory");
 
 			Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
 				protected PasswordAuthentication getPasswordAuthentication() {
@@ -739,19 +708,14 @@ public class EmailSelectionsHandler {
 				}
 			});
 
-			// Session session = null;
 			MimeMessage message = new MimeMessage(session);
 			message.setFrom(new InternetAddress(this.dflmngrEmailAddr));
 			message.addRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
 
 			loggerUtils.log("info", "Creating response message: to={}; from={};", to, this.dflmngrEmailAddr);
 
-			// boolean isSuccess = response.getValue();
-
-			// if(isSuccess) {
 			if (validationResult.isValid()) {
 				if (teamCode != null && !teamCode.equals("")) {
-					// String teamTo = globalsService.getTeamEmail(teamCode);
 					DflTeam team = dflTeamService.get(teamCode);
 					String teamTo = team.getCoachEmail();
 					loggerUtils.log("info", "Team email: {}", teamTo);
@@ -768,12 +732,6 @@ public class EmailSelectionsHandler {
 			}
 
 			loggerUtils.log("info", "Sending message");
-			// Transport.send(message);
-
-			// String oauthToken = AccessTokenFromRefreshToken.getAccessToken();
-			// Transport smptTransport = OAuth2Authenticator.connectToSmtp(outgoingMailHost,
-			// outgoingMailPort, mailUsername, oauthToken, false);
-			// smptTransport.sendMessage(message, message.getAllRecipients());
 
 			Transport.send(message, message.getAllRecipients());
 		}
@@ -788,135 +746,37 @@ public class EmailSelectionsHandler {
 			messageBody = messageBody + "\n";
 
 			if (validationResult.selectedWarning) {
-				messageBody = messageBody
-						+ "\tWarning: You have seleted a player who is already selected.  You may be playing short! Players:\n";
-				for (DflPlayer player : validationResult.selectedWarnPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildSelectedWarning(validationResult);
 			}
 			if (validationResult.droppedWarning) {
-				messageBody = messageBody
-						+ "\tWarning: You have dropped a player who is not selected.  Your team may not be as you expect or invalid! Players:\n";
-				for (DflPlayer player : validationResult.droppedWarnPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildDroppedWarning(validationResult);
 			}
-
 			if (validationResult.emergencyFfWarning) {
-				messageBody = messageBody
-						+ "\tWarning: You have selcted a Full Forward as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
-				for (DflPlayer player : validationResult.emgFfPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildEmergencyFfWarining(validationResult);
 			}
 			if (validationResult.emergencyFwdWarning) {
-				messageBody = messageBody
-						+ "\tWarning: You have selcted a Forward as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
-				for (DflPlayer player : validationResult.emgFwdPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildEmergencyFwdWarining(validationResult);
 			}
 			if (validationResult.emergencyRckWarning) {
-				messageBody = messageBody
-						+ "\tWarning: You have selcted a Ruck as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
-				for (DflPlayer player : validationResult.emgRckPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildEmergencyRckWarining(validationResult);
 			}
 			if (validationResult.emergencyMidWarning) {
-				messageBody = messageBody
-						+ "\tWarning: You have selcted a Midfielder as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
-				for (DflPlayer player : validationResult.emgMidPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildEmergencyMidWarining(validationResult);
 			}
 			if (validationResult.emergencyDefWarning) {
-				messageBody = messageBody
-						+ "\tWarning: You have selcted a Defender as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
-				for (DflPlayer player : validationResult.emgDefPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildEmergencyDefWarining(validationResult);
 			}
 			if (validationResult.emergencyFbWarning) {
-				messageBody = messageBody
-						+ "\tWarning: You have selcted a Full Back as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n";
-				for (DflPlayer player : validationResult.emgFbPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildEmergencyFbWarining(validationResult);
 			}
 			if (validationResult.duplicateIns) {
-				messageBody = messageBody + "\tWarning: You have selected duplicate ins, one will be ignored.  Ins:\n";
-				for (DflPlayer player : validationResult.dupInPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildDuplicateInsWarining(validationResult);
 			}
 			if (validationResult.duplicateOuts) {
-				messageBody = messageBody + "\tWarning: You have selected duplicate outs, one will be ignored.  Ins:\n";
-				for (DflPlayer player : validationResult.dupInPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildDuplicateOutsWarining(validationResult);
 			}
 			if (validationResult.duplicateEmgs) {
-				messageBody = messageBody
-						+ "\tWarning: You have selected duplicate emergencies, one will be ignored.  Ins:\n";
-				for (DflPlayer player : validationResult.dupInPlayers) {
-
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
-
-					messageBody = messageBody + "\t\t" + teamPlayer.getTeamPlayerId() + " " + player.getFirstName()
-							+ " " + player.getLastName() + " " + player.getPosition() + " " + player.getPosition()
-							+ "\n";
-				}
+				messageBody = messageBody + buildDuplicateEmgsWarining(validationResult);
 			}
 		}
 
@@ -924,6 +784,145 @@ public class EmailSelectionsHandler {
 
 		message.setContent(messageBody, "text/plain");
 	}
+
+	private String buildSelectedWarning(SelectedTeamValidation validationResult) {
+		StringBuilder selectedWarning = new StringBuilder(
+			"\tWarning: You have seleted a player who is already selected.  You may be playing short! Players:\n");
+		
+		for(DflPlayer player : validationResult.selectedWarnPlayers) {
+			selectedWarning.append(buildSuccessContent(player));
+		}
+
+		return selectedWarning.toString();
+	}
+
+	private String buildDroppedWarning(SelectedTeamValidation validationResult) {
+		StringBuilder droppedWarning = new StringBuilder(
+			"\tWarning: You have dropped a player who is not selected.  Your team may not be as you expect or invalid! Players:\n");
+
+		for(DflPlayer player : validationResult.droppedWarnPlayers) {
+			droppedWarning.append(buildSuccessContent(player));
+		}
+
+		return droppedWarning.toString();
+	}
+
+	private String buildEmergencyFfWarining(SelectedTeamValidation validationResult) {
+		StringBuilder emergencyWarning = new StringBuilder(
+			"\tWarning: You have selcted a Full Forward as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n");
+
+		for(DflPlayer player : validationResult.emgFfPlayers) {
+			emergencyWarning.append(buildSuccessContent(player));
+		}
+
+		return emergencyWarning.toString();
+	}
+
+	private String buildEmergencyFwdWarining(SelectedTeamValidation validationResult) {
+		StringBuilder emergencyWarning = new StringBuilder(
+			"\tWarning: You have selcted a Forward as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n");
+
+		for(DflPlayer player : validationResult.emgFwdPlayers) {
+			emergencyWarning.append(buildSuccessContent(player));
+		}
+
+		return emergencyWarning.toString();
+	}
+
+	private String buildEmergencyRckWarining(SelectedTeamValidation validationResult) {
+		StringBuilder emergencyWarning = new StringBuilder(
+			"\tWarning: You have selcted a Ruck as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n");
+
+		for(DflPlayer player : validationResult.emgRckPlayers) {
+			emergencyWarning.append(buildSuccessContent(player));
+		}
+
+		return emergencyWarning.toString();
+	} 
+
+	private String buildEmergencyMidWarining(SelectedTeamValidation validationResult) {
+		StringBuilder emergencyWarning = new StringBuilder(
+			"\tWarning: You have selcted a Midfielder as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n");
+
+		for(DflPlayer player : validationResult.emgMidPlayers) {
+			emergencyWarning.append(buildSuccessContent(player));
+		}
+
+		return emergencyWarning.toString();
+	}
+
+	private String buildEmergencyDefWarining(SelectedTeamValidation validationResult) {
+		StringBuilder emergencyWarning = new StringBuilder(
+			"\tWarning: You have selcted a Defender as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n");
+
+		for(DflPlayer player : validationResult.emgDefPlayers) {
+			emergencyWarning.append(buildSuccessContent(player));
+		}
+
+		return emergencyWarning.toString();
+	} 
+
+	private String buildEmergencyFbWarining(SelectedTeamValidation validationResult) {
+		StringBuilder emergencyWarning = new StringBuilder(
+			"\tWarning: You have selcted a Full Back as an emergency but already have one on your bench.  It will be ignored.  Emgergency:\n");
+
+		for(DflPlayer player : validationResult.emgFbPlayers) {
+			emergencyWarning.append(buildSuccessContent(player));
+		}
+
+		return emergencyWarning.toString();
+	}
+
+	private String buildDuplicateInsWarining(SelectedTeamValidation validationResult) {
+		StringBuilder emergencyWarning = new StringBuilder("\tWarning: You have selected duplicate ins, one will be ignored.  Ins:\n");
+
+		for(DflPlayer player : validationResult.dupInPlayers) {
+			emergencyWarning.append(buildSuccessContent(player));
+		}
+
+		return emergencyWarning.toString();
+	}
+
+	private String buildDuplicateOutsWarining(SelectedTeamValidation validationResult) {
+		StringBuilder emergencyWarning = new StringBuilder("\tWarning: You have selected duplicate outs, one will be ignored.  Ins:\n");
+
+		for(DflPlayer player : validationResult.dupOutPlayers) {
+			emergencyWarning.append(buildSuccessContent(player));
+		}
+
+		return emergencyWarning.toString();
+	} 
+
+	private String buildDuplicateEmgsWarining(SelectedTeamValidation validationResult) {
+		StringBuilder emergencyWarning = new StringBuilder("\tWarning: You have selected duplicate emergencies, one will be ignored.  Ins:\n");
+
+		for(DflPlayer player : validationResult.dupEmgPlayers) {
+			emergencyWarning.append(buildSuccessContent(player));
+		}
+
+		return emergencyWarning.toString();
+	} 
+
+	private String buildSuccessContent(DflPlayer player) {
+		DflTeamPlayer teamPlayer = dflTeamPlayerService.get(player.getPlayerId());
+
+		StringBuilder warningContent = new StringBuilder();
+
+		warningContent.append("\t\t")
+			.append(teamPlayer.getTeamPlayerId())
+			.append(" ")
+			.append(player.getFirstName())
+			.append(" ")
+			.append(player.getLastName())
+			.append(" ")
+			.append(player.getPosition())
+			.append(" ")
+			.append(player.getPosition())
+			.append("\n");
+
+		return warningContent.toString();
+	}
+
 
 	private void setFailureMessage(Message message, SelectedTeamValidation validationResult) throws Exception {
 		message.setSubject("Selections received - FAILED!");
@@ -940,8 +939,6 @@ public class EmailSelectionsHandler {
 		} else if (validationResult.roundCompleted) {
 			messageBody = messageBody + "\t- The round you have in your selections.txt has past\n";
 		} else if (validationResult.lockedOut) {
-			// messageBody = messageBody + "\t- The round you have in your selections.txt is
-			// in progress and doesn't allow more selections\n";
 			messageBody = messageBody + "\t- The round you have in your selections as had all AFL games completed.\n";
 		} else if (validationResult.unknownError) {
 			messageBody = messageBody + "\t- Some exception occured follow up with email to xdfl google group.\n";
@@ -983,7 +980,6 @@ public class EmailSelectionsHandler {
 	// internal testing
 	public static void main(String[] args) {
 		try {
-			// JndiProvider.bind();
 			EmailSelectionsHandler selectionHandler = new EmailSelectionsHandler();
 			selectionHandler.execute();
 			System.exit(0);

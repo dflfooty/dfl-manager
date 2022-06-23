@@ -3,7 +3,7 @@ package net.dflmngr.scheduler;
 import static org.quartz.JobBuilder.*;
 import static org.quartz.TriggerBuilder.*;
 import static org.quartz.CronScheduleBuilder.*;
-
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
@@ -17,6 +17,7 @@ import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
@@ -45,7 +46,7 @@ public class JobScheduler {
         });
 	}
 	
-	public void execute() throws Exception {			
+	public void execute() throws IOException, SchedulerException {			
 		loggerUtils.log("info", "---- Starting DFL Manager Scheduler ----");
 		
 		Properties schedulerProperties = getSchedulerConfig();
@@ -62,7 +63,7 @@ public class JobScheduler {
 	}
 	
 		
-	private static Properties getSchedulerConfig() throws Exception {
+	private static Properties getSchedulerConfig() throws IOException {
 		
 		Properties schedulerProperties = new Properties();
 		
@@ -74,7 +75,8 @@ public class JobScheduler {
 		return schedulerProperties;	
 	}
 		
-	public static void schedule(String jobName, String jobGroup, String jobClassStr, Map<String, Object> jobParams, String cronStr, boolean isImmediate) throws Exception {
+	public static void schedule(String jobName, String jobGroup, String jobClassStr, 
+	                            Map<String, Object> jobParams, String cronStr, boolean isImmediate)  {
 		try {			
 			String now = DflmngrUtils.getNowStr();
 			String jobNameKey;
@@ -100,7 +102,7 @@ public class JobScheduler {
 		}
 	}
 
-	public static void deleteGroup(String group) throws Exception {
+	public static void deleteGroup(String group) throws IOException, SchedulerException {
 		loggerUtils.log("info", "Deleting scheduler group: group={}", group);
 
 		Properties schedulerProperties = getSchedulerConfig();
@@ -122,7 +124,7 @@ public class JobScheduler {
 		}
 	}
 	
-	private static void createAndSchedule(String jobNameKey, String group, String jobClassStr, String jobTriggerKey, Map<String, Object> jobParams, String cronStr, boolean isImmediate) throws Exception {
+	private static void createAndSchedule(String jobNameKey, String group, String jobClassStr, String jobTriggerKey, Map<String, Object> jobParams, String cronStr, boolean isImmediate) throws ClassNotFoundException {
 		loggerUtils.log("info", "Final job details: jobNameKey={}; group={}; jobClassStr={}; jobTriggerKey={}; jobParams={}; cronStr={}; isImmediate={};", jobNameKey, group, jobClassStr, jobTriggerKey, jobParams, cronStr, isImmediate);
 		
 		Class<? extends Job> jobClass = Class.forName(jobClassStr).asSubclass(Job.class);
@@ -142,13 +144,13 @@ public class JobScheduler {
 				boolean valid = CronExpression.isValidExpression(cronStr);
 				if(valid) {
 					CronExpression cronExpression = new CronExpression(cronStr);
-					cronExpression.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
-					Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone));
+					cronExpression.setTimeZone(TimeZone.getTimeZone(DflmngrUtils.DEFAULT_TIMEZONE));
+					Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(DflmngrUtils.DEFAULT_TIMEZONE));
 					Date currentDate = calendar.getTime();
 					valid = cronExpression.getNextValidTimeAfter(currentDate) != null;
 				}
 				if(valid) {
-					trigger = newTrigger().withIdentity(jobTriggerKey, group).withSchedule(cronSchedule(cronStr).inTimeZone(TimeZone.getTimeZone(DflmngrUtils.defaultTimezone))).forJob(job).build();
+					trigger = newTrigger().withIdentity(jobTriggerKey, group).withSchedule(cronSchedule(cronStr).inTimeZone(TimeZone.getTimeZone(DflmngrUtils.DEFAULT_TIMEZONE))).forJob(job).build();
 				}
 			}
 

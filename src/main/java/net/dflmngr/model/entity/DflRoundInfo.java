@@ -1,9 +1,8 @@
 package net.dflmngr.model.entity;
 
 import java.time.ZonedDateTime;
-//import java.util.Date;
 import java.util.List;
-
+import java.util.Objects;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -11,8 +10,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-//import javax.persistence.Temporal;
-//import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "dfl_round_info")
@@ -83,7 +80,7 @@ public class DflRoundInfo {
 		return "DflRoundInfo [round=" + round + ", hardLockoutTime=" + hardLockoutTime + ", splitRound=" + splitRound
 				+ ", earlyGames=" + earlyGames + ", roundMapping=" + roundMapping + "]";
 	}
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -95,7 +92,7 @@ public class DflRoundInfo {
 		result = prime * result + ((splitRound == null) ? 0 : splitRound.hashCode());
 		return result;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -104,29 +101,13 @@ public class DflRoundInfo {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
+		
 		DflRoundInfo other = (DflRoundInfo) obj;
-		if (earlyGames == null) {
-			if (other.earlyGames != null)
-				return false;
-		} else if (!earlyGames.equals(other.earlyGames))
-			return false;
-		if (hardLockoutTime == null) {
-			if (other.hardLockoutTime != null)
-				return false;
-		} else if (!hardLockoutTime.equals(other.hardLockoutTime))
-			return false;
-		if (round != other.round)
-			return false;
-		if (roundMapping == null) {
-			if (other.roundMapping != null)
-				return false;
-		} else if (!roundMapping.equals(other.roundMapping))
-			return false;
-		if (splitRound == null) {
-			if (other.splitRound != null)
-				return false;
-		} else if (!splitRound.equals(other.splitRound))
-			return false;
-		return true;
+
+		return Objects.equals(earlyGames, other.earlyGames)
+			&& Objects.equals(hardLockoutTime, other.hardLockoutTime)
+			&& Objects.equals(round, other.round)
+			&& Objects.equals(roundMapping, other.roundMapping)
+			&& Objects.equals(splitRound, other.splitRound);
 	}
 }

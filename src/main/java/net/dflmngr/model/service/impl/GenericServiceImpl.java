@@ -7,85 +7,84 @@ import net.dflmngr.model.service.GenericService;
 
 public class GenericServiceImpl<E, K> implements GenericService<E, K>  {
 	
-	public GenericDao<E, K> dao;
+	private GenericDao<E, K> genericDao;
 	
     protected void setDao(GenericDao<E, K> dao) {
-        this.dao = dao;
+        this.genericDao = dao;
     }
     
     public E get(K id) {
-    	E entity = dao.findById(id);
-    	return entity;
+    	return genericDao.findById(id);
     }
 	
 	public List<E> findAll() {
-		return dao.findAll();
+		return genericDao.findAll();
 	}
 	
 	public void insert(E entity) {
-		dao.beginTransaction();
-		dao.persist(entity);
-		dao.commit();
+		genericDao.beginTransaction();
+		genericDao.persist(entity);
+		genericDao.commit();
 	}
 	
 	public void update(E entity) {
-		dao.merge(entity);
+		genericDao.merge(entity);
 	}
 	
 	public void insertAll(List<E> entitys, boolean inTx) {
 		
 		if(!inTx) {
-			dao.beginTransaction();
+			genericDao.beginTransaction();
 		}
 		
 		for(E e : entitys) {
-			dao.persist(e);
+			genericDao.persist(e);
 		}
 		
 		if(!inTx) {
-			dao.commit();
+			genericDao.commit();
 		}
 	}
 	
 	public void updateAll(List<E> entitys, boolean inTx) {
 		
 		if(!inTx) {
-			dao.beginTransaction();
+			genericDao.beginTransaction();
 		}
 		
 		for(E e : entitys) {
-			dao.merge(e);
+			genericDao.merge(e);
 		}
 		
 		if(!inTx) {
-			dao.commit();
+			genericDao.commit();
 		}
 	}
 	
 	public void delete(E entity) {
-		dao.remove(entity);
+		genericDao.remove(entity);
 	}
 	
 	public void replaceAll(List<E> entitys) {
-		dao.beginTransaction();
+		genericDao.beginTransaction();
 		List<E> existingEntitys = findAll();
 		for(E entity : existingEntitys) {
-			dao.remove(entity);
+			genericDao.remove(entity);
 		}
 		
-		dao.flush();
+		genericDao.flush();
 		
 		for(E entity : entitys) {
-			dao.persist(entity);
+			genericDao.persist(entity);
 		}
-		dao.commit();
+		genericDao.commit();
 	}
 	
 	public void refresh(E entity) {
-		dao.refresh(entity);
+		genericDao.refresh(entity);
 	}
 	
 	public void close() {
-		dao.close();
+		genericDao.close();
 	}
 }

@@ -11,13 +11,12 @@ import net.dflmngr.logging.LoggingUtils;
 public class ResultsJob implements Job {
 	private LoggingUtils loggerUtils;
 	
-	public static String ROUND = "ROUND";
-	public static String IS_FINAL = "IS_FINAL";
-	public static String ONGOING = "ONGOING";
+	public static final String ROUND = "ROUND";
+	public static final String IS_FINAL = "IS_FINAL";
+	public static final String ONGOING = "ONGOING";
 	
 	@Override
 	public void execute(JobExecutionContext context) throws JobExecutionException {
-		//loggerUtils = new LoggingUtils("online-logger", "online.name", "Scheduler");
 		loggerUtils = new LoggingUtils("Scheduler");
 		
 		try {
@@ -30,7 +29,6 @@ public class ResultsJob implements Job {
 			boolean ongoing = data.getBoolean(ONGOING);
 			
 			String logFile = "";
-			boolean onHeroku = false;
 			boolean sendReport = false;
 			boolean skipStats = false;
 			
@@ -39,11 +37,9 @@ public class ResultsJob implements Job {
 			} else {			
 				if(isFinal) {
 					logFile = "ResultsRound_R" + round;
-					onHeroku = true;
 					sendReport = true;
 				} else {
 					logFile = "ProgressRound_R" + round;
-					onHeroku = true;
 				}
 			}
 			
@@ -51,7 +47,7 @@ public class ResultsJob implements Job {
 			resultsHandler.configureLogging("online.name", "online-logger", logFile);
 
 			loggerUtils.log("info", "Running {}", logFile);
-			resultsHandler.execute(round, isFinal, null, skipStats, onHeroku, sendReport);
+			resultsHandler.execute(round, isFinal, null, skipStats, sendReport);
 			loggerUtils.log("info", "{} completed", logFile);
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);

@@ -2,22 +2,16 @@ package net.dflmngr.handlers;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-//import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import net.dflmngr.logging.LoggingUtils;
-//import net.dflmngr.model.entity.AflFixture;
-//import net.dflmngr.model.entity.DflEarlyInsAndOuts;
 import net.dflmngr.model.entity.DflPlayer;
 import net.dflmngr.model.entity.DflRoundInfo;
 import net.dflmngr.model.entity.DflRoundMapping;
-//import net.dflmngr.model.entity.DflRoundEarlyGames;
-//import net.dflmngr.model.entity.DflRoundInfo;
 import net.dflmngr.model.entity.DflSelectedPlayer;
 import net.dflmngr.model.entity.DflSelectionIds;
 import net.dflmngr.model.entity.DflTeamPlayer;
-//import net.dflmngr.model.entity.keys.AflFixturePK;
 import net.dflmngr.model.service.AflFixtureService;
 import net.dflmngr.model.service.DflEarlyInsAndOutsService;
 import net.dflmngr.model.service.DflPlayerService;
@@ -34,7 +28,6 @@ import net.dflmngr.model.service.impl.DflSelectedTeamServiceImpl;
 import net.dflmngr.model.service.impl.DflSelectionIdsServiceImpl;
 import net.dflmngr.model.service.impl.DflTeamPlayerServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
-//import net.dflmngr.utils.DflmngrUtils;
 import net.dflmngr.validation.SelectedTeamValidation;
 
 public class SelectedTeamValidationHandler {

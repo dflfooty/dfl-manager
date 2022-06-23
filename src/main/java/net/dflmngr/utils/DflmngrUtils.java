@@ -1,47 +1,28 @@
 package net.dflmngr.utils;
 
-//import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-//import java.util.TimeZone;
 
 import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 
 public class DflmngrUtils {
 
-	//public static String nowStr = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+	private DflmngrUtils() {}
+
 	public static String getNowStr() {
-
 		return new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
-
 	}
 
-	public static final String defaultTimezone;
+	public static final String DEFAULT_TIMEZONE;
 	static
 	{
 			GlobalsService globalsService = new GlobalsServiceImpl();
-			defaultTimezone = globalsService.getGroundTimeZone("default");
-	};
-
-	public static final SimpleDateFormat dateDbFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-
-	/*
-	public static Date applyDefaultTimezone(Date date) throws Exception {
-		GlobalsService globalsService = new GlobalsServiceImpl();
-		String defaultTimezone = globalsService.getGroundTimeZone("default");
-
-		SimpleDateFormat formatter = new SimpleDateFormat("EEEE, MMMM dd h:mma yyyy");
-		formatter.setTimeZone(TimeZone.getTimeZone(defaultTimezone));
-
-		String defaultDateStr = formatter.format(date);
-		Date defaultDate = formatter.parse(defaultDateStr);
-
-		return defaultDate;
-	}*/
+			DEFAULT_TIMEZONE = globalsService.getGroundTimeZone("default");
+	}
 
 	public static final Map<String, Integer> weekDaysInt;
 	static
@@ -54,7 +35,7 @@ public class DflmngrUtils {
 	    weekDaysInt.put("Friday", Calendar.FRIDAY);
 	    weekDaysInt.put("Saturday", Calendar.SATURDAY);
 	    weekDaysInt.put("Sunday", Calendar.SUNDAY);
-	};
+	}
 
 	public static final Map<Integer, String> weekDaysString;
 	static
@@ -67,7 +48,7 @@ public class DflmngrUtils {
 	    weekDaysString.put(Calendar.FRIDAY, "Friday");
 	    weekDaysString.put(Calendar.SATURDAY, "Saturday");
 	    weekDaysString.put(Calendar.SUNDAY, "Sunday");
-	};
+	}
 
 	public static final Map<String, Integer> AMPM;
 	static
@@ -75,7 +56,7 @@ public class DflmngrUtils {
 	    AMPM = new HashMap<String, Integer>();
 	    AMPM.put("AM", Calendar.AM);
 	    AMPM.put("PM", Calendar.PM);
-	};
+	}
 
 	public static final Map<String, String> dflAflTeamMap;
 	static

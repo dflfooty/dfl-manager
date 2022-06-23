@@ -1,5 +1,6 @@
 package net.dflmngr.reports;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,7 +16,6 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import net.dflmngr.handlers.RawPlayerStatsHandler;
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.RawPlayerStats;
 import net.dflmngr.model.service.GlobalsService;
@@ -57,7 +57,6 @@ public class RawStatsReport {
 		this.loggerName = loggerName;
 		this.logfile = logfile;
 		
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		isExecutable = true;
 	}
@@ -78,7 +77,7 @@ public class RawStatsReport {
 			
 			RawPlayerStatsHandler rawPlayerStatsHandler = new RawPlayerStatsHandler();
 			rawPlayerStatsHandler.configureLogging(this.mdcKey, this.loggerName, this.logfile);
-			rawPlayerStatsHandler.execute(round, isFinal, true);
+			rawPlayerStatsHandler.execute(round, isFinal);
 			
 			List<RawPlayerStats> playerStats = rawPlayerStatsService.getForRound(round);
 			
@@ -94,7 +93,7 @@ public class RawStatsReport {
 		} 
 	}
 	
-	private String writeReport(int round, boolean isFinal, List<RawPlayerStats> playerStats) throws Exception {
+	private String writeReport(int round, boolean isFinal, List<RawPlayerStats> playerStats) throws IOException {
 		
 		String reportName = "";
 		if(isFinal) {
@@ -131,7 +130,6 @@ public class RawStatsReport {
 		
 		XSSFCellStyle style = workbook.createCellStyle();
 		XSSFFont font = workbook.createFont();
-		//font.setBoldweight(XSSFFont.BOLDWEIGHT_BOLD);
 		font.setBold(true);
 		style.setFont(font);
 				
@@ -161,6 +159,7 @@ public class RawStatsReport {
 					case 5: cell.setCellValue(stats.getFreesAgainst()); break;
 					case 6: cell.setCellValue(stats.getTackles()); break;
 					case 7: cell.setCellValue(stats.getGoals()); break;
+					default: cell.setCellValue("NULL"); break;
 				}
 			}
 		}
@@ -200,13 +199,15 @@ public class RawStatsReport {
 	}
 	
 	public static void main(String[] args) {
+
+		LoggingUtils logger = new LoggingUtils("main");
 		
 		try {
 			String email = "";
 			int round = 0;
 			
 			if(args.length > 2 || args.length < 1) {
-				System.out.println("usage: RawStatsReport <round> optional [<email>]");
+				logger.log("info", "usage: RawStatsReport <round> optional [<email>]");
 			} else {
 				
 				round = Integer.parseInt(args[0]);
@@ -214,9 +215,7 @@ public class RawStatsReport {
 				if(args.length == 2) {
 					email = args[1];
 				}
-				
-				//JndiProvider.bind();
-				
+								
 				RawStatsReport rawStatsReport = new RawStatsReport();
 				rawStatsReport.configureLogging("batch.name", "batch-logger", "RawStatsReport");
 				rawStatsReport.execute(round, false, email);

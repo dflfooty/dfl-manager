@@ -1,20 +1,22 @@
 package net.dflmngr.tests;
 
-/*
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 
 import org.json.simple.JsonObject;
 import org.json.simple.Jsoner;
-*/
+
 
 public class QuickApiChecker {
 
-	/*
-	public void callHerokuApi() {
+
+	public void callHerokuApi() throws IOException {
 		String fullStatsUrl = "http:/www.afl.com.au/match-centre/2017/5/port-v-carl";
 		System.out.println("AFL stats URL: " + fullStatsUrl);
 
@@ -48,7 +50,7 @@ public class QuickApiChecker {
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		String output;
-		StringBuffer response = new StringBuffer();
+		StringBuilder response = new StringBuilder();
 
 		while ((output = in.readLine()) != null) {
 			response.append(output);
@@ -59,6 +61,4 @@ public class QuickApiChecker {
 		
 		JsonObject responseData = Jsoner.deserialize(response.toString(), new JsonObject());
 	}
-	*/
-	
 }

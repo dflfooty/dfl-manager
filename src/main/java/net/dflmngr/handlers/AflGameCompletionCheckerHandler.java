@@ -1,5 +1,7 @@
 package net.dflmngr.handlers;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -68,7 +70,7 @@ public class AflGameCompletionCheckerHandler {
 			List<AflFixture> incompleteFixtures = aflFixtureService.getIncompleteFixtures();
 
 			if (incompleteFixtures != null && !incompleteFixtures.isEmpty()) {
-				ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
+				ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.DEFAULT_TIMEZONE));
 
 				loggerUtils.log("info", "Incomplete AFL fixtures, fixtures={}", incompleteFixtures);
 
@@ -78,15 +80,9 @@ public class AflGameCompletionCheckerHandler {
 				String statsUrl = globalsService.getAflStatsUrl();
 
 				for (AflFixture fixture : incompleteFixtures) {
-					// String homeTeam = fixture.getHomeTeam();
-					// String awayTeam = fixture.getAwayTeam();
-					// String aflRound = Integer.toString(fixture.getRound());
-
 					String roundStr = String.format("%02d", fixture.getRound());
 					String gameStr = String.format("%02d", fixture.getGame());
 
-					// String fullStatsUrl = statsUrl + "/" + year + "/" + aflRound + "/" +
-					// homeTeam.toLowerCase() + "-v-" + awayTeam.toLowerCase();
 					String fullStatsUrl = statsUrl + "/AFL" + year + roundStr + gameStr;
 
 					loggerUtils.log("info", "Checking for complete fixute at URL={}", fullStatsUrl);
@@ -117,7 +113,7 @@ public class AflGameCompletionCheckerHandler {
 		}
 	}
 
-	private boolean checkGame(String statsUrl) throws Exception {
+	private boolean checkGame(String statsUrl) {
 
 		boolean gameCompleted = false;
 
@@ -145,24 +141,30 @@ public class AflGameCompletionCheckerHandler {
 			loggerUtils.log("info", "Using HTTP Proxy");
 			driver = new HtmlUnitDriver(browserVersion) {
 				@Override
-				protected WebClient newWebClient(BrowserVersion version) {
+				protected WebClient newWebClient(BrowserVersion version)  {
 					WebClient webClient = super.newWebClient(version);
 					webClient.getOptions().setThrowExceptionOnScriptError(false);
 					webClient.getOptions().setCssEnabled(false);
 					webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 
-					String fixieUrl = System.getenv("FIXIE_URL");
+					URL fixieUrl;
+					try {
+						fixieUrl = new URL(System.getenv("FIXIE_URL"));
+					
+						String fixieScheme = fixieUrl.getProtocol();
+						String fixieUser = fixieUrl.getUserInfo().split(":")[0];
+						String fixiePassword = fixieUrl.getUserInfo().split(":")[0];
+						String fixieHost = fixieUrl.getHost();
+						int fixiePort = fixieUrl.getPort();
 
-					String[] fixieValues = fixieUrl.split("[/(:\\/@)/]+");
-					String fixieScheme = fixieValues[0];
-					String fixieUser = fixieValues[1];
-					String fixiePassword = fixieValues[2];
-					String fixieHost = fixieValues[3];
-					int fixiePort = Integer.parseInt(fixieValues[4]);
+						webClient.getOptions().setProxyConfig(new ProxyConfig(fixieHost, fixiePort, fixieScheme));
+						webClient.getCredentialsProvider().setCredentials(new AuthScope(fixieHost, fixiePort),
+								new UsernamePasswordCredentials(fixieUser, fixiePassword));
 
-					webClient.getOptions().setProxyConfig(new ProxyConfig(fixieHost, fixiePort, fixieScheme));
-					webClient.getCredentialsProvider().setCredentials(new AuthScope(fixieHost, fixiePort),
-							new UsernamePasswordCredentials(fixieUser, fixiePassword));
+					} catch (MalformedURLException e) {
+						e.printStackTrace();
+					}
+
 					return webClient;
 				}
 			};
@@ -176,11 +178,7 @@ public class AflGameCompletionCheckerHandler {
 				loggerUtils.log("info", "AflGameCompletionChecker attempt: {}", i);
 				driver.get(statsUrl);
 
-				// String pageSrc = driver.getPageSource();
-
-				// if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
-
-				if (driver.findElements(By.className("styles__Scoreboard-sc-14r16wm-0")).size() != 0) {
+				if (driver.findElements(By.className("styles__Scoreboard-sc-14r16wm-0")).isEmpty()) {
 					WebElement scorecard = driver.findElement(By.className("styles__Scoreboard-sc-14r16wm-0"));
 					if (scorecard.findElement(By.className("styles__State-lxmyn6-2")).getText().equals("Full Time")) {
 						gameCompleted = true;
@@ -193,8 +191,6 @@ public class AflGameCompletionCheckerHandler {
 					gameCompleted = false;
 					loggerUtils.log("info", "Page failed to load");
 				}
-			} catch (Exception ex) {
-				throw new Exception("Error Loading page, URL:" + statsUrl, ex);
 			} finally {
 				driver.quit();
 			}

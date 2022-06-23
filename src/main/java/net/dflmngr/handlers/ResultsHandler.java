@@ -52,87 +52,32 @@ public class ResultsHandler {
 		emailOverride = null;
 	}
 	
-	public void execute(int inputRound, boolean isFinal, String emailOverride, boolean skipStats, boolean onHeroku, boolean sendReport) {
+	public void execute(int inputRound, boolean isFinal, String emailOverride, boolean skipStats, boolean sendReport) {
 		
 		try{
-			if(!isExecutable) {
-				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
-				loggerUtils.log("info", "Default logging configured");
-			}
+			setup(emailOverride);
 			
 			loggerUtils.log("info", "ResultsHandler excuting ....");
-
-			if(emailOverride != null && !emailOverride.equals("")) {
-				loggerUtils.log("info", "Overriding email with: {}", emailOverride);
-				this.emailOverride = emailOverride;
-			}
 			
-			if(!isFinal) {
-				loggerUtils.log("info", "Completing AFL games");
-				AflGameCompletionCheckerHandler gameCompletor = new AflGameCompletionCheckerHandler();
-				gameCompletor.configureLogging(mdcKey, loggerName, logfile);
-				gameCompletor.execute();
-			}
+			completeAlfGames(isFinal);
 			
-			List<Integer> roundsToProcess = new ArrayList<>();
-			if(inputRound == 0) {
-				loggerUtils.log("info", "Check for multiple rounds");
-				List<Integer> aflRounds = aflFixtureService.getAflRoundsToScrape();
-				List<DflRoundInfo> dflRoundsInfo = dflRoundInfoService.findAll();
-				
-				loggerUtils.log("info", "Inprogress AFL rounds {}", aflRounds);
-				
-				for(DflRoundInfo roundInfo : dflRoundsInfo) {
-					for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
-						if(aflRounds.contains(roundMapping.getAflRound()) && !roundsToProcess.contains(roundMapping.getRound())) {
-							roundsToProcess.add(roundMapping.getRound());
-						}
-					}
-				}
-			} else {
-				loggerUtils.log("info", "Using specfic round");
-				roundsToProcess.add(inputRound);
-			}
-			
-			loggerUtils.log("info", "Rounds to process, rounds={} ....", roundsToProcess);
+			List<Integer> roundsToProcess = getRoundsToProcess(inputRound);
 			
 			for(int round : roundsToProcess) {
 				loggerUtils.log("info", "Handling round={} ....", round);
 				
 				if(!skipStats) {
-					loggerUtils.log("info", "Getting stats");
-					RawPlayerStatsHandler statsHandler = new RawPlayerStatsHandler();
-					statsHandler.configureLogging(mdcKey, loggerName, logfile);
-					boolean scrapeAll = false;
-					if(inputRound != 0) {
-						scrapeAll = true;
-					}
-					statsHandler.execute(round, scrapeAll, onHeroku);
+					getStats(inputRound, round);
 				}
 	
-				loggerUtils.log("info", "Calculating scores");
-				ScoresCalculatorHandler scoresCalculator = new ScoresCalculatorHandler();
-				scoresCalculator.configureLogging(mdcKey, loggerName, logfile);
-				scoresCalculator.execute(round);
+				calculateScores(round);
 
 				if(round <= 18) {
-					loggerUtils.log("info", "Calculating Ladder");
-					LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
-					ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
-					if(isFinal) {
-						loggerUtils.log("info", "Ladder is not live");
-						ladderCalculator.execute(round, false);
-					} else {
-						loggerUtils.log("info", "Ladder is live");
-						ladderCalculator.execute(round, true);
-					}
+					calculateLadder(round, isFinal);
 				}
 				
 				if(sendReport) {
-					loggerUtils.log("info", "Writing report");
-					ResultsReport resultsReport = new ResultsReport();
-					resultsReport.configureLogging(mdcKey, loggerName, logfile);
-					resultsReport.execute(round, isFinal, emailOverride);
+					sendReport(round, isFinal);
 				}
 				
 				loggerUtils.log("info", "Handled round={} ....", round);
@@ -144,6 +89,91 @@ public class ResultsHandler {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
 	}
+
+	private void setup(String emailOverride) {
+		if(!isExecutable) {
+			configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
+			loggerUtils.log("info", "Default logging configured");
+		}
+
+		if(emailOverride != null && !emailOverride.equals("")) {
+			loggerUtils.log("info", "Overriding email with: {}", emailOverride);
+			this.emailOverride = emailOverride;
+		}
+	}
+
+	private void completeAlfGames(boolean isFinal) {
+		if(!isFinal) {
+			loggerUtils.log("info", "Completing AFL games");
+			AflGameCompletionCheckerHandler gameCompletor = new AflGameCompletionCheckerHandler();
+			gameCompletor.configureLogging(mdcKey, loggerName, logfile);
+			gameCompletor.execute();
+		}
+	}
+
+	private List<Integer> getRoundsToProcess(int inputRound) {
+		List<Integer> roundsToProcess = new ArrayList<>();
+		if(inputRound == 0) {
+			loggerUtils.log("info", "Check for multiple rounds");
+			List<Integer> aflRounds = aflFixtureService.getAflRoundsToScrape();
+			List<DflRoundInfo> dflRoundsInfo = dflRoundInfoService.findAll();
+			
+			loggerUtils.log("info", "Inprogress AFL rounds {}", aflRounds);
+			
+			for(DflRoundInfo roundInfo : dflRoundsInfo) {
+				for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
+					if(aflRounds.contains(roundMapping.getAflRound()) && !roundsToProcess.contains(roundMapping.getRound())) {
+						roundsToProcess.add(roundMapping.getRound());
+					}
+				}
+			}
+		} else {
+			loggerUtils.log("info", "Using specfic round");
+			roundsToProcess.add(inputRound);
+		}
+		
+		loggerUtils.log("info", "Rounds to process, rounds={} ....", roundsToProcess);
+
+		return roundsToProcess;
+	}
+
+	private void getStats(int inputRound, int round) {
+		loggerUtils.log("info", "Getting stats");
+		RawPlayerStatsHandler statsHandler = new RawPlayerStatsHandler();
+		statsHandler.configureLogging(mdcKey, loggerName, logfile);
+		boolean scrapeAll = false;
+		if(inputRound != 0) {
+			scrapeAll = true;
+		}
+		statsHandler.execute(round, scrapeAll);
+	}
+
+	private void calculateScores(int round) {
+		loggerUtils.log("info", "Calculating scores");
+		ScoresCalculatorHandler scoresCalculator = new ScoresCalculatorHandler();
+		scoresCalculator.configureLogging(mdcKey, loggerName, logfile);
+		scoresCalculator.execute(round);
+	}
+
+	private void calculateLadder(int round, boolean isFinal) {
+		loggerUtils.log("info", "Calculating Ladder");
+		LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
+		ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
+		if(isFinal) {
+			loggerUtils.log("info", "Ladder is not live");
+			ladderCalculator.execute(round, false);
+		} else {
+			loggerUtils.log("info", "Ladder is live");
+			ladderCalculator.execute(round, true);
+		}
+	}
+
+	private void sendReport(int round, boolean isFinal) {
+		loggerUtils.log("info", "Writing report");
+		ResultsReport resultsReport = new ResultsReport();
+		resultsReport.configureLogging(mdcKey, loggerName, logfile);
+		resultsReport.execute(round, isFinal, emailOverride);
+	}
 	
 	public static void main(String[] args) {
 		
@@ -153,14 +183,12 @@ public class ResultsHandler {
 		Option emailOPt = Option.builder("e").argName("email").hasArg().desc("override email distribution").build();
 		Option finalOpt = new Option("f", "final run");
 		Option skipStatsOpt = new Option("ss", "skip stats download");
-		Option onHerokuOpt = new Option("h", "running on Heroku");
 		Option sendReportOpt = new Option("rp", "send report");
 		
 		options.addOption(roundOpt);
 		options.addOption(emailOPt);
 		options.addOption(finalOpt);
 		options.addOption(skipStatsOpt);
-		options.addOption(onHerokuOpt);
 		options.addOption(sendReportOpt);
 		
 		try {
@@ -168,7 +196,6 @@ public class ResultsHandler {
 			int round = 0;
 			boolean isFinal = false;
 			boolean skipStats = false;
-			boolean onHeroku = false;
 			boolean sendReport = false;
 						
 			CommandLineParser parser = new DefaultParser();
@@ -185,18 +212,13 @@ public class ResultsHandler {
 			if(cli.hasOption("ss")) {
 				skipStats=true;
 			}
-			if(cli.hasOption("h")) {
-				onHeroku = true;
-			}
 			if(cli.hasOption("rp")) {
 				sendReport = true;
 			}
 
-			//JndiProvider.bind();
-			
 			ResultsHandler resultsHandler = new ResultsHandler();
 			resultsHandler.configureLogging("batch.name", "batch-logger", ("ResultsHandler_R" + round));
-			resultsHandler.execute(round, isFinal, email, skipStats, onHeroku, sendReport);
+			resultsHandler.execute(round, isFinal, email, skipStats, sendReport);
 			
 			System.exit(0);
 

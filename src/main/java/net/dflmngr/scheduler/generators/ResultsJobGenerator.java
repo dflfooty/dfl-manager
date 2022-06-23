@@ -90,7 +90,7 @@ public class ResultsJobGenerator {
 		}
 	}
 	
-	private void processFixtures(int dflRound, List<AflFixture> aflGames) throws Exception {
+	private void processFixtures(int dflRound, List<AflFixture> aflGames) {
 		
 		Collections.sort(aflGames, Collections.reverseOrder());
 		
@@ -100,7 +100,7 @@ public class ResultsJobGenerator {
 		ZonedDateTime gameStart = null;
 		ZonedDateTime lastGameStart = null;
 		
-		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
+		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.DEFAULT_TIMEZONE));
 		
 		for(AflFixture game : aflGames) {
 			
@@ -136,11 +136,11 @@ public class ResultsJobGenerator {
 		}
 	}
 	
-	private void createOngoingSchedule() throws Exception {
+	private void createOngoingSchedule() {
 		scheduleJob(0, true, false, null);	
 	}
 	
-	private void createWeekendSchedule(int dflRound, ZonedDateTime time, boolean lastGameDay) throws Exception {
+	private void createWeekendSchedule(int dflRound, ZonedDateTime time, boolean lastGameDay) {
 		time = time.withHour(19);
 		time = time.withMinute(0);
 		scheduleJob(dflRound, false, false, time);
@@ -152,7 +152,7 @@ public class ResultsJobGenerator {
 		}
 	}
 	
-	private void createWeekdaySchedule(int dflRound, ZonedDateTime time, boolean lastGameDay) throws Exception {
+	private void createWeekdaySchedule(int dflRound, ZonedDateTime time, boolean lastGameDay) {
 		if(!lastGameDay) {
 			time = time.withHour(23);
 			time = time.withMinute(0);
@@ -160,13 +160,13 @@ public class ResultsJobGenerator {
 		}
 	}
 	
-	private void createFinalRunSchedule(int dflRound, ZonedDateTime time) throws Exception {
+	private void createFinalRunSchedule(int dflRound, ZonedDateTime time) {
 		time = time.withHour(23);
 		time = time.withMinute(0);
 		scheduleJob(dflRound, false, true, time);	
 	}
 	
-	private void scheduleJob(int round, boolean ongoing, boolean isFinal, ZonedDateTime time) throws Exception {
+	private void scheduleJob(int round, boolean ongoing, boolean isFinal, ZonedDateTime time) {
 		
 		if(ongoing) {
 			loggerUtils.log("info", "Scheduling ongoing ResultsJob");
