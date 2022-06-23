@@ -743,46 +743,51 @@ public class EmailSelectionsHandler {
 		String messageBody = "Coach, \n\n" + "Your selections have been stored in the database ....\n";
 
 		if (validationResult.areWarnings()) {
-			messageBody = messageBody + "\n";
-
-			if (validationResult.selectedWarning) {
-				messageBody = messageBody + buildSelectedWarning(validationResult);
-			}
-			if (validationResult.droppedWarning) {
-				messageBody = messageBody + buildDroppedWarning(validationResult);
-			}
-			if (validationResult.emergencyFfWarning) {
-				messageBody = messageBody + buildEmergencyFfWarining(validationResult);
-			}
-			if (validationResult.emergencyFwdWarning) {
-				messageBody = messageBody + buildEmergencyFwdWarining(validationResult);
-			}
-			if (validationResult.emergencyRckWarning) {
-				messageBody = messageBody + buildEmergencyRckWarining(validationResult);
-			}
-			if (validationResult.emergencyMidWarning) {
-				messageBody = messageBody + buildEmergencyMidWarining(validationResult);
-			}
-			if (validationResult.emergencyDefWarning) {
-				messageBody = messageBody + buildEmergencyDefWarining(validationResult);
-			}
-			if (validationResult.emergencyFbWarning) {
-				messageBody = messageBody + buildEmergencyFbWarining(validationResult);
-			}
-			if (validationResult.duplicateIns) {
-				messageBody = messageBody + buildDuplicateInsWarining(validationResult);
-			}
-			if (validationResult.duplicateOuts) {
-				messageBody = messageBody + buildDuplicateOutsWarining(validationResult);
-			}
-			if (validationResult.duplicateEmgs) {
-				messageBody = messageBody + buildDuplicateEmgsWarining(validationResult);
-			}
+			messageBody = messageBody + "\n" + buildSucessMessage(validationResult);
 		}
 
 		messageBody = messageBody + "\n\nHave a nice day. \n\n" + "DFL Manager Admin";
 
 		message.setContent(messageBody, "text/plain");
+	}
+
+	private String buildSucessMessage(SelectedTeamValidation validationResult) {
+		StringBuilder messageBody = new StringBuilder();
+		if (validationResult.selectedWarning) {
+			messageBody.append(buildSelectedWarning(validationResult));
+		}
+		if (validationResult.droppedWarning) {
+			messageBody.append(buildDroppedWarning(validationResult));
+		}
+		if (validationResult.emergencyFfWarning) {
+			messageBody.append(buildEmergencyFfWarining(validationResult));
+		}
+		if (validationResult.emergencyFwdWarning) {
+			messageBody.append(buildEmergencyFwdWarining(validationResult));
+		}
+		if (validationResult.emergencyRckWarning) {
+			messageBody.append(buildEmergencyRckWarining(validationResult));
+		}
+		if (validationResult.emergencyMidWarning) {
+			messageBody.append(buildEmergencyMidWarining(validationResult));
+		}
+		if (validationResult.emergencyDefWarning) {
+			messageBody.append(buildEmergencyDefWarining(validationResult));
+		}
+		if (validationResult.emergencyFbWarning) {
+			messageBody.append(buildEmergencyFbWarining(validationResult));
+		}
+		if (validationResult.duplicateIns) {
+			messageBody.append(buildDuplicateInsWarining(validationResult));
+		}
+		if (validationResult.duplicateOuts) {
+			messageBody.append(buildDuplicateOutsWarining(validationResult));
+		}
+		if (validationResult.duplicateEmgs) {
+			messageBody.append(buildDuplicateEmgsWarining(validationResult));
+		}
+
+		return messageBody.toString();
 	}
 
 	private String buildSelectedWarning(SelectedTeamValidation validationResult) {

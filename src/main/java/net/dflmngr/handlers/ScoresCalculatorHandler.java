@@ -228,24 +228,7 @@ public class ScoresCalculatorHandler {
 		Map<Integer, String> playerPositions = new HashMap<>();
 		List<String> benchPositions = new ArrayList<>();
 
-		List<String> playedTeams = new ArrayList<>();
-		int aflRound = 0;
-		for(DflRoundMapping roundMapping : dflRoundInfo.getRoundMapping()) {
-			int currentAflRound = roundMapping.getAflRound();
-
-			if(roundMapping.getAflGame() == 0) {
-				if(aflRound != currentAflRound) {
-					playedTeams.addAll(aflFixtureService.getAflTeamsPlayedForRound(currentAflRound));
-					aflRound = currentAflRound;
-				}
-			} else {
-				AflFixture aflFixture = aflFixtureService.getPlayedGame(currentAflRound, roundMapping.getAflGame());
-				if(aflFixture != null) {
-					playedTeams.add(roundMapping.getAflTeam());
-					aflRound = currentAflRound;
-				}
-			}
-		}
+		List<String> playedTeams = getPlayedTeams(dflRoundInfo);
 
 		int ffCount = 0;
 		int fwdCount = 0;
@@ -515,6 +498,29 @@ public class ScoresCalculatorHandler {
 		}
 
 		return teamScore;
+	}
+
+	private List<String> getPlayedTeams(DflRoundInfo dflRoundInfo) throws Exception {
+		List<String> playedTeams = new ArrayList<>();
+		int aflRound = 0;
+		for(DflRoundMapping roundMapping : dflRoundInfo.getRoundMapping()) {
+			int currentAflRound = roundMapping.getAflRound();
+
+			if(roundMapping.getAflGame() == 0) {
+				if(aflRound != currentAflRound) {
+					playedTeams.addAll(aflFixtureService.getAflTeamsPlayedForRound(currentAflRound));
+					aflRound = currentAflRound;
+				}
+			} else {
+				AflFixture aflFixture = aflFixtureService.getPlayedGame(currentAflRound, roundMapping.getAflGame());
+				if(aflFixture != null) {
+					playedTeams.add(roundMapping.getAflTeam());
+					aflRound = currentAflRound;
+				}
+			}
+		}
+
+		return playedTeams;
 	}
 
 	public static void main(String[] args) {
