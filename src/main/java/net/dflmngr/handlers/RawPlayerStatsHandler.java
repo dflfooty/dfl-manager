@@ -22,11 +22,9 @@ import net.dflmngr.model.entity.DflRoundMapping;
 import net.dflmngr.model.service.AflFixtureService;
 import net.dflmngr.model.service.DflRoundInfoService;
 import net.dflmngr.model.service.GlobalsService;
-import net.dflmngr.model.service.ProcessService;
 import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
-import net.dflmngr.model.service.impl.ProcessServiceImpl;
 
 public class RawPlayerStatsHandler {
 	private LoggingUtils loggerUtils;
@@ -34,7 +32,6 @@ public class RawPlayerStatsHandler {
 	DflRoundInfoService dflRoundInfoService;
 	AflFixtureService aflFixtureService;
 	GlobalsService globalsService;
-	ProcessService processService;
 
 	boolean isExecutable;
 
@@ -50,8 +47,7 @@ public class RawPlayerStatsHandler {
 		dflRoundInfoService = new DflRoundInfoServiceImpl();
 		aflFixtureService = new AflFixtureServiceImpl();
 		globalsService = new GlobalsServiceImpl();
-		processService = new ProcessServiceImpl();
-
+		
 		isExecutable = false;
 	}
 

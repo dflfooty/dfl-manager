@@ -1,21 +1,15 @@
 package net.dflmngr.handlers;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.RawPlayerStats;
-import net.dflmngr.model.entity.Process;
 import net.dflmngr.model.service.GlobalsService;
-import net.dflmngr.model.service.ProcessService;
 import net.dflmngr.model.service.RawPlayerStatsService;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
-import net.dflmngr.model.service.impl.ProcessServiceImpl;
 import net.dflmngr.model.service.impl.RawPlayerStatsServiceImpl;
-import net.dflmngr.utils.DflmngrUtils;
 
 public class RawStatsDownloaderHandler {
 	private LoggingUtils loggerUtils;
@@ -26,12 +20,10 @@ public class RawStatsDownloaderHandler {
 	String logfile;
 
 	RawPlayerStatsService rawPlayerStatsService;
-	ProcessService processService;
 	GlobalsService globalsService;
 
 	public RawStatsDownloaderHandler() {
 		rawPlayerStatsService = new RawPlayerStatsServiceImpl();
-		processService = new ProcessServiceImpl();
 		globalsService = new GlobalsServiceImpl();
 
 		isExecutable = false;
@@ -44,9 +36,6 @@ public class RawStatsDownloaderHandler {
 	}
 
 	public void execute(int round, String homeTeam, String awayTeam, String statsUrl, boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) {
-
-		Process process = new Process();
-		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.DEFAULT_TIMEZONE));
 
 		try {
 			if(!isExecutable) {
@@ -74,23 +63,10 @@ public class RawStatsDownloaderHandler {
 			} else {
 				loggerUtils.log("info", "Player stats were not downloaded");
 			}
-
-			now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.DEFAULT_TIMEZONE));
-			process.setEndTime(now);
-			process.setStatus("Completed");
-
-			processService.insert(process);
-
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
-			now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.DEFAULT_TIMEZONE));
-			process.setEndTime(now);
-			process.setStatus("Failed");
-
-			processService.insert(process);
 		} finally {
 			rawPlayerStatsService.close();
-			processService.close();
 			globalsService.close();
 		}
 	}

@@ -18,9 +18,7 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.RawPlayerStats;
 import net.dflmngr.model.service.GlobalsService;
-import net.dflmngr.model.service.ProcessService;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
-import net.dflmngr.model.service.impl.ProcessServiceImpl;
 
 public class RawStatsHtmlHandler {
     private LoggingUtils loggerUtils;
@@ -30,13 +28,10 @@ public class RawStatsHtmlHandler {
     String defaultLogfile = "RoundProgress";
     String logfile;
 
-    ProcessService processService;
     GlobalsService globalsService;
 
     public RawStatsHtmlHandler() {
-        processService = new ProcessServiceImpl();
         globalsService = new GlobalsServiceImpl();
-
         isExecutable = false;
     }
 
@@ -70,8 +65,6 @@ public class RawStatsHtmlHandler {
 
         int webdriverTimeout = globalsService.getWebdriverTimeout();
         int webdriverWait = globalsService.getWebdriverWait();
-
-        // WebDriver driver = new PhantomJSDriver();
 
         BrowserVersion browserVersion = new BrowserVersion.BrowserVersionBuilder(BrowserVersion.CHROME)
                 .setApplicationName("DFLManager").setApplicationVersion("1.0")
