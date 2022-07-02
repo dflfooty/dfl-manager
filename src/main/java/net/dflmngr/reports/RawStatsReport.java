@@ -57,7 +57,6 @@ public class RawStatsReport {
 		this.loggerName = loggerName;
 		this.logfile = logfile;
 		
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		isExecutable = true;
 	}
@@ -78,7 +77,7 @@ public class RawStatsReport {
 			
 			RawPlayerStatsHandler rawPlayerStatsHandler = new RawPlayerStatsHandler();
 			rawPlayerStatsHandler.configureLogging(this.mdcKey, this.loggerName, this.logfile);
-			rawPlayerStatsHandler.execute(round, isFinal, true);
+			rawPlayerStatsHandler.execute(round, isFinal);
 			
 			List<RawPlayerStats> playerStats = rawPlayerStatsService.getForRound(round);
 			

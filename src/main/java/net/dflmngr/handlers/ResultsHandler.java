@@ -52,7 +52,7 @@ public class ResultsHandler {
 		emailOverride = null;
 	}
 	
-	public void execute(int inputRound, boolean isFinal, String emailOverride, boolean skipStats, boolean onHeroku, boolean sendReport) {
+	public void execute(int inputRound, boolean isFinal, String emailOverride, boolean skipStats, boolean sendReport) {
 		
 		try{
 			if(!isExecutable) {
@@ -107,7 +107,7 @@ public class ResultsHandler {
 					if(inputRound != 0) {
 						scrapeAll = true;
 					}
-					statsHandler.execute(round, scrapeAll, onHeroku);
+					statsHandler.execute(round, scrapeAll);
 				}
 	
 				loggerUtils.log("info", "Calculating scores");
@@ -153,14 +153,12 @@ public class ResultsHandler {
 		Option emailOPt = Option.builder("e").argName("email").hasArg().desc("override email distribution").build();
 		Option finalOpt = new Option("f", "final run");
 		Option skipStatsOpt = new Option("ss", "skip stats download");
-		Option onHerokuOpt = new Option("h", "running on Heroku");
 		Option sendReportOpt = new Option("rp", "send report");
 		
 		options.addOption(roundOpt);
 		options.addOption(emailOPt);
 		options.addOption(finalOpt);
 		options.addOption(skipStatsOpt);
-		options.addOption(onHerokuOpt);
 		options.addOption(sendReportOpt);
 		
 		try {
@@ -168,7 +166,6 @@ public class ResultsHandler {
 			int round = 0;
 			boolean isFinal = false;
 			boolean skipStats = false;
-			boolean onHeroku = false;
 			boolean sendReport = false;
 						
 			CommandLineParser parser = new DefaultParser();
@@ -185,9 +182,6 @@ public class ResultsHandler {
 			if(cli.hasOption("ss")) {
 				skipStats=true;
 			}
-			if(cli.hasOption("h")) {
-				onHeroku = true;
-			}
 			if(cli.hasOption("rp")) {
 				sendReport = true;
 			}
@@ -196,7 +190,7 @@ public class ResultsHandler {
 			
 			ResultsHandler resultsHandler = new ResultsHandler();
 			resultsHandler.configureLogging("batch.name", "batch-logger", ("ResultsHandler_R" + round));
-			resultsHandler.execute(round, isFinal, email, skipStats, onHeroku, sendReport);
+			resultsHandler.execute(round, isFinal, email, skipStats, sendReport);
 			
 			System.exit(0);
 
