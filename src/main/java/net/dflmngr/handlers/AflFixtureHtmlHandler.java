@@ -48,7 +48,7 @@ public class AflFixtureHtmlHandler {
         isExecutable = true;
     }
 
-    public List<AflFixture> execute(Integer aflRound, String aflFixtureUrl) throws Exception {
+    public List<AflFixture> execute(Integer aflRound, String aflFixtureUrl) throws InterruptedException {
 
         loggerUtils.log("info", "Loading Afl Fixture HTML: aflRound={} url={}", aflRound, aflFixtureUrl);
 
@@ -59,7 +59,13 @@ public class AflFixtureHtmlHandler {
         return games;
     }
 
-    private List<AflFixture> download(Integer aflRound, String aflFixtureUrl) throws Exception {
+    public void report(List<AflFixture> fixtures) {
+        for(AflFixture fixture: fixtures) {
+            loggerUtils.log("info", "Fixture: {}", fixture);
+        }
+    }
+
+    private List<AflFixture> download(Integer aflRound, String aflFixtureUrl) throws InterruptedException {
 
         List<AflFixture> games = new ArrayList<>();
 
@@ -85,7 +91,7 @@ public class AflFixtureHtmlHandler {
 			loggerUtils.log("info", "Try: {}", retry);
 			if(driver.findElements(By.className("match-list")).isEmpty()) {
 				loggerUtils.log("info", "Still waiting, will try again in 5");
-				Thread.sleep(5000);
+                Thread.sleep(5000);
 			} else {
 				break;
 			}
@@ -141,12 +147,10 @@ public class AflFixtureHtmlHandler {
 
         try {
             List<AflFixture> fixtures =  handler.execute(round, fixtureUrl);
-
-            for(AflFixture fixture: fixtures) {
-                System.out.println("Fixture: " + fixture);
-            }
-        } catch (Exception e) {
+            handler.report(fixtures);
+        } catch (InterruptedException e) {
             e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
 
         System.exit(0);

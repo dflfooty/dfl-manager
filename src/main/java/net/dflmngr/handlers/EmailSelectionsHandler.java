@@ -703,6 +703,7 @@ public class EmailSelectionsHandler {
 			properties.setProperty("mail.smtp.auth", "true");
 
 			Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
+				@Override
 				protected PasswordAuthentication getPasswordAuthentication() {
 					return new PasswordAuthentication(mailUsername, mailPassword);
 				}

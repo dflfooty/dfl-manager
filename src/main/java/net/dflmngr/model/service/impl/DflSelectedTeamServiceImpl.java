@@ -20,13 +20,11 @@ public class DflSelectedTeamServiceImpl extends GenericServiceImpl<DflSelectedPl
 	}
 	
 	public List<DflSelectedPlayer> getAllForRound(int round) {
-		List<DflSelectedPlayer> selectedRound = dao.findAllForRound(round);
-		return selectedRound;
+		return dao.findAllForRound(round);
 	}
 	
 	public List<DflSelectedPlayer> getSelectedTeamForRound(int round, String teamCode) {
-		List<DflSelectedPlayer> selectedTeam = dao.findSelectedTeamForRound(round, teamCode);
-		return selectedTeam;
+		return dao.findSelectedTeamForRound(round, teamCode);
 	}
 	
 	public void replaceAllForRound(int round, List<DflSelectedPlayer> selectedTeam) {

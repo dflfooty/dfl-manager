@@ -1,5 +1,6 @@
 package net.dflmngr.model.entity;
 
+import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -94,19 +95,10 @@ public class DflRoundMapping {
 		if (getClass() != obj.getClass())
 			return false;
 		DflRoundMapping other = (DflRoundMapping) obj;
-		if (aflGame != other.aflGame)
-			return false;
-		if (aflRound != other.aflRound)
-			return false;
-		if (aflTeam == null) {
-			if (other.aflTeam != null)
-				return false;
-		} else if (!aflTeam.equals(other.aflTeam))
-			return false;
-		if (id != other.id)
-			return false;
-		if (round != other.round)
-			return false;
-		return true;
+		return aflGame == other.aflGame
+			&& aflRound == other.aflRound
+			&& Objects.equals(aflTeam, other.aflTeam)
+			&& id == other.id
+			&& round == other.round;
 	}
 }

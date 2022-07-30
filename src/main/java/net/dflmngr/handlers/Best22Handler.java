@@ -1,12 +1,12 @@
 package net.dflmngr.handlers;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-
+import java.util.stream.Collectors;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -50,7 +50,6 @@ public class Best22Handler {
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -110,15 +109,16 @@ public class Best22Handler {
 				case "Mid": midScores.put(playerId, total); break;
 				case "FB": fbScores.put(playerId, total); break;
 				case "Def": defScores.put(playerId, total); break;
+				default: loggerUtils.log("info", "Unknown position");
 			}
 		}
 		
-		ffScores = sortByValue(ffScores);
-		fwdScores = sortByValue(fwdScores);
-		rckScores = sortByValue(rckScores);
-		midScores = sortByValue(midScores);
-		fbScores = sortByValue(fbScores);
-		defScores = sortByValue(defScores);
+		ffScores = sortByValueDesc(ffScores);
+		fwdScores = sortByValueDesc(fwdScores);
+		rckScores = sortByValueDesc(rckScores);
+		midScores = sortByValueDesc(midScores);
+		fbScores = sortByValueDesc(fbScores);
+		defScores = sortByValueDesc(defScores);
 		
 		Map<Integer, Integer> best22selections = new HashMap<>();
 		
@@ -166,7 +166,7 @@ public class Best22Handler {
 		
 		best22selections.clear();
 		
-		benchScores = sortByValue(benchScores);
+		benchScores = sortByValueDesc(benchScores);
 		
 		loggerUtils.log("info", "Selecting Bench");
 		best22selections.putAll(selectPlayers(benchScores, "Bench"));
@@ -201,6 +201,7 @@ public class Best22Handler {
 			case "FB": selectionCount = 1; break;
 			case "Def": selectionCount = 5; break;
 			case "Bench": selectionCount = 4; break;
+			default: loggerUtils.log("info", "Unknown position");
 		}
 		
 		loggerUtils.log("info", "Selecting {} players for {}", selectionCount, position);
@@ -215,11 +216,13 @@ public class Best22Handler {
 		return selectedPlayers;		
 	}
 	
-	private Map<Integer, Integer> sortByValue(Map<Integer, Integer> unsortedMap) {
-		Comparator<Integer> comparator = new ValueComparator<Integer, Integer>(unsortedMap);
-		TreeMap<Integer, Integer> sortedMap = new TreeMap<Integer, Integer>(comparator);
-		sortedMap.putAll(unsortedMap);
-		return sortedMap;
+	private Map<Integer, Integer> sortByValueDesc(Map<Integer, Integer> unsortedMap) {
+		return unsortedMap.entrySet()
+        .stream()
+        .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+        .collect(
+            Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
+                LinkedHashMap::new));
 	}
 	
 	// internal testing
@@ -245,19 +248,5 @@ public class Best22Handler {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-	}
-}
-
-class ValueComparator<K, V extends Comparable<V>> implements Comparator<K>{
-	 
-	Map<K, V> map = new HashMap<>();
- 
-	public ValueComparator(Map<K, V> map){
-		this.map.putAll(map);
-	}
- 
-	@Override
-	public int compare(K s1, K s2) {
-		return -map.get(s1).compareTo(map.get(s2));//descending order	
 	}
 }

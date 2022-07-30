@@ -12,7 +12,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflPlayerPredictedScores;
 import net.dflmngr.model.entity.DflPlayerScores;
@@ -59,7 +58,6 @@ public class PredictionHandler {
 	}
 
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -223,9 +221,6 @@ public class PredictionHandler {
 			CommandLine cli = parser.parse(options, args);
 
 			round = ((Number)cli.getParsedOptionValue("r")).intValue();
-
-			//JndiProvider.bind();
-
 			PredictionHandler predictions = new PredictionHandler();
 			predictions.configureLogging("batch.name", "batch-logger", "PredictionsHandler_R" + round);
 			predictions.execute(round, null, true);

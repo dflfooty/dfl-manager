@@ -1,13 +1,10 @@
 package net.dflmngr.handlers;
 
-//import java.text.DateFormat;
-// java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflPlayer;
 import net.dflmngr.model.entity.AflTeam;
@@ -26,6 +23,9 @@ import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 
 public class AflPlayerLoaderHandler {
 	private LoggingUtils loggerUtils;
+
+	private static final String REGEX = "[^a-zA-Z]";
+	private static final String UNMATCHED_TEXT = "Unmatched AFL player: {}";
 
 	private AflTeamService aflTeamService;
 	private AflPlayerService aflPlayerService;
@@ -66,34 +66,29 @@ public class AflPlayerLoaderHandler {
 
 	}
 
-	private void processTeams(List<AflTeam> aflTeams) throws Exception {
+	private void processTeams(List<AflTeam> aflTeams) {
 
 		List<AflPlayer> aflPlayers = new ArrayList<>();
-
 		AflPlayerLoaderHtmlHandler playerHtmlLoader = new AflPlayerLoaderHtmlHandler();
-		boolean useOfficalPlayers = globalsService.getUseOfficalPlayers();
-
-		loggerUtils.log("info", "Using official AFL player lists: {}", useOfficalPlayers);
 
 		for(AflTeam team : aflTeams) {
 
 			loggerUtils.log("info", "Working on team: {}", team.getTeamId());
 
-			String teamListUrlS = useOfficalPlayers ? team.getOfficialWebsite() + "/" + team.getOfficialSeniorUri() : team.getWebsite() + "/" + team.getSeniorUri();
+			String teamListUrlS = team.getOfficialWebsite() + "/" + team.getOfficialSeniorUri();
 
 			loggerUtils.log("info", "Senior list URL: {}", teamListUrlS);
 
-			aflPlayers.addAll(playerHtmlLoader.execute(team.getTeamId(), teamListUrlS, useOfficalPlayers));
+			aflPlayers.addAll(playerHtmlLoader.execute(team.getTeamId(), teamListUrlS));
 
 			loggerUtils.log("info", "Seniors added to list");
 
-			if((!useOfficalPlayers && team.getRookieUri() != null && !team.getRookieUri().equals("")) ||
-				(useOfficalPlayers && team.getOfficialRookieUri() != null && !team.getOfficialRookieUri().equals("")) ) {
+			if(team.getOfficialRookieUri() != null && !team.getOfficialRookieUri().equals("")) {
 
-				String teamListUrlR = useOfficalPlayers ? team.getOfficialWebsite() + "/" + team.getOfficialRookieUri() : team.getWebsite() + "/" + team.getRookieUri();
+				String teamListUrlR = team.getOfficialWebsite() + "/" + team.getOfficialRookieUri();
 				loggerUtils.log("info", "Rookie list URL: {}", teamListUrlS);
 
-				aflPlayers.addAll(playerHtmlLoader.execute(team.getTeamId(), teamListUrlR, useOfficalPlayers));
+				aflPlayers.addAll(playerHtmlLoader.execute(team.getTeamId(), teamListUrlR));
 
 				loggerUtils.log("info", "Rookies added to list");
 			} else {
@@ -137,13 +132,21 @@ public class AflPlayerLoaderHandler {
 	private void crossRefAflDflPlayers(List<AflPlayer> aflPlayers) {
 
 		Map<String, DflPlayer> dflPlayerCrossRefs = dflPlayerService.getCrossRefPlayers();
-		List<AflPlayer> aflUnmatchedPlayers = new ArrayList<>();
 
+		crossRefAflWithDflPlayer(aflPlayers, dflPlayerCrossRefs);
+		crossRefByNamesAndClub(aflPlayers, dflPlayerCrossRefs);
+		crossRefByLastNameAndClub(aflPlayers, dflPlayerCrossRefs);
+		crossRefByFirstNameAndClub(aflPlayers, dflPlayerCrossRefs);
+
+		createUnmatchedPlayers(dflPlayerCrossRefs);
+	}
+
+	private void crossRefAflWithDflPlayer(List<AflPlayer> aflPlayers, Map<String, DflPlayer> dflPlayerCrossRefs) {
 		Map<String, DflPlayer> dflPlayerUpdates = new HashMap<>();
 		Map<Integer, AflPlayer> aflPlayerUpdates = new HashMap<>();
-
+	
 		for(AflPlayer aflPlayer : aflPlayers) {
-			String aflPlayerCrossRef = (aflPlayer.getName().replaceAll("[^a-zA-Z]", "") + "-" + globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase())).toLowerCase();
+			String aflPlayerCrossRef = (aflPlayer.getName().replaceAll(REGEX, "") + "-" + globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase())).toLowerCase();
 			loggerUtils.log("info", "Searching for player: {}", aflPlayerCrossRef);
 			DflPlayer dflPlayer = dflPlayerCrossRefs.get(aflPlayerCrossRef);
 
@@ -159,32 +162,33 @@ public class AflPlayerLoaderHandler {
 
 				dflPlayerCrossRefs.remove(aflPlayerCrossRef);
 			} else {
-				loggerUtils.log("info", "Unmatched AFL player: {}", aflPlayer);
-				aflUnmatchedPlayers.add(aflPlayer);
+				loggerUtils.log("info", UNMATCHED_TEXT, aflPlayer);
+				aflPlayers.remove(aflPlayer);
 			}
 		}
 
-		List<DflUnmatchedPlayer> unmatchedPlayers = new ArrayList<>();
+		dflPlayerService.bulkUpdateAflPlayerId(dflPlayerUpdates);
+		aflPlayerService.bulkUpdateDflPlayerId(aflPlayerUpdates);
+	}
+
+	private void crossRefByNamesAndClub(List<AflPlayer> aflPlayers, Map<String, DflPlayer> dflPlayerCrossRefs) {
+		Map<String, DflPlayer> dflPlayerUpdates = new HashMap<>();
+		Map<Integer, AflPlayer> aflPlayerUpdates = new HashMap<>();
 
 		for (Map.Entry<String, DflPlayer> entry : dflPlayerCrossRefs.entrySet()) {
 		    String crossRef = entry.getKey();
 		    DflPlayer dflPlayer = entry.getValue();
 
-		    boolean matched = false;
+		    String check = ((dflPlayer.getFirstName() + dflPlayer.getInitial() + dflPlayer.getLastName()).replaceAll(REGEX, "") + "-" + dflPlayer.getAflClub()).toLowerCase();
 
-		    String dflCheckOne = ((dflPlayer.getFirstName() + dflPlayer.getInitial() + dflPlayer.getLastName()).replaceAll("[^a-zA-Z]", "") + "-" + dflPlayer.getAflClub()).toLowerCase();
-		    String dflCheckTwo = (dflPlayer.getLastName().replaceAll("[^a-zA-Z]", "") + "-" + dflPlayer.getAflClub()).toLowerCase();
-		    String dflCheckThree = (dflPlayer.getFirstName().replaceAll("[^a-zA-Z]", "") + "-" + dflPlayer.getAflClub()).toLowerCase();
-
-		    for(AflPlayer aflPlayer : aflUnmatchedPlayers) {
+		    for(AflPlayer aflPlayer : aflPlayers) {
 
 		    	String aflTeamName = globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase());
+		    	String aflCheck = (aflPlayer.getName().replaceAll(REGEX, "") + "-" + aflTeamName).toLowerCase();
 
-		    	String aflCheckOne = (aflPlayer.getName().replaceAll("[^a-zA-Z]", "") + "-" + aflTeamName).toLowerCase();
+		    	loggerUtils.log("info", "Check one {} vs {}", check, aflCheck);
 
-		    	loggerUtils.log("info", "Check one {} vs {}", dflCheckOne, aflCheckOne);
-
-		    	if(dflCheckOne.equals(aflCheckOne)) {
+		    	if(check.equals(aflCheck)) {
 		    		int dflPlayerId = dflPlayer.getPlayerId();
 					String aflPlayerId = aflPlayer.getPlayerId();
 
@@ -193,72 +197,117 @@ public class AflPlayerLoaderHandler {
 					dflPlayerUpdates.put(aflPlayerId, dflPlayer);
 					aflPlayerUpdates.put(dflPlayerId, aflPlayer);
 
-		    		matched = true;
-		    	}
-
-		    	if(!matched) {
-		    		String aflCheckTwo = (aflPlayer.getSecondName().replaceAll("[^a-zA-Z]", "") + "-" + aflTeamName).toLowerCase();
-
-		    		loggerUtils.log("info", "Check two {} vs {}", dflCheckTwo, aflCheckTwo);
-
-		    		if(dflCheckTwo.equals(aflCheckTwo)) {
-			    		int dflPlayerId = dflPlayer.getPlayerId();
-						String aflPlayerId = aflPlayer.getPlayerId();
-
-						loggerUtils.log("info", "Matched player on Check Two - CrossRef: {}, DflPlayerId: {}, AflPlayerId {}", crossRef, dflPlayerId, aflPlayerId);
-
-						dflPlayerUpdates.put(aflPlayerId, dflPlayer);
-						aflPlayerUpdates.put(dflPlayerId, aflPlayer);
-
-			    		matched = true;
-		    		}
-		    	}
-
-		    	if(!matched) {
-		    		String aflCheckThree = (aflPlayer.getFirstName().replaceAll("[^a-zA-Z]", "") + "-" + aflTeamName).toLowerCase();
-
-		    		loggerUtils.log("info", "Check three {} vs {}", dflCheckThree, aflCheckThree);
-
-		    		if(dflCheckThree.equals(aflCheckThree)) {
-			    		int dflPlayerId = dflPlayer.getPlayerId();
-						String aflPlayerId = aflPlayer.getPlayerId();
-
-						loggerUtils.log("info", "Matched player on Check Two - CrossRef: {}, DflPlayerId: {}, AflPlayerId {}", crossRef, dflPlayerId, aflPlayerId);
-
-						dflPlayerUpdates.put(aflPlayerId, dflPlayer);
-						aflPlayerUpdates.put(dflPlayerId, aflPlayer);
-
-			    		matched = true;
-		    		}
-		    	}
-
-				if(matched) {
-					break;
+					dflPlayerCrossRefs.remove(crossRef);
+		    	} else {
+					loggerUtils.log("info", UNMATCHED_TEXT, aflPlayer);
+					aflPlayers.remove(aflPlayer);
 				}
-		    }
-
-		    if(!matched) {
-			    loggerUtils.log("info", "Unmatched player: {}", crossRef);
-
-			    DflUnmatchedPlayer unmatchedPlayer = new DflUnmatchedPlayer();
-			    unmatchedPlayer.setPlayerId(dflPlayer.getPlayerId());
-			    unmatchedPlayer.setFirstName(dflPlayer.getFirstName());
-			    unmatchedPlayer.setLastName(dflPlayer.getLastName());
-			    unmatchedPlayer.setInitial(dflPlayer.getInitial());
-			    unmatchedPlayer.setStatus(dflPlayer.getStatus());
-			    unmatchedPlayer.setAflClub(dflPlayer.getAflClub());
-			    unmatchedPlayer.setPosition(dflPlayer.getPosition());
-			    unmatchedPlayer.setFirstYear(dflPlayer.isFirstYear());
-
-			    unmatchedPlayers.add(unmatchedPlayer);
-		    }
+			}
 		}
 
 		dflPlayerService.bulkUpdateAflPlayerId(dflPlayerUpdates);
 		aflPlayerService.bulkUpdateDflPlayerId(aflPlayerUpdates);
+	}
+
+	private void crossRefByLastNameAndClub(List<AflPlayer> aflPlayers, Map<String, DflPlayer> dflPlayerCrossRefs) {
+		Map<String, DflPlayer> dflPlayerUpdates = new HashMap<>();
+		Map<Integer, AflPlayer> aflPlayerUpdates = new HashMap<>();
+
+		for (Map.Entry<String, DflPlayer> entry : dflPlayerCrossRefs.entrySet()) {
+		    String crossRef = entry.getKey();
+		    DflPlayer dflPlayer = entry.getValue();
+
+		    String check = (dflPlayer.getLastName().replaceAll(REGEX, "") + "-" + dflPlayer.getAflClub()).toLowerCase();
+
+		    for(AflPlayer aflPlayer : aflPlayers) {
+
+		    	String aflTeamName = globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase());
+				String aflCheck = (aflPlayer.getSecondName().replaceAll(REGEX, "") + "-" + aflTeamName).toLowerCase();
+
+				loggerUtils.log("info", "Check two {} vs {}", check, aflCheck);
+
+				if(check.equals(aflCheck)) {
+					int dflPlayerId = dflPlayer.getPlayerId();
+					String aflPlayerId = aflPlayer.getPlayerId();
+
+					loggerUtils.log("info", "Matched player on Check Two - CrossRef: {}, DflPlayerId: {}, AflPlayerId {}", crossRef, dflPlayerId, aflPlayerId);
+
+					dflPlayerUpdates.put(aflPlayerId, dflPlayer);
+					aflPlayerUpdates.put(dflPlayerId, aflPlayer);
+
+					dflPlayerCrossRefs.remove(crossRef);
+				} else {
+					loggerUtils.log("info", UNMATCHED_TEXT, aflPlayer);
+					aflPlayers.remove(aflPlayer);
+				}
+			}
+		}
+
+		dflPlayerService.bulkUpdateAflPlayerId(dflPlayerUpdates);
+		aflPlayerService.bulkUpdateDflPlayerId(aflPlayerUpdates);
+	}
+
+	private void crossRefByFirstNameAndClub(List<AflPlayer> aflPlayers, Map<String, DflPlayer> dflPlayerCrossRefs) {
+		Map<String, DflPlayer> dflPlayerUpdates = new HashMap<>();
+		Map<Integer, AflPlayer> aflPlayerUpdates = new HashMap<>();
+
+		for (Map.Entry<String, DflPlayer> entry : dflPlayerCrossRefs.entrySet()) {
+		    String crossRef = entry.getKey();
+		    DflPlayer dflPlayer = entry.getValue();
+
+		    String check = (dflPlayer.getFirstName().replaceAll(REGEX, "") + "-" + dflPlayer.getAflClub()).toLowerCase();
+
+		    for(AflPlayer aflPlayer : aflPlayers) {
+
+		    	String aflTeamName = globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase());
+				String aflCheck = (aflPlayer.getFirstName().replaceAll(REGEX, "") + "-" + aflTeamName).toLowerCase();
+
+				loggerUtils.log("info", "Check three {} vs {}", check, aflCheck);
+
+				if(check.equals(aflCheck)) {
+					int dflPlayerId = dflPlayer.getPlayerId();
+					String aflPlayerId = aflPlayer.getPlayerId();
+
+					loggerUtils.log("info", "Matched player on Check Three - CrossRef: {}, DflPlayerId: {}, AflPlayerId {}", crossRef, dflPlayerId, aflPlayerId);
+
+					dflPlayerUpdates.put(aflPlayerId, dflPlayer);
+					aflPlayerUpdates.put(dflPlayerId, aflPlayer);
+
+					dflPlayerCrossRefs.remove(crossRef);
+				} else {
+					loggerUtils.log("info", UNMATCHED_TEXT, aflPlayer);
+					aflPlayers.remove(aflPlayer);
+				}
+			}
+		}
+
+		dflPlayerService.bulkUpdateAflPlayerId(dflPlayerUpdates);
+		aflPlayerService.bulkUpdateDflPlayerId(aflPlayerUpdates);
+	}
+
+	private void createUnmatchedPlayers(Map<String, DflPlayer> dflPlayerCrossRefs) {
+		List<DflUnmatchedPlayer> unmatchedPlayers = new ArrayList<>();
+
+		for (Map.Entry<String, DflPlayer> entry : dflPlayerCrossRefs.entrySet()) {
+			String crossRef = entry.getKey();
+		    DflPlayer dflPlayer = entry.getValue();
+
+			loggerUtils.log("info", "Unmatched player: {}", crossRef);
+
+			DflUnmatchedPlayer unmatchedPlayer = new DflUnmatchedPlayer();
+			unmatchedPlayer.setPlayerId(dflPlayer.getPlayerId());
+			unmatchedPlayer.setFirstName(dflPlayer.getFirstName());
+			unmatchedPlayer.setLastName(dflPlayer.getLastName());
+			unmatchedPlayer.setInitial(dflPlayer.getInitial());
+			unmatchedPlayer.setStatus(dflPlayer.getStatus());
+			unmatchedPlayer.setAflClub(dflPlayer.getAflClub());
+			unmatchedPlayer.setPosition(dflPlayer.getPosition());
+			unmatchedPlayer.setFirstYear(dflPlayer.isFirstYear());
+
+			unmatchedPlayers.add(unmatchedPlayer);
+		}
 
 		dflUnmatchedPlayerService.replaceAll(unmatchedPlayers);
-
 	}
 
 	public static void main(String[] args) {

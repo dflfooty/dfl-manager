@@ -43,7 +43,7 @@ public class AflFixtureLoaderHandler {
 		}	
 	}
 	
-	public void execute(List<Integer> aflRounds) throws Exception {
+	public void execute(List<Integer> aflRounds) {
 		
 		try {
 			loggerUtils.log("info", "Executing AflFixtureLoader for rounds: {}", aflRounds);
@@ -62,8 +62,9 @@ public class AflFixtureLoaderHandler {
 			aflFixtureService.updateLoadedFixtures(allGames);
 			
 			loggerUtils.log("info", "AflFixtureLoader Complete");
-		} catch (Exception ex) {
+		} catch (InterruptedException ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
+			Thread.currentThread().interrupt();
 		}
 	}
 		

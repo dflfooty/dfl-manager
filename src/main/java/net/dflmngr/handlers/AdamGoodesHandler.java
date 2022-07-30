@@ -91,6 +91,30 @@ public class AdamGoodesHandler {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
 	}
+
+	private void report() {		
+		loggerUtils.log("info", "Adam Goodes top 5");
+		for(int i = 0; i < 5; i++) {
+			if(i < medalStandings.size()) {
+				DflAdamGoodes standing = medalStandings.get(i);
+				loggerUtils.log("info", "{}. {}, {}, {} - {}",
+								i+1, standing.getPlayerId(), standing.getTeamCode(),  standing.getTeamPlayerId(), standing.getTotalScore());
+			} else {
+				break;
+			}
+		}
+		
+		loggerUtils.log("info", "Top 5 first year players");
+		for(int i = 0; i < 5; i++) {
+			if(i < topFirstYears.size()) {
+				DflAdamGoodes topFirstYear = topFirstYears.get(i);
+				loggerUtils.log("info", "{}. {}, {}, {} - {}",
+								i+1, topFirstYear.getPlayerId(), topFirstYear.getTeamCode(),  topFirstYear.getTeamPlayerId(), topFirstYear.getTotalScore());
+			} else {
+				break;
+			}
+		}
+	}
 	
 	public List<DflAdamGoodes> getMedalStandings() {
 		return medalStandings;
@@ -169,30 +193,7 @@ public class AdamGoodesHandler {
 			adamGoodesHandler.configureLogging("batch.name", "batch-logger", ("AdamGoodesHandler_R" + round));
 			adamGoodesHandler.execute(round);
 			
-			List<DflAdamGoodes> standings = adamGoodesHandler.getMedalStandings();
-			List<DflAdamGoodes> topFirstYears = adamGoodesHandler.getTopFirstYears();
-			
-			System.out.println("Adam Goodes top 5 for round " + round);
-			for(int i = 0; i < 5; i++) {
-				if(i < standings.size()) {
-					DflAdamGoodes standing = standings.get(i);
-					String out = i+1 + ". " + standing.getPlayerId() + ", " + standing.getTeamCode() + ", " + standing.getTeamPlayerId() + " - " + standing.getTotalScore();
-					System.out.println(out);
-				} else {
-					break;
-				}
-			}
-			
-			System.out.println("\nTop 5 first year players for round " + round);
-			for(int i = 0; i < 5; i++) {
-				if(i < topFirstYears.size()) {
-					DflAdamGoodes topFirstYear = topFirstYears.get(i);
-					String out = i+1 + ". " + topFirstYear.getPlayerId() + ", " + topFirstYear.getTeamCode() + ", " + topFirstYear.getTeamPlayerId() + " - " + topFirstYear.getTotalScore();
-					System.out.println(out);
-				} else {
-					break;
-				}
-			}
+			adamGoodesHandler.report();
 			
 		} catch (ParseException ex) {
 			HelpFormatter formatter = new HelpFormatter();

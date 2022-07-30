@@ -14,7 +14,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflAdamGoodes;
 import net.dflmngr.model.entity.DflBest22;
@@ -60,6 +59,9 @@ import net.dflmngr.utils.EmailUtils;
 public class EndRoundHandler {
 	private LoggingUtils loggerUtils;
 
+	private static final String SIGN_OFF_TEXT = "Good luck,\nDFL Manager Admin";
+	private static final String ELEMINATION_TEXT = " has been eliminated. Better luck next year ";
+
 	boolean isExecutable;
 
 	String defaultMdcKey = "batch.name";
@@ -101,7 +103,6 @@ public class EndRoundHandler {
 	}
 
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		// loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -110,7 +111,6 @@ public class EndRoundHandler {
 	}
 
 	public void execute(int round, String emailOverride) {
-
 		try {
 			if (!isExecutable) {
 				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
@@ -126,7 +126,7 @@ public class EndRoundHandler {
 
 			List<Integer> rounds = getRoundsToDefault(round);
 
-			defaultSelectedTeams(rounds);
+			defaultRounds(rounds);
 
 			for (int r : rounds) {
 				PredictionHandler predictions = new PredictionHandler();
@@ -167,18 +167,20 @@ public class EndRoundHandler {
 			}
 
 			switch (round) {
-			case 18:
-				calculateFinalsWeek1(round);
-				break;
-			case 19:
-				calculateFinalsWeek2(round);
-				break;
-			case 20:
-				calculateFinalsWeek3(round);
-				break;
-			case 21:
-				calculateFinalsWeek4(round);
-				break;
+				case 18:
+					calculateFinalsWeek1(round);
+					break;
+				case 19:
+					calculateFinalsWeek2(round);
+					break;
+				case 20:
+					calculateFinalsWeek3(round);
+					break;
+				case 21:
+					calculateFinalsWeek4(round);
+					break;
+				default:
+					loggerUtils.log("info", "Not finals");
 			}
 
 			globalsService.setCurrentRound(round + 1);
@@ -201,12 +203,11 @@ public class EndRoundHandler {
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
-
 	}
 
 	private List<Integer> getRoundsToDefault(int round) {
 
-		loggerUtils.log("info", "Gettings rounds to create default team for.");
+		loggerUtils.log("info", "Getting rounds to create default team for.");
 
 		List<Integer> roundsToDefault = new ArrayList<>();
 
@@ -238,171 +239,137 @@ public class EndRoundHandler {
 		return roundsToDefault;
 	}
 
-	private void defaultSelectedTeams(List<Integer> rounds) {
-
+	private void defaultRounds(List<Integer> rounds) {
 		loggerUtils.log("info", "Creating selected teams for next round(s)={}", rounds);
 
 		List<DflTeam> teams = dflTeamService.findAll();
 
 		for (int round : rounds) {
-			for (DflTeam team : teams) {
-				List<DflSelectedPlayer> currentSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round,
-						team.getTeamCode());
-				List<DflSelectedPlayer> previousSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round - 1,
-						team.getTeamCode());
+			defaultTeams(round, teams);
+		}
+	}
 
-				if (currentSelectedTeam == null || currentSelectedTeam.isEmpty()) {
+	private void defaultTeams(int round, List<DflTeam> teams) {
+		loggerUtils.log("info", "Creating selected team for teams={}", teams);
 
-					loggerUtils.log("info", "No currently selected team.  Defaulting team. teamCode={}; round={};",
-							team.getTeamCode(), round);
+		for (DflTeam team : teams) {
+			List<DflSelectedPlayer> currentSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round,	team.getTeamCode());
 
-					List<DflSelectedPlayer> updatedSelectedTeam = new ArrayList<>();
+			if(currentSelectedTeam == null || currentSelectedTeam.isEmpty()) {
+				loggerUtils.log("info", "No currently selected team.  Defaulting team. teamCode={}; round={};",	team.getTeamCode(), round);
+				defaultTeam(round, team);
+			}
+		}
+	}
 
-					/*
-					 * for(DflSelectedPlayer selectedPlayer : previousSelectedTeam) {
-					 * DflSelectedPlayer updatedSelectedPlayer = defaultPlayer(selectedPlayer,
-					 * round);
-					 * 
-					 * loggerUtils.log("info",
-					 * "Adding selected player for next round={}; player={}", round,
-					 * updatedSelectedPlayer); updatedSelectedTeam.add(updatedSelectedPlayer); } }
-					 * else {
-					 * 
-					 * loggerUtils.log("info",
-					 * "Team has been selected for current round. teamCode={}; round={};",
-					 * team.getTeamCode(), round);
-					 */
-					List<InsAndOuts> insAndOuts = insAndOutsService.getByTeamAndRound(round, team.getTeamCode());
+	private void defaultTeam(int round, DflTeam team) {
 
-					if (insAndOuts == null || insAndOuts.isEmpty()) {
+		List<DflSelectedPlayer> previousSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round - 1, team.getTeamCode());
 
-						loggerUtils.log("info", "Team has no ins or outs.  Defaulting team. teamCode={}; round={};",
-								team.getTeamCode(), round);
+		loggerUtils.log("info", "No currently selected team.  Defaulting team. teamCode={}; round={};", team.getTeamCode(), round);
 
-						for (DflSelectedPlayer selectedPlayer : previousSelectedTeam) {
-							DflSelectedPlayer updatedSelectedPlayer = defaultPlayer(selectedPlayer, round);
+		List<DflSelectedPlayer> updatedSelectedTeam = new ArrayList<>();
+		List<InsAndOuts> insAndOuts = insAndOutsService.getByTeamAndRound(round, team.getTeamCode());
 
-							loggerUtils.log("info", "Adding selected player for next round={}; player={}", round,
-									updatedSelectedPlayer);
-							updatedSelectedTeam.add(updatedSelectedPlayer);
-						}
-					} else {
+		if (insAndOuts == null || insAndOuts.isEmpty()) {
+			loggerUtils.log("info", "Team has no ins or outs.  Defaulting team. teamCode={}; round={};", team.getTeamCode(), round);
+			updatedSelectedTeam.addAll(noChanges(round, previousSelectedTeam));
+		} else {
+			loggerUtils.log("info",	"Team has ins and outs. Updating team from previous round. teamCode={}; round={};",	team.getTeamCode(),	round);
+			updatedSelectedTeam.addAll(applyChanges(round, previousSelectedTeam, insAndOuts));
+		}
 
-						loggerUtils.log("info",
-								"Team has ins and outs.  Updating team from previous round. teamCode={}; round={};",
-								team.getTeamCode(), round);
+		dflSelectedTeamService.replaceTeamForRound(round, team.getTeamCode(), updatedSelectedTeam);
+	}
 
-						List<DflSelectedPlayer> tmpSelectedTeam = new ArrayList<>();
+	private List<DflSelectedPlayer> noChanges(int round, List<DflSelectedPlayer> previousSelectedTeam) {
+		List<DflSelectedPlayer> updatedSelectedTeam = new ArrayList<>();
+		for (DflSelectedPlayer selectedPlayer : previousSelectedTeam) {
+			DflSelectedPlayer updatedSelectedPlayer = defaultPlayer(selectedPlayer, round);
 
-						Map<Integer, DflSelectedPlayer> previousSelectedTeamMap = previousSelectedTeam.stream()
-								.collect(Collectors.toMap(DflSelectedPlayer::getTeamPlayerId, item -> item));
+			loggerUtils.log("info", "Adding selected player for next round={}; player={}", round, updatedSelectedPlayer);
+			updatedSelectedTeam.add(updatedSelectedPlayer);
+		}
 
-						for (DflSelectedPlayer selectedPlayer : previousSelectedTeam) {
-							if (selectedPlayer.isEmergency() == 0) {
-								loggerUtils.log("info", "Addiong player to team.  selectedPlayer={}; ", selectedPlayer);
-								tmpSelectedTeam.add(selectedPlayer);
-							} else {
-								loggerUtils.log("info", "Player is emgergency removing from team.  selectedPlayer={}; ",
-										selectedPlayer);
-							}
-						}
+		return updatedSelectedTeam;
+	}
 
-						for (InsAndOuts inOrOut : insAndOuts) {
-							if (inOrOut.getInOrOut().equals("I")) {
-								DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+	private List<DflSelectedPlayer> applyChanges(int round, List<DflSelectedPlayer> previousSelectedTeam, List<InsAndOuts> insAndOuts) {
+		List<DflSelectedPlayer> updatedSelectedTeam = new ArrayList<>();
+		List<DflSelectedPlayer> tmpSelectedTeam = new ArrayList<>();
 
-								DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(),
-										inOrOut.getTeamPlayerId());
+		Map<Integer, DflSelectedPlayer> previousSelectedTeamMap = previousSelectedTeam.stream()
+				.collect(Collectors.toMap(DflSelectedPlayer::getTeamPlayerId, item -> item));
 
-								selectedPlayer.setPlayerId(teamPlayer.getPlayerId());
-								selectedPlayer.setRound(round);
-								selectedPlayer.setTeamCode(teamPlayer.getTeamCode());
-								selectedPlayer.setTeamPlayerId(teamPlayer.getTeamPlayerId());
-								selectedPlayer.setDnp(false);
-								selectedPlayer.setEmergency(0);
-
-								selectedPlayer.setScoreUsed(true);
-
-								loggerUtils.log("info", "Selecting player as in to team.  selectedPlayer={}; ",
-										selectedPlayer);
-								tmpSelectedTeam.add(selectedPlayer);
-							} else if (inOrOut.getInOrOut().equals("O")) {
-								DflSelectedPlayer droppedPlayer = previousSelectedTeamMap
-										.get(inOrOut.getTeamPlayerId());
-
-								loggerUtils.log("info", "Dropped player team.  droppedPlayer={}; ", droppedPlayer);
-
-								tmpSelectedTeam.remove(droppedPlayer);
-							} else if (inOrOut.getInOrOut().equals("E1")) {
-								DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-
-								DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(),
-										inOrOut.getTeamPlayerId());
-
-								selectedPlayer.setPlayerId(teamPlayer.getPlayerId());
-								selectedPlayer.setRound(round);
-								selectedPlayer.setTeamCode(teamPlayer.getTeamCode());
-								selectedPlayer.setTeamPlayerId(teamPlayer.getTeamPlayerId());
-								selectedPlayer.setDnp(false);
-								selectedPlayer.setEmergency(1);
-
-								selectedPlayer.setScoreUsed(false);
-
-								loggerUtils.log("info", "Selecting player as emg1 to team.  selectedPlayer={}; ",
-										selectedPlayer);
-								tmpSelectedTeam.add(selectedPlayer);
-							} else if (inOrOut.getInOrOut().equals("E2")) {
-								DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-
-								DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(team.getTeamCode(),
-										inOrOut.getTeamPlayerId());
-
-								selectedPlayer.setPlayerId(teamPlayer.getPlayerId());
-								selectedPlayer.setRound(round);
-								selectedPlayer.setTeamCode(teamPlayer.getTeamCode());
-								selectedPlayer.setTeamPlayerId(teamPlayer.getTeamPlayerId());
-								selectedPlayer.setDnp(false);
-								selectedPlayer.setEmergency(2);
-
-								selectedPlayer.setScoreUsed(false);
-
-								loggerUtils.log("info", "Selecting player as emg2 to team.  selectedPlayer={}; ",
-										selectedPlayer);
-								tmpSelectedTeam.add(selectedPlayer);
-							}
-						}
-
-						Map<Integer, DflSelectedPlayer> currentSelectedTeamMap = currentSelectedTeam.stream()
-								.collect(Collectors.toMap(DflSelectedPlayer::getPlayerId, item -> item));
-
-						for (DflSelectedPlayer tmpSelectedPlayer : tmpSelectedTeam) {
-
-							DflSelectedPlayer selectedPlayer = defaultPlayer(tmpSelectedPlayer, round);
-
-							if (currentSelectedTeamMap.containsKey(selectedPlayer.getPlayerId())) {
-								DflSelectedPlayer currentSelectedPlayer = currentSelectedTeamMap
-										.get(selectedPlayer.getPlayerId());
-
-								if (currentSelectedPlayer.hasPlayed()) {
-									selectedPlayer.setHasPlayed(currentSelectedPlayer.hasPlayed());
-									selectedPlayer.setDnp(currentSelectedPlayer.isDnp());
-									selectedPlayer.setScoreUsed(currentSelectedPlayer.isScoreUsed());
-									selectedPlayer.setReplacementInd(currentSelectedPlayer.getReplacementInd());
-
-									loggerUtils.log("info", "Player has played updating defaults.  selectedPlayer={}; ",
-											selectedPlayer);
-								}
-							}
-
-							updatedSelectedTeam.add(selectedPlayer);
-						}
-					}
-
-					dflSelectedTeamService.replaceTeamForRound(round, team.getTeamCode(), updatedSelectedTeam);
-				}
+		for (DflSelectedPlayer selectedPlayer : previousSelectedTeam) {
+			if (selectedPlayer.isEmergency() == 0) {
+				loggerUtils.log("info", "Addiong player to team.  selectedPlayer={}; ", selectedPlayer);
+				tmpSelectedTeam.add(selectedPlayer);
+			} else {
+				loggerUtils.log("info", "Player is emgergency removing from team.  selectedPlayer={}; ", selectedPlayer);
 			}
 		}
 
+		for (InsAndOuts inOrOut : insAndOuts) {
+			if (inOrOut.getInOrOut().equals("I")) {
+				tmpSelectedTeam.add(inSelection(round, inOrOut));
+			} else if (inOrOut.getInOrOut().equals("O")) {
+				tmpSelectedTeam.remove(outSelection(inOrOut, previousSelectedTeamMap));
+			} else if (inOrOut.getInOrOut().equals("E1")) {
+				tmpSelectedTeam.add(emgSelection(round, inOrOut, 1));
+			} else if (inOrOut.getInOrOut().equals("E2")) {
+				tmpSelectedTeam.add(emgSelection(round, inOrOut, 2));
+			}
+		}
+
+		for (DflSelectedPlayer tmpSelectedPlayer : tmpSelectedTeam) {
+			DflSelectedPlayer selectedPlayer = defaultPlayer(tmpSelectedPlayer, round);
+			updatedSelectedTeam.add(selectedPlayer);
+		}
+
+		return updatedSelectedTeam;
+	}
+ 
+	private DflSelectedPlayer inSelection(int round, InsAndOuts in) {
+		DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+
+		DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(in.getTeamCode(), in.getTeamPlayerId());
+
+		selectedPlayer.setPlayerId(teamPlayer.getPlayerId());
+		selectedPlayer.setRound(round);
+		selectedPlayer.setTeamCode(teamPlayer.getTeamCode());
+		selectedPlayer.setTeamPlayerId(teamPlayer.getTeamPlayerId());
+		selectedPlayer.setDnp(false);
+		selectedPlayer.setEmergency(0);
+		selectedPlayer.setScoreUsed(true);
+
+		loggerUtils.log("info", "Selecting player as in to team.  selectedPlayer={}; ",	selectedPlayer);
+		
+		return selectedPlayer;
+	}
+
+	private DflSelectedPlayer outSelection(InsAndOuts out, Map<Integer, DflSelectedPlayer> previousSelectedTeamMap) {
+		DflSelectedPlayer droppedPlayer = previousSelectedTeamMap.get(out.getTeamPlayerId());
+		loggerUtils.log("info", "Dropped player team.  droppedPlayer={}; ", droppedPlayer);
+		return droppedPlayer;
+	}
+
+	private DflSelectedPlayer emgSelection(int round, InsAndOuts emg, int firstOrSecondEmg) {
+		DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+
+		DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(emg.getTeamCode(), emg.getTeamPlayerId());
+
+		selectedPlayer.setPlayerId(teamPlayer.getPlayerId());
+		selectedPlayer.setRound(round);
+		selectedPlayer.setTeamCode(teamPlayer.getTeamCode());
+		selectedPlayer.setTeamPlayerId(teamPlayer.getTeamPlayerId());
+		selectedPlayer.setDnp(false);
+		selectedPlayer.setEmergency(firstOrSecondEmg);
+		selectedPlayer.setScoreUsed(false);
+
+		loggerUtils.log("info", "Selecting player as emg1 to team.  selectedPlayer={}; ", selectedPlayer);
+
+		return selectedPlayer;
 	}
 
 	private DflSelectedPlayer defaultPlayer(DflSelectedPlayer selectedPlayer, int round) {
@@ -415,51 +382,10 @@ public class EndRoundHandler {
 		defaultedSelectedPlayer.setTeamPlayerId(selectedPlayer.getTeamPlayerId());
 		defaultedSelectedPlayer.setDnp(false);
 		defaultedSelectedPlayer.setEmergency(selectedPlayer.isEmergency());
-
-		if (defaultedSelectedPlayer.isEmergency() != 0) {
-			defaultedSelectedPlayer.setScoreUsed(false);
-		} else {
-			defaultedSelectedPlayer.setScoreUsed(true);
-		}
+		defaultedSelectedPlayer.setScoreUsed(defaultedSelectedPlayer.isEmergency() != 0);
 
 		return defaultedSelectedPlayer;
 	}
-
-	/*
-	 * private void defaultSelectedTeams(int round) {
-	 * 
-	 * loggerUtils.log("info", "Creating selected teams for next round={}",
-	 * round+1);
-	 * 
-	 * List<DflSelectedPlayer> previousSelectedPlayers =
-	 * dflSelectedTeamService.getAllForRound(round); List<DflSelectedPlayer>
-	 * updatedSelectedPlayers = new ArrayList<>();
-	 * 
-	 * 
-	 * for(DflSelectedPlayer previousSelectedPlayer : previousSelectedPlayers) {
-	 * List<DflSelectedPlayer> currentSelections =
-	 * dflSelectedTeamService.getSelectedTeamForRound(round+1,
-	 * previousSelectedPlayer.getTeamCode());
-	 * 
-	 * if(currentSelections == null || currentSelections.isEmpty()) {
-	 * DflSelectedPlayer updatedSelectedPlayer = new DflSelectedPlayer();
-	 * updatedSelectedPlayer.setPlayerId(previousSelectedPlayer.getPlayerId());
-	 * updatedSelectedPlayer.setRound(round+1);
-	 * updatedSelectedPlayer.setTeamCode(previousSelectedPlayer.getTeamCode());
-	 * updatedSelectedPlayer.setTeamPlayerId(previousSelectedPlayer.getTeamPlayerId(
-	 * )); updatedSelectedPlayer.setDnp(false);
-	 * updatedSelectedPlayer.setEmergency(previousSelectedPlayer.isEmergency());
-	 * 
-	 * if(updatedSelectedPlayer.isEmergency() != 0) {
-	 * updatedSelectedPlayer.setScoreUsed(false); } else {
-	 * updatedSelectedPlayer.setScoreUsed(true); }
-	 * 
-	 * loggerUtils.log("info", "Adding selected player for next round, player={}",
-	 * updatedSelectedPlayer); updatedSelectedPlayers.add(updatedSelectedPlayer); }
-	 * }
-	 * 
-	 * dflSelectedTeamService.insertAll(updatedSelectedPlayers, false); }
-	 */
 
 	private void calculateFinalsWeek1(int round) throws Exception {
 
@@ -494,7 +420,7 @@ public class EndRoundHandler {
 
 		dflFixtureService.updateAll(finalsFixtures, false);
 
-		createFinalsWeek1Email(round, finalWeek1Game1, finalWeek1Game2, first);
+		createFinalsWeek1Email(finalWeek1Game1, finalWeek1Game2, first);
 	}
 
 	private void calculateFinalsWeek2(int round) throws Exception {
@@ -570,7 +496,7 @@ public class EndRoundHandler {
 
 		dflFixtureService.updateAll(finalsFixtures, false);
 
-		createFinalsWeek2Email(round, finalWeek2Game1, finalWeek2Game2, game2Loser);
+		createFinalsWeek2Email(finalWeek2Game1, finalWeek2Game2, game2Loser);
 	}
 
 	private void calculateFinalsWeek3(int round) throws Exception {
@@ -631,7 +557,7 @@ public class EndRoundHandler {
 
 		dflFixtureService.updateAll(finalsFixtures, false);
 
-		createFinalsWeek3Email(round, finalWeek3Game1, game2Loser);
+		createFinalsWeek3Email(finalWeek3Game1, game2Loser);
 	}
 
 	private void calculateFinalsWeek4(int round) throws Exception {
@@ -696,7 +622,7 @@ public class EndRoundHandler {
 
 		dflFixtureService.updateAll(finalsFixtures, false);
 
-		createFinalsWeek4Email(round, finalWeek4Game1, game1Loser);
+		createFinalsWeek4Email(finalWeek4Game1, game1Loser);
 	}
 
 	private void createEndOfRoundEmail(int round, List<DflMatthewAllen> matthewAllenStandings,
@@ -708,7 +634,23 @@ public class EndRoundHandler {
 
 		String subject = "End of Round " + round + ", Current Medal Standings";
 
-		String body = "Matthew Allen Medal Top 5:\n";
+		StringBuilder body = new StringBuilder();
+		body.append(handleMathewAllenText(matthewAllenStandings));
+		body.append(handleAdamGoodesText(adamGoodesStandings));
+		body.append(handleFirstYearPlayerText(topFirstYears));
+		body.append(handleCallumChambers(callumChambersStandings));
+
+		if (sendBest22) {
+			body.append(handleBest22(round, best22));
+		}
+
+		body.append("\nDFL Manager Admin");
+
+		sendEmail(subject, body.toString());
+	}
+
+	private String handleMathewAllenText(List<DflMatthewAllen> matthewAllenStandings) {
+		StringBuilder text = new StringBuilder("Matthew Allen Medal Top 5:\n");
 		for (int i = 0; i < 5; i++) {
 			DflMatthewAllen standing = matthewAllenStandings.get(i);
 
@@ -716,11 +658,15 @@ public class EndRoundHandler {
 			DflTeamPlayer teamPlayer = dflTeamPlayerService.get(standing.getPlayerId());
 			DflTeam team = dflTeamService.get(teamPlayer.getTeamCode());
 
-			body = body + (i + 1) + ". " + standing.getPlayerId() + " " + player.getFirstName() + " "
-					+ player.getLastName() + ", " + team.getName() + " - " + standing.getTotal() + "\n";
+			text.append(constructStandingText(i+1, standing.getPlayerId(), player.getFirstName(), 
+				player.getLastName(), team.getName(), standing.getTotal()));
 		}
 
-		body = body + "\nAdam Goodes Medal Top 5:\n";
+		return text.toString();
+	}
+
+	private String handleAdamGoodesText(List<DflAdamGoodes> adamGoodesStandings) {
+		StringBuilder text = new StringBuilder("\nAdam Goodes Medal Top 5:\n");
 		for (int i = 0; i < 5; i++) {
 			if (i < adamGoodesStandings.size()) {
 				DflAdamGoodes standing = adamGoodesStandings.get(i);
@@ -729,12 +675,16 @@ public class EndRoundHandler {
 				DflTeamPlayer teamPlayer = dflTeamPlayerService.get(standing.getPlayerId());
 				DflTeam team = dflTeamService.get(teamPlayer.getTeamCode());
 
-				body = body + (i + 1) + ". " + standing.getPlayerId() + " " + player.getFirstName() + " "
-						+ player.getLastName() + ", " + team.getName() + " - " + standing.getTotalScore() + "\n";
+				text.append(constructStandingText(i+1, standing.getPlayerId(), player.getFirstName(), 
+					player.getLastName(), team.getName(), standing.getTotalScore()));
 			}
 		}
 
-		body = body + "\nFirst Year Player Top 5:\n";
+		return text.toString();
+	}
+
+	private String handleFirstYearPlayerText(List<DflAdamGoodes> topFirstYears) {
+		StringBuilder text = new StringBuilder("\nFirst Year Player Top 5:\n");
 		for (int i = 0; i < 5; i++) {
 			if (i < topFirstYears.size()) {
 				DflAdamGoodes standing = topFirstYears.get(i);
@@ -744,16 +694,20 @@ public class EndRoundHandler {
 
 				if (teamPlayer != null) {
 					DflTeam team = dflTeamService.get(teamPlayer.getTeamCode());
-					body = body + (i + 1) + ". " + standing.getPlayerId() + " " + player.getFirstName() + " "
-							+ player.getLastName() + ", " + team.getName() + " - " + standing.getTotalScore() + "\n";
+					text.append(constructStandingText(i+1, standing.getPlayerId(), player.getFirstName(), 
+						player.getLastName(), team.getName(), standing.getTotalScore()));
 				} else {
-					body = body + (i + 1) + ". " + standing.getPlayerId() + " " + player.getFirstName() + " "
-							+ player.getLastName() + ", Not Drafted - " + standing.getTotalScore() + "\n";
+					text.append(constructStandingText(i+1, standing.getPlayerId(), player.getFirstName(), 
+						player.getLastName(), "Not Drafted", standing.getTotalScore()));
 				}
 			}
 		}
 
-		body = body + "\nCallum Chambers Medal Top 5:\n";
+		return text.toString();
+	}
+
+	private String handleCallumChambers(List<DflCallumChambers> callumChambersStandings) {
+		StringBuilder text = new StringBuilder("\nCallum Chambers Medal Top 5:\n");
 		for (int i = 0; i < 5; i++) {
 			DflCallumChambers standing = callumChambersStandings.get(i);
 
@@ -761,38 +715,58 @@ public class EndRoundHandler {
 			DflTeamPlayer teamPlayer = dflTeamPlayerService.get(standing.getPlayerId());
 			DflTeam team = dflTeamService.get(teamPlayer.getTeamCode());
 
-			body = body + (i + 1) + ". " + standing.getPlayerId() + " " + player.getFirstName() + " "
-					+ player.getLastName() + ", " + team.getName() + " - " + standing.getTotalScore() + "\n";
+			text.append(constructStandingText(i+1, standing.getPlayerId(), player.getFirstName(), 
+				player.getLastName(), team.getName(), standing.getTotalScore()));
 		}
 
-		if (sendBest22) {
-			body = body + "\nDFL Best 22 after Round " + round + "\n";
+		return text.toString();
+	}
 
-			List<String> ff = new ArrayList<>();
-			List<String> fwd = new ArrayList<>();
-			List<String> rck = new ArrayList<>();
-			List<String> mid = new ArrayList<>();
-			List<String> fb = new ArrayList<>();
-			List<String> def = new ArrayList<>();
-			List<String> bench = new ArrayList<>();
+	private String constructStandingText(int rank, int playerId, String firstName, String lastName, String teamName, int score) {
+		StringBuilder text = new StringBuilder();
+		text.append(rank)
+			.append(". ")
+			.append(playerId)
+			.append(" ")
+			.append(firstName)
+			.append(" ")
+			.append(lastName)
+			.append(", ")
+			.append(teamName)
+			.append(" - ")
+			.append(score)
+			.append("\n");
+		return text.toString();
+	}
 
-			for (DflBest22 best22Player : best22) {
-				DflPlayer player = dflPlayerService.get(best22Player.getPlayerId());
-				DflTeamPlayer teamPlayer = dflTeamPlayerService.get(best22Player.getPlayerId());
+	private String handleBest22(int round, List<DflBest22> best22) {
+		StringBuilder text = new StringBuilder("\nDFL Best 22 after Round " + round + "\n");
 
-				String teamName = "Not Drafted";
-				if (teamPlayer != null) {
-					DflTeam team = dflTeamService.get(teamPlayer.getTeamCode());
-					teamName = team.getName();
-				}
+		List<String> ff = new ArrayList<>();
+		List<String> fwd = new ArrayList<>();
+		List<String> rck = new ArrayList<>();
+		List<String> mid = new ArrayList<>();
+		List<String> fb = new ArrayList<>();
+		List<String> def = new ArrayList<>();
+		List<String> bench = new ArrayList<>();
 
-				if (best22Player.isBench()) {
-					bench.add(player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + ", "
-							+ teamName + " - " + best22Player.getScore());
-				} else {
-					String displayString = player.getPlayerId() + " " + player.getFirstName() + " "
-							+ player.getLastName() + ", " + teamName + " - " + best22Player.getScore();
-					switch (player.getPosition()) {
+		for (DflBest22 best22Player : best22) {
+			DflPlayer player = dflPlayerService.get(best22Player.getPlayerId());
+			DflTeamPlayer teamPlayer = dflTeamPlayerService.get(best22Player.getPlayerId());
+
+			String teamName = "Not Drafted";
+			if (teamPlayer != null) {
+				DflTeam team = dflTeamService.get(teamPlayer.getTeamCode());
+				teamName = team.getName();
+			}
+
+			if (best22Player.isBench()) {
+				bench.add(player.getPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + ", "
+						+ teamName + " - " + best22Player.getScore());
+			} else {
+				String displayString = player.getPlayerId() + " " + player.getFirstName() + " "
+						+ player.getLastName() + ", " + teamName + " - " + best22Player.getScore();
+				switch (player.getPosition()) {
 					case "FF":
 						ff.add(displayString);
 						break;
@@ -811,46 +785,46 @@ public class EndRoundHandler {
 					case "Def":
 						def.add(displayString);
 						break;
-					}
+					default:
+						loggerUtils.log("info", "Unknown position");
 				}
-			}
-
-			body = body + "FB:\n";
-			for (String displayString : fb) {
-				body = body + displayString + "\n";
-			}
-			body = body + "\nDef:\n";
-			for (String displayString : def) {
-				body = body + displayString + "\n";
-			}
-			body = body + "\nRck:\n";
-			for (String displayString : rck) {
-				body = body + displayString + "\n";
-			}
-			body = body + "\nMid:\n";
-			for (String displayString : mid) {
-				body = body + displayString + "\n";
-			}
-			body = body + "\nFwd:\n";
-			for (String displayString : fwd) {
-				body = body + displayString + "\n";
-			}
-			body = body + "\nFF:\n";
-			for (String displayString : ff) {
-				body = body + displayString + "\n";
-			}
-			body = body + "\nBench:\n";
-			for (String displayString : bench) {
-				body = body + displayString + "\n";
 			}
 		}
 
-		body = body + "\nDFL Manager Admin";
+		text.append("FB:\n")
+			.append(constructBest22Text(fb));
+		
+		text.append("\nDef:\n")
+			.append(constructBest22Text(def));
 
-		sendEmail(subject, body);
+		text.append("\nRck:\n")
+			.append(constructBest22Text(rck));
+		
+		text.append("\nMid:\n")
+			.append(constructBest22Text(mid));
+
+		text.append("\nFwd:\n")
+			.append(constructBest22Text(fwd));
+		
+		text.append("\nFF:\n")
+			.append(constructBest22Text(ff));
+
+		text.append("\nBench:\n")
+			.append(constructBest22Text(bench));
+		
+		return text.toString();
 	}
 
-	private void createFinalsWeek1Email(int round, DflFixture finalsGame1, DflFixture finalsGame2, DflLadder first)
+	private String constructBest22Text(List<String> positionText) {
+		StringBuilder text = new StringBuilder();
+		for (String displayText : positionText) {
+			text.append(displayText)
+				.append("\n");
+		}
+		return text.toString();
+	}
+
+	private void createFinalsWeek1Email(DflFixture finalsGame1, DflFixture finalsGame2, DflLadder first)
 			throws Exception {
 
 		loggerUtils.log("info", "Creating email for finals week 1 - Game 1: {}, Game 2 {}, Minor Premier: {}",
@@ -874,12 +848,12 @@ public class EndRoundHandler {
 
 		body = body + "\tElimination Final: " + homeTeam.getShortName() + " vs " + awayTeam.getShortName() + "\n\n";
 
-		body = body + "Good luck,\nDFL Manager Admin";
+		body = body + SIGN_OFF_TEXT;
 
 		sendEmail(subject, body);
 	}
 
-	private void createFinalsWeek2Email(int round, DflFixture finalsGame1, DflFixture finalsGame2, String out)
+	private void createFinalsWeek2Email(DflFixture finalsGame1, DflFixture finalsGame2, String out)
 			throws Exception {
 
 		loggerUtils.log("info", "Creating email for finals week 2 - Game 1: {}, Game 2 {}, Out: {}", finalsGame1,
@@ -889,7 +863,7 @@ public class EndRoundHandler {
 
 		DflTeam dflTeam = dflTeamService.get(out);
 
-		String body = dflTeam.getName() + " has been eliminated. Better luck next year " + dflTeam.getCoachName()
+		String body = dflTeam.getName() + ELEMINATION_TEXT + dflTeam.getCoachName()
 				+ "\n\n";
 		body = body + "The fixture for week 2 of the finals is:\n\n";
 
@@ -903,12 +877,12 @@ public class EndRoundHandler {
 
 		body = body + "\t1st Semi Final: " + homeTeam.getShortName() + " vs " + awayTeam.getShortName() + "\n\n";
 
-		body = body + "Good luck,\nDFL Manager Admin";
+		body = body + SIGN_OFF_TEXT;
 
 		sendEmail(subject, body);
 	}
 
-	private void createFinalsWeek3Email(int round, DflFixture finalsGame1, String out) throws Exception {
+	private void createFinalsWeek3Email(DflFixture finalsGame1, String out) throws Exception {
 
 		loggerUtils.log("info", "Creating email for finals week 3 - Game 1: {}, Out: {}", finalsGame1, out);
 
@@ -916,7 +890,7 @@ public class EndRoundHandler {
 
 		DflTeam dflTeam = dflTeamService.get(out);
 
-		String body = dflTeam.getName() + " has been eliminated. Better luck next year " + dflTeam.getCoachName()
+		String body = dflTeam.getName() + ELEMINATION_TEXT + dflTeam.getCoachName()
 				+ "\n\n";
 		body = body + "The fixture for week 3 of the finals is:\n\n";
 
@@ -925,12 +899,12 @@ public class EndRoundHandler {
 
 		body = body + "\tPreliminary Final: " + homeTeam.getShortName() + " vs " + awayTeam.getShortName() + "\n";
 
-		body = body + "Good luck,\nDFL Manager Admin";
+		body = body + SIGN_OFF_TEXT;
 
 		sendEmail(subject, body);
 	}
 
-	private void createFinalsWeek4Email(int round, DflFixture finalsGame1, String out) throws Exception {
+	private void createFinalsWeek4Email(DflFixture finalsGame1, String out) throws Exception {
 
 		loggerUtils.log("info", "Creating email for finals week 4 - Game 1: {}, Out: {}", finalsGame1, out);
 
@@ -938,7 +912,7 @@ public class EndRoundHandler {
 
 		DflTeam dflTeam = dflTeamService.get(out);
 
-		String body = dflTeam.getName() + " has been eliminated. Better luck next year " + dflTeam.getCoachName()
+		String body = dflTeam.getName() + ELEMINATION_TEXT + dflTeam.getCoachName()
 				+ "\n\n";
 		body = body + "The fixture for the grand final is:\n\n";
 
@@ -947,7 +921,7 @@ public class EndRoundHandler {
 
 		body = body + "\tGrand Final: " + homeTeam.getShortName() + " vs " + awayTeam.getShortName() + "\n";
 
-		body = body + "Good luck,\nDFL Manager Admin";
+		body = body + SIGN_OFF_TEXT;
 
 		sendEmail(subject, body);
 	}
@@ -992,8 +966,6 @@ public class EndRoundHandler {
 			if (cli.hasOption("e")) {
 				email = cli.getOptionValue("e");
 			}
-
-			// JndiProvider.bind();
 
 			EndRoundHandler endRound = new EndRoundHandler();
 			endRound.configureLogging("batch.name", "batch-logger", ("EndRound_R" + round));

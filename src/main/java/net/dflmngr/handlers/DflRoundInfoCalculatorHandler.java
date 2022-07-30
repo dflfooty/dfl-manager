@@ -10,6 +10,7 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -17,13 +18,14 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
-
+import java.util.function.Function;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.DomainDecodes;
 import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.entity.DflRoundEarlyGames;
 import net.dflmngr.model.entity.DflRoundInfo;
 import net.dflmngr.model.entity.DflRoundMapping;
+import net.dflmngr.model.entity.keys.AflFixturePK;
 import net.dflmngr.model.service.AflFixtureService;
 import net.dflmngr.model.service.DflRoundInfoService;
 import net.dflmngr.model.service.GlobalsService;
@@ -76,7 +78,6 @@ public class DflRoundInfoCalculatorHandler {
 	}
 	
 	public void execute() {
-		
 		try {
 			if(!isExecutable) {
 				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
@@ -84,85 +85,32 @@ public class DflRoundInfoCalculatorHandler {
 			}
 			
 			standardLockout = globalsService.getStandardLockoutTime();
-			//int aflRoundsMax = Integer.parseInt(globalsService.getAflRoundsMax());
 			int aflRoundsMax = aflFixtrureService.getMaxAflRound();
 
 			loggerUtils.log("info", "Executing DflRoundInfoCalculator, max AFL rounds: {}", aflRoundsMax);
 			loggerUtils.log("info", "Standard round lockout time: {}", standardLockout);
 			
 			List<DflRoundInfo> allRoundInfo = new ArrayList<>();
-			
-			Map<Integer, List<AflFixture>> aflFixture = aflFixtrureService.getAflFixturneRoundBlocks();
-					
+								
 			int dflRound = 1;
+			int aflRound = 1;
 			
-			for(int i = 1; i <= aflRoundsMax; i++) {
+			while(aflRound <= aflRoundsMax) {
 				
-				loggerUtils.log("info", "Handling round: {}", i);
+				loggerUtils.log("info", "Handling round: {}", aflRound);
 				
-				List<AflFixture> aflRoundFixtures = aflFixture.get(i);
-				DflRoundInfo dflRoundInfo = new DflRoundInfo();
-				
-				if(aflRoundFixtures.size() == 9) {
-					loggerUtils.log("info", "AFL full round");
-					
-					dflRoundInfo.setRound(dflRound);
-					dflRoundInfo.setSplitRound(DomainDecodes.DFL_ROUND_INFO.SPLIT_ROUND.NO);
-					
-					Map<Integer, ZonedDateTime> gameStartTimes = new HashMap<>();
-					
-					for(AflFixture fixture : aflRoundFixtures) {
-						gameStartTimes.put(fixture.getGame(), fixture.getStartTime());
-					}
-					
-					loggerUtils.log("info", "AFL game start times: {}", gameStartTimes);
-					
-					loggerUtils.log("info", "Calculating hard lockout time");
-					ZonedDateTime hardLockout = calculateHardLockout(dflRound, gameStartTimes);
-					dflRoundInfo.setHardLockoutTime(hardLockout);
-					
-					loggerUtils.log("info", "Creating round mapping: DFL rouund={}; AFL round={};", dflRound, i);
-					List<DflRoundMapping> roundMappingList = new ArrayList<>();
-					DflRoundMapping roundMapping = new DflRoundMapping();
-					roundMapping.setRound(dflRound);
-					roundMapping.setAflRound(i);
-					roundMappingList.add(roundMapping);
-					dflRoundInfo.setRoundMapping(roundMappingList);
-					
-					loggerUtils.log("info", "Calculating early games");
-					List<DflRoundEarlyGames> earlyGames = calculateEarlyGames(hardLockout, aflRoundFixtures, dflRound);
-					dflRoundInfo.setEarlyGames(earlyGames);
-					
-					allRoundInfo.add(dflRoundInfo);
+				List<AflFixture> aflRoundFixtures = aflFixtrureService.getAflFixturesForRound(aflRound);
+								
+				if(aflRoundFixtures.size() == 9) {					
+					allRoundInfo.add(handleFullRound(dflRound, aflRound, aflRoundFixtures));
 				} else {
-					loggerUtils.log("info", "AFL split/bye round");
-					
-					int gamesCount = aflRoundFixtures.size();
-					loggerUtils.log("info", "Games in AFL round: {}", gamesCount);
-					
-					Map<Integer, List<AflFixture>> gamesInSplitRound = new HashMap<>();
-					gamesInSplitRound.put(i, aflRoundFixtures);
-					
-					for(i++; i <= aflRoundsMax; i++) {
-						List<AflFixture> aflNextRoundFixtures = aflFixture.get(i);
-						gamesInSplitRound.put(i, aflNextRoundFixtures);
-						
-						loggerUtils.log("info", "Games in next AFL round: {}", aflNextRoundFixtures.size());
-						gamesCount = gamesCount + aflNextRoundFixtures.size();
-						
-						if(gamesCount % 9 == 0)  {
-							loggerUtils.log("info", "Found enough games to make DFL rounds ... calculation split round");
-							allRoundInfo.addAll(calculateSplitRound(dflRound, gamesInSplitRound));
-							for(DflRoundInfo roundInfo : allRoundInfo) {
-								if(roundInfo.getRound() > dflRound) {
-									dflRound = roundInfo.getRound();
-								}
-							}
-							break;
-						} 
-					}	
+					List<DflRoundInfo> splitRoundInfo = handelSplitRound(dflRound, aflRound, aflRoundsMax, aflRoundFixtures);
+
+					dflRound = resetDlfRound(dflRound, splitRoundInfo);
+					aflRound = resetAflRound(aflRound, splitRoundInfo);
 				}
 				dflRound++;
+				aflRound++;
 			}
 			
 			dflRoundInfoService.replaceAll(allRoundInfo);
@@ -172,134 +120,237 @@ public class DflRoundInfoCalculatorHandler {
 			loggerUtils.log("error", "Error in ... ", ex);
 		}
 	}
+
+	private DflRoundInfo handleFullRound(int dflRound, int aflRound, List<AflFixture> aflRoundFixtures) {
+
+		loggerUtils.log("info", "AFL full round");
+							
+		Map<Integer, ZonedDateTime> gameStartTimes = new HashMap<>();
+		
+		for(AflFixture fixture : aflRoundFixtures) {
+			gameStartTimes.put(fixture.getGame(), fixture.getStartTime());
+		}
+				
+		loggerUtils.log("info", "Creating round mapping: DFL rouund={}; AFL round={};", dflRound, aflRound);
+		List<DflRoundMapping> roundMappings = new ArrayList<>();
+		DflRoundMapping roundMapping = new DflRoundMapping();
+		roundMapping.setRound(dflRound);
+		roundMapping.setAflRound(aflRound);
+		roundMappings.add(roundMapping);
+
+		return createRoundInfo(dflRound, false, gameStartTimes, roundMappings, aflRoundFixtures);
+	}
+
+	private DflRoundInfo createRoundInfo(int dflRound, boolean splitRound, Map<Integer, ZonedDateTime> gameStartTimes, 
+										 List<DflRoundMapping> roundMappings, List<AflFixture> aflFixtures) {
+		
+		DflRoundInfo dflRoundInfo = new DflRoundInfo();
+
+		loggerUtils.log("info", "Creating DFL round info");
+		
+		dflRoundInfo.setRound(dflRound);
+		
+		if(splitRound) {
+			dflRoundInfo.setSplitRound(DomainDecodes.DFL_ROUND_INFO.SPLIT_ROUND.YES);
+		} else {
+			dflRoundInfo.setSplitRound(DomainDecodes.DFL_ROUND_INFO.SPLIT_ROUND.NO);
+		}
+				
+		loggerUtils.log("info", "AFL game start times: {}", gameStartTimes);
+		
+		loggerUtils.log("info", "Calculating hard lockout time");
+		ZonedDateTime hardLockout = calculateHardLockout(dflRound, gameStartTimes);
+		dflRoundInfo.setHardLockoutTime(hardLockout);
+		
+		loggerUtils.log("info", "Round mapping: DFL round={}; RoundMappings={};", dflRound, roundMappings);
+		dflRoundInfo.setRoundMapping(roundMappings);
+		
+		loggerUtils.log("info", "Calculating early games");
+		List<DflRoundEarlyGames> earlyGames = calculateEarlyGames(hardLockout, aflFixtures, dflRound);
+		dflRoundInfo.setEarlyGames(earlyGames);
+
+		return dflRoundInfo;
+
+	}
+
+	private List<DflRoundInfo> handelSplitRound(int dflRound, int aflRound, int aflRoundsMax, List<AflFixture> aflRoundFixtures) {
+		List<DflRoundInfo> allRoundInfo = new ArrayList<>();
+
+		loggerUtils.log("info", "AFL split/bye round");
+					
+		int gamesCount = aflRoundFixtures.size();
+		loggerUtils.log("info", "Games in AFL round: {}", gamesCount);
+		
+		Map<Integer, List<AflFixture>> gamesInSplitRound = new HashMap<>();
+		gamesInSplitRound.put(aflRound, aflRoundFixtures);
+		
+		boolean splitRoundHandled = false;
+		while(!splitRoundHandled || aflRound <= aflRoundsMax) {
+			aflRound++;
+
+			List<AflFixture> aflNextRoundFixtures = aflFixtrureService.getAflFixturesForRound(aflRound);
+			gamesInSplitRound.put(aflRound, aflNextRoundFixtures);
+			
+			loggerUtils.log("info", "Games in next AFL round: {}", aflNextRoundFixtures.size());
+			gamesCount = gamesCount + aflNextRoundFixtures.size();
+			
+			if(gamesCount % 9 == 0)  {
+				loggerUtils.log("info", "Found enough games to make DFL rounds ... calculation split round");
+				allRoundInfo.addAll(calculateSplitRound(dflRound, gamesInSplitRound));
+				splitRoundHandled = true;
+			} 
+		}
+
+		return allRoundInfo;
+	}
+
+	private int resetDlfRound(int dflRound, List<DflRoundInfo> splitRoundInfo) {
+		for(DflRoundInfo roundInfo : splitRoundInfo) {
+			if(dflRound < roundInfo.getRound()) {
+				dflRound = roundInfo.getRound();
+			}
+		}
+
+		return dflRound;
+	}
+
+	private int resetAflRound(int aflRound, List<DflRoundInfo> splitRoundInfo) {
+		for(DflRoundInfo roundInfo : splitRoundInfo) {
+			for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
+				if(aflRound < roundMapping.getAflRound()) {
+					aflRound = roundMapping.getAflRound();
+				}
+			}
+		}
+
+		return aflRound;
+	}
 	
-	private List<DflRoundInfo> calculateSplitRound(int dflRound, Map<Integer, List<AflFixture>> gamesInSplitRound) throws Exception {
+	private List<DflRoundInfo> calculateSplitRound(int dflRound, Map<Integer, List<AflFixture>> gamesInSplitRound) {
 		
 		List<DflRoundInfo> splitRoundInfo = new ArrayList<>();
+		List<DflRoundMapping> roundMappings = new ArrayList<>();
+		Map<String, AflFixture> workingWithGames = new HashMap<>();
 		
 		Set<Integer> aflSplitRounds = gamesInSplitRound.keySet();
 		int aflFirstSplitRound = Collections.min(aflSplitRounds);
 		
 		loggerUtils.log("info", "AFL rounds used in split round: {}", aflSplitRounds);
-		
-		DflRoundInfo dflRoundInfo = new DflRoundInfo();
-		dflRoundInfo.setRound(dflRound);
-		dflRoundInfo.setSplitRound(DomainDecodes.DFL_ROUND_INFO.SPLIT_ROUND.YES);
-		
-		List<DflRoundMapping> roundMappings = new ArrayList<>();
-		List<AflFixture> mappedAflFixtures = new ArrayList<>();
-		
-		Map<Integer, ZonedDateTime> gameStartTimes = new HashMap<>();
-		
-		Map<String, AflFixture> workingWithGames = new HashMap<>();
-		
+				
 		for(int i = 0; i < aflSplitRounds.size(); i++) {
 			
-			int currentSplitRound = aflFirstSplitRound + i;
+			int currentAflSplitRound = aflFirstSplitRound + i;
 			
-			loggerUtils.log("info", "Working with AFL round: {}", currentSplitRound);
+			loggerUtils.log("info", "Working with AFL round: {}", currentAflSplitRound);
 			
-			List<AflFixture> splitRoundGames = gamesInSplitRound.get(currentSplitRound);
-			for(AflFixture splitRoundGame : splitRoundGames) {
-				String homeKey = splitRoundGame.getRound() + "-" + splitRoundGame.getGame() + "-1";
-				String awayKey = splitRoundGame.getRound() + "-" + splitRoundGame.getGame() + "-2";
-				
-				if(!workingWithGames.containsKey(homeKey)) {
-					loggerUtils.log("info", "Adding working with AFL game: {}", splitRoundGame);
-					workingWithGames.put(homeKey, splitRoundGame);
-				}
-				if(!workingWithGames.containsKey(awayKey)) {
-					loggerUtils.log("info", "Adding working with AFL game: {}", splitRoundGame);
-					workingWithGames.put(awayKey, splitRoundGame);
+			getGamesToWorkWith(currentAflSplitRound, gamesInSplitRound, workingWithGames);
+			
+			if(roundMappings.size() == 18) {
+				splitRoundInfo.add(createSplitRoundInfo(dflRound, roundMappings));
+				roundMappings.clear();
+				dflRound++;
+			} else {
+				mapGames(dflRound, workingWithGames, roundMappings);				
+
+				for(DflRoundMapping roundMap : roundMappings) {
+					String key = roundMap.getAflRound() + "-" + roundMap.getAflGame() + "-" + roundMap.getAflTeam();
+					workingWithGames.remove(key);
 				}
 			}
-				
-			if(roundMappings.size() < 18) {
-				
-				loggerUtils.log("info", "Find teams to fill out round");
-				
-				SortedSet<String> keys = new TreeSet<>(workingWithGames.keySet());
-				for(String key : keys) {
-					AflFixture aflFixture = workingWithGames.get(key);
-					
-					String[] homeOrAway = key.split("-");
-					String aflTeam = "";
-					
-					if(homeOrAway[2].equals("1")) {
-						aflTeam = aflFixture.getHomeTeam();
-					} else {
-						aflTeam = aflFixture.getAwayTeam();
-					}
-					
-					
-					boolean teamAlreadyMapped = false;
-					
-					for(DflRoundMapping roundMap : roundMappings) {
-						if(aflTeam.equals(roundMap.getAflTeam())) {
-							loggerUtils.log("info", "Team: {} already mapped in round: {}", aflTeam, dflRound);
-							teamAlreadyMapped = true;
-							break;
-						}
-					}
-					
-					if(!teamAlreadyMapped) {
-					
-						DflRoundMapping roundMapping = new DflRoundMapping();
-						
-						roundMapping.setRound(dflRound);
-						roundMapping.setAflRound(currentSplitRound);
-						roundMapping.setAflRound(aflFixture.getRound());
-						roundMapping.setAflGame(aflFixture.getGame());					
-						roundMapping.setAflTeam(aflTeam);
-						
-						
-						loggerUtils.log("info", "Round mapping created: {}", roundMapping);
-						
-						Integer gameStartTimeKey = Integer.parseInt(Integer.toString(aflFixture.getRound()) + Integer.toString(aflFixture.getGame()));
-						if(!gameStartTimes.containsKey(gameStartTimeKey)) {
-							gameStartTimes.put(gameStartTimeKey, aflFixture.getStartTime());
-						}
-						
-						roundMappings.add(roundMapping);
-						
-						if(!mappedAflFixtures.contains(aflFixture)) {
-							mappedAflFixtures.add(aflFixture);
-						}
-						
-						workingWithGames.remove(key);
-						
-						if(roundMappings.size() == 18) {
-							loggerUtils.log("info", "Round {} fully mapped, reminder teams: {}", dflRound, workingWithGames);
-							dflRoundInfo.setRoundMapping(roundMappings);
-														
-							loggerUtils.log("info", "Calculating hard lockout time");
-							ZonedDateTime hardLockout = calculateHardLockout(dflRound, gameStartTimes);
-							dflRoundInfo.setHardLockoutTime(hardLockout);
-							
-							loggerUtils.log("info", "Calculating early games");
-							List<DflRoundEarlyGames> earlyGames = calculateEarlyGames(hardLockout, mappedAflFixtures, dflRound);
-							dflRoundInfo.setEarlyGames(earlyGames);
-							
-							splitRoundInfo.add(dflRoundInfo);
-							
-							dflRound++;
-							dflRoundInfo = new DflRoundInfo();
-							dflRoundInfo.setRound(dflRound);
-							dflRoundInfo.setSplitRound(DomainDecodes.DFL_ROUND_INFO.SPLIT_ROUND.YES);
-							roundMappings = new ArrayList<>();
-							mappedAflFixtures = new ArrayList<>();
-							gameStartTimes = new HashMap<>();
-						}
-					}
-				}
-				
-			}	
 		}
 		
 		return splitRoundInfo;
 	}
 
-	private ZonedDateTime calculateHardLockout(int dflRound, Map<Integer, ZonedDateTime> gameStartTimes) throws Exception {
+	private void getGamesToWorkWith(int currentAflSplitRound, Map<Integer, List<AflFixture>> gamesInSplitRound, Map<String, AflFixture> workingWithGames) {
+		List<AflFixture> splitRoundGames = gamesInSplitRound.get(currentAflSplitRound);
+		for(AflFixture splitRoundGame : splitRoundGames) {
+			Function<String, AflFixture> addFixture = key -> {
+				loggerUtils.log("info", "Adding working with AFL game: {}", splitRoundGame);
+				return splitRoundGame;
+			};
+
+			String homeKey = splitRoundGame.getRound() + "-" + splitRoundGame.getGame() + "-" + splitRoundGame.getHomeTeam();
+			String awayKey = splitRoundGame.getRound() + "-" + splitRoundGame.getGame() + "-" + splitRoundGame.getAwayTeam();
+			
+			workingWithGames.computeIfAbsent(homeKey, addFixture);
+			workingWithGames.computeIfAbsent(awayKey, addFixture);
+		}
+	}
+
+	private List<DflRoundMapping> mapGames(int dflRound, Map<String, AflFixture> workingWithGames, List<DflRoundMapping> roundMappings) {		
+		loggerUtils.log("info", "Find teams to fill out round");
+		
+		SortedSet<String> keys = new TreeSet<>(workingWithGames.keySet());
+		for(String key : keys) {
+			AflFixture aflFixture = workingWithGames.get(key);
+			
+			String aflTeam = key.split("-")[2]; 
+
+			boolean teamAlreadyMapped = isTeamMapped(dflRound, aflTeam, roundMappings);
+								
+			if(!teamAlreadyMapped) {
+				DflRoundMapping roundMapping = createRoundMapping(dflRound, aflTeam, aflFixture);
+				roundMappings.add(roundMapping);
+			}
+		}
+		
+		return roundMappings;
+	}
+
+	private boolean isTeamMapped(int dflRound, String aflTeam, List<DflRoundMapping> roundMappings) {
+
+		Iterator<DflRoundMapping> i = roundMappings.listIterator();
+		boolean teamMapped = false;
+
+		while(i.hasNext() && !teamMapped) {
+			DflRoundMapping roundMap = i.next();
+			if(aflTeam.equals(roundMap.getAflTeam())) {
+				loggerUtils.log("info", "Team: {} already mapped in round: {}", aflTeam, dflRound);
+				teamMapped = true;
+			}
+		}
+
+		return teamMapped;
+	}
+
+	private DflRoundMapping createRoundMapping(int dflRound, String aflTeam, AflFixture aflFixture) {
+		DflRoundMapping roundMapping = new DflRoundMapping();
+						
+		roundMapping.setRound(dflRound);
+		roundMapping.setAflRound(aflFixture.getRound());
+		roundMapping.setAflGame(aflFixture.getGame());					
+		roundMapping.setAflTeam(aflTeam);
+
+		loggerUtils.log("info", "Round mapping created: {}", roundMapping);
+
+		return roundMapping;
+	}
+
+	private DflRoundInfo createSplitRoundInfo(int dflRound, List<DflRoundMapping> roundMappings) {
+		
+		List<AflFixture> mappedAflFixtures = new ArrayList<>();
+		Map<Integer, ZonedDateTime> gameStartTimes = new HashMap<>();
+
+		for(DflRoundMapping roundMapping : roundMappings) {
+			AflFixturePK aflFixturePK = new AflFixturePK();
+			aflFixturePK.setRound(roundMapping.getAflRound());
+			aflFixturePK.setGame(roundMapping.getAflGame());
+			
+			AflFixture aflFixture = aflFixtrureService.get(aflFixturePK);
+
+			if(!mappedAflFixtures.contains(aflFixture)) {
+				mappedAflFixtures.add(aflFixture);	
+			}
+
+			Integer gameStartTimeKey = Integer.parseInt(Integer.toString(aflFixture.getRound()) + Integer.toString(aflFixture.getGame()));
+			gameStartTimes.computeIfAbsent(gameStartTimeKey, k -> aflFixture.getStartTime());
+		}
+		
+		return createRoundInfo(dflRound, true, gameStartTimes, roundMappings, mappedAflFixtures);
+	}
+
+	private ZonedDateTime calculateHardLockout(int dflRound, Map<Integer, ZonedDateTime> gameStartTimes) {
 		
 		ZonedDateTime hardLockoutTime = null;
 		
@@ -335,21 +386,18 @@ public class DflRoundInfoCalculatorHandler {
 				hardLockoutTime = LocalDateTime.parse(nonStandardLockoutStr, DateTimeFormatter.ISO_DATE_TIME).atZone(ZoneId.of(globalsService.getGroundTimeZone("default")));
 				loggerUtils.log("info", "Custom lockout time: {}", hardLockoutTime);
 			} else {
-				throw new Exception();
+				throw new IllegalStateException("No non-standard lockout defined");
 			}
 		} else {
-		
 			int lockoutOffset = standardLockoutDayBaseWed - lastGameDayBaseWed;
-
 			hardLockoutTime = lastGameTime.plusDays(lockoutOffset).withHour(standardLockoutHour).withMinute(standardLockoutMinute);
-			
 			loggerUtils.log("info", "Lockout time: {}", hardLockoutTime);
 		}
 			
 		return hardLockoutTime;
 	}
 	
-	private List<DflRoundEarlyGames> calculateEarlyGames(ZonedDateTime hardLockout, List<AflFixture> gamesInRound, int dflRound) throws Exception {
+	private List<DflRoundEarlyGames> calculateEarlyGames(ZonedDateTime hardLockout, List<AflFixture> gamesInRound, int dflRound) {
 		
 		List<DflRoundEarlyGames> earlyGames = new ArrayList<>();
 		
