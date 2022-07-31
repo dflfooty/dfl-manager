@@ -2,9 +2,12 @@ package net.dflmngr.model.dao.impl;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 
 import net.dflmngr.model.dao.AflFixtureDao;
 import net.dflmngr.model.entity.AflFixture;
@@ -26,9 +29,7 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 		Predicate roundEquals = criteriaBuilder.equal(entity.get(AflFixture_.round), round);
 		
 		criteriaQuery.where(criteriaBuilder.and(roundEquals));
-		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
-		
-		return entitys;
+		return  entityManager.createQuery(criteriaQuery).getResultList();
 	}
 	
 	public List<AflFixture> findIncompleteAflFixtures(ZonedDateTime time) {
@@ -40,9 +41,7 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 		Predicate endNull = criteriaBuilder.isNull(entity.get(AflFixture_.endTime));
 		
 		criteriaQuery.where(criteriaBuilder.and(startLess, endNull));
-		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
-		
-		return entitys;
+		return entityManager.createQuery(criteriaQuery).getResultList();
 	}
 	
 	public List<AflFixture> findFixturesToScrape(ZonedDateTime time) {
@@ -56,9 +55,7 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 		Predicate statsDownloadedNullOrFalse = criteriaBuilder.or(statsDownloadedNull, statsDownloadedFalse);
 		
 		criteriaQuery.where(criteriaBuilder.and(startLess, statsDownloadedNullOrFalse));
-		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
-		
-		return entitys;
+		return entityManager.createQuery(criteriaQuery).getResultList();
 	}
 	
 	public List<AflFixture> findIncompleteFixturesForRound(int round) {
@@ -70,9 +67,7 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 		Predicate endTimeNull = criteriaBuilder.isNull(entity.get(AflFixture_.endTime));
 		
 		criteriaQuery.where(criteriaBuilder.and(roundEquals, endTimeNull));
-		List<AflFixture> entitys = entityManager.createQuery(criteriaQuery).getResultList();
-		
-		return entitys;
+		return entityManager.createQuery(criteriaQuery).getResultList();
 	}
 
 	public int findMaxAflRound() {
@@ -84,9 +79,30 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 		Predicate startTimeNotNull = criteriaBuilder.isNotNull(entity.get(AflFixture_.startTime));
 
 		criteriaQuery.select(maxRound).where(startTimeNotNull);
-		Integer maxAflRound = entityManager.createQuery(criteriaQuery).getSingleResult();
+		return entityManager.createQuery(criteriaQuery).getSingleResult();
+	}
 
-		return maxAflRound;
+	public int findRefreshFixtureStart() {
+		criteriaBuilder = entityManager.getCriteriaBuilder();
+		CriteriaQuery<Integer> criteriaQuery = criteriaBuilder.createQuery(Integer.class);
+		entity = criteriaQuery.from(entityClass);
+
+		Subquery<Integer> criteriaSubquery = criteriaQuery.subquery(Integer.class);
+		Root<AflFixture> subqueryEntity = criteriaSubquery.from(entityClass);
+
+		Predicate statsDownloadedFalse = criteriaBuilder.isFalse(subqueryEntity.get(AflFixture_.statsDownloaded));
+		Expression<Long> count = criteriaBuilder.count(subqueryEntity.get(AflFixture_.round));
+		Predicate countEquals9 = criteriaBuilder.equal(count, 9);
+
+		criteriaSubquery.select(subqueryEntity.get(AflFixture_.round))
+			.where(statsDownloadedFalse)
+			.groupBy(subqueryEntity.get(AflFixture_.round))
+			.having(countEquals9);
+
+		Expression<Integer> min = criteriaBuilder.min(entity.get(AflFixture_.round));
+		criteriaQuery.select(min).where(criteriaBuilder.in(criteriaSubquery));
+
+		return entityManager.createQuery(criteriaQuery).getSingleResult();
 	}
 	
 }

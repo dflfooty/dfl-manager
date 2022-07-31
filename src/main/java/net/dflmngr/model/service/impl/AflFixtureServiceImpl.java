@@ -23,8 +23,7 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 	}
 	
 	public List<AflFixture> getAflFixturesForRound(int round) {
-		List<AflFixture> aflFixtures = dao.findAflFixturesForRound(round);
-		return aflFixtures;
+		return dao.findAflFixturesForRound(round);
 	}
 	
 	public Map<Integer, List<AflFixture>> getAflFixturneRoundBlocks() {
@@ -97,18 +96,12 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 	
 	public List<AflFixture> getIncompleteFixtures() {
 		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
-		
-		List<AflFixture> incompleteFixtures = dao.findIncompleteAflFixtures(now);
-		
-		return incompleteFixtures;
+		return dao.findIncompleteAflFixtures(now);
 	}
 	
 	public List<AflFixture> getFixturesToScrape() {
 		ZonedDateTime now = ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone));
-		
-		List<AflFixture> fixturesToScrape = dao.findFixturesToScrape(now);
-		
-		return fixturesToScrape;
+		return dao.findFixturesToScrape(now);
 	}
 	
 	public List<Integer> getAflRoundsToScrape() {
@@ -163,7 +156,10 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 	}
 
 	public int getMaxAflRound() {
-		int maxAflRound = dao.findMaxAflRound();
-		return maxAflRound;
+		return dao.findMaxAflRound();
+	}
+
+	public int getRefreshFixtureStart() {
+		return dao.findRefreshFixtureStart();
 	}
 }

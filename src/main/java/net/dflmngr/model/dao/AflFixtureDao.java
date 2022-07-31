@@ -13,4 +13,5 @@ public interface AflFixtureDao extends GenericDao<AflFixture, AflFixturePK> {
 	public List<AflFixture> findFixturesToScrape(ZonedDateTime time);
 	public List<AflFixture> findIncompleteFixturesForRound(int round);
 	public int findMaxAflRound();
+	public int findRefreshFixtureStart();
 }

@@ -93,7 +93,7 @@ public class AflFixtureLoaderHandler {
 					testRounds.add(i);
 				}
 			} else {
-				int startAtRound = Integer.parseInt(testing.globalsService.getCurrentRound()) + 1;
+				int startAtRound = testing.aflFixtureService.getRefreshFixtureStart();
 				for(int i = startAtRound; i < 24; i++) {
 					testRounds.add(i);
 				}
