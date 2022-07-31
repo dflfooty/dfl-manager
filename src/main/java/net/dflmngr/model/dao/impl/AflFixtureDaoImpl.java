@@ -8,6 +8,7 @@ import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
+import javax.persistence.criteria.CriteriaBuilder.In;
 
 import net.dflmngr.model.dao.AflFixtureDao;
 import net.dflmngr.model.entity.AflFixture;
@@ -100,8 +101,10 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 			.having(countEquals9);
 
 		Expression<Integer> min = criteriaBuilder.min(entity.get(AflFixture_.round));
-		criteriaQuery.select(min).where(criteriaBuilder.in(criteriaSubquery));
+		In<Integer> roundIn = criteriaBuilder.in(entity.get(AflFixture_.round));
+		roundIn.value(criteriaSubquery);
 
+		criteriaQuery.select(min).where(roundIn);
 		return entityManager.createQuery(criteriaQuery).getSingleResult();
 	}
 	
