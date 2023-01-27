@@ -115,7 +115,7 @@
 		<dependency>
 			<groupId>org.seleniumhq.selenium</groupId>
 			<artifactId>htmlunit-driver</artifactId>
-			<version>3.63.0</version>
+			<version>4.8.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.cliftonlabs</groupId>
