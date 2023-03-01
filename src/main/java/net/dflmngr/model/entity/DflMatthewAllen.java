@@ -22,7 +22,8 @@ public class DflMatthewAllen implements Comparator<DflMatthewAllen>, Comparable<
 	
 	@Column(name="player_id")
 	private int playerId;
-	
+
+	private int score;
 	private int votes;
 	private int total;
 	
@@ -50,6 +51,12 @@ public class DflMatthewAllen implements Comparator<DflMatthewAllen>, Comparable<
 	public void setPlayerId(int playerId) {
 		this.playerId = playerId;
 	}
+	public int getScore() {
+		return score;
+	}
+	public void setScore(int score) {
+		this.score = score;
+	}
 	public int getVotes() {
 		return votes;
 	}
@@ -66,8 +73,9 @@ public class DflMatthewAllen implements Comparator<DflMatthewAllen>, Comparable<
 	@Override
 	public String toString() {
 		return "DflMatthewAllen [id=" + id + ", round=" + round + ", game=" + game + ", playerId=" + playerId
-				+ ", votes=" + votes + ", total=" + total + "]";
+				+ ", score=" + score + ", votes=" + votes + ", total=" + total + "]";
 	}
+	
 	
 	@Override
 	public int hashCode() {
@@ -79,8 +87,10 @@ public class DflMatthewAllen implements Comparator<DflMatthewAllen>, Comparable<
 		result = prime * result + round;
 		result = prime * result + total;
 		result = prime * result + votes;
+		result = prime * result + score;
 		return result;
 	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -89,29 +99,30 @@ public class DflMatthewAllen implements Comparator<DflMatthewAllen>, Comparable<
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
+
 		DflMatthewAllen other = (DflMatthewAllen) obj;
-		if (game != other.game)
-			return false;
-		if (id != other.id)
-			return false;
-		if (playerId != other.playerId)
-			return false;
-		if (round != other.round)
-			return false;
-		if (total != other.total)
-			return false;
-		if (votes != other.votes)
-			return false;
-		return true;
+		return game == other.game
+			&& id == other.id
+			&& playerId == other.playerId
+			&& round == other.round
+			&& total == other.total
+			&& votes == other.votes
+			&& score == other.score;
 	}
-	
+
 	@Override
 	public int compareTo(DflMatthewAllen o) {
-		return this.getTotal() > o.getTotal() ? 1 : (this.getTotal() < o.getTotal() ? -1 : 0);
+		if(this.getTotal() > o.getTotal()) {
+			return 1;
+		}
+		return this.getTotal() < o.getTotal() ? -1 : 0;
 	}
 	
 	@Override
 	public int compare(DflMatthewAllen o1, DflMatthewAllen o2) {
-		return o1.getTotal() > o2.getTotal() ? 1 : (o2.getTotal() < o2.getTotal() ? -1 : 0);
+		if(o1.getTotal() > o2.getTotal()) {
+			return 1;
+		}
+		return o1.getTotal() < o2.getTotal() ? -1 : 0;
 	}
 }

@@ -1,8 +1,8 @@
 package net.dflmngr.handlers;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.ProxyConfig;
@@ -15,12 +15,13 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
+import net.dflmngr.exceptions.UnexpectedHtmlException;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.RawPlayerStats;
 import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 
-public class RawStatsHtmlHandler {
+public class StatsHtmlHandler {
     private LoggingUtils loggerUtils;
 
     boolean isExecutable;
@@ -30,7 +31,7 @@ public class RawStatsHtmlHandler {
 
     GlobalsService globalsService;
 
-    public RawStatsHtmlHandler() {
+    public StatsHtmlHandler() {
         globalsService = new GlobalsServiceImpl();
         isExecutable = false;
     }
@@ -42,7 +43,7 @@ public class RawStatsHtmlHandler {
     }
 
     public List<RawPlayerStats> execute(int round, String homeTeam, String awayTeam, String statsUrl,
-            boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) throws Exception {
+            boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) {
 
         if (!isExecutable) {
             configureLogging(defaultLogfile);
@@ -59,7 +60,7 @@ public class RawStatsHtmlHandler {
     }
 
     private List<RawPlayerStats> downloadStats(int round, String homeTeam, String awayTeam, String statsUrl,
-            boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) throws Exception {
+            boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) {
 
         List<RawPlayerStats> playerStats = new ArrayList<>();
 
@@ -110,36 +111,27 @@ public class RawStatsHtmlHandler {
             };
         }
 
-        driver.manage().timeouts().implicitlyWait(webdriverWait, TimeUnit.SECONDS);
-        driver.manage().timeouts().pageLoadTimeout(webdriverTimeout, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(webdriverWait));
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(webdriverTimeout));
 
         try {
             driver.get(statsUrl);
         } catch (Exception ex) {
-            // if(driver.findElements(By.cssSelector("a[href='#full-time-stats']")).isEmpty())
-            // {
             if (driver.findElements(By.id("full-time-stats")).isEmpty()
                     && driver.findElements(By.id("live-stats")).isEmpty()) {
                 driver.quit();
-                throw new Exception("Error Loading page, URL:" + statsUrl, ex);
+                throw new UnexpectedHtmlException();
             }
         }
 
-        boolean isLive = false;
-        // if(driver.findElements(By.id("full-time-stats")).isEmpty()) {
-        // isLive = true;
-        // }
-
         try {
             if (includeHomeTeam) {
-                playerStats.addAll(getStats(round, homeTeam, "h", driver, isLive, scrapingStatus));
+                playerStats.addAll(getStats(round, homeTeam, "h", driver, scrapingStatus));
             }
 
             if (includeAwayTeam) {
-                playerStats.addAll(getStats(round, awayTeam, "a", driver, isLive, scrapingStatus));
+                playerStats.addAll(getStats(round, awayTeam, "a", driver, scrapingStatus));
             }
-        } catch (Exception ex) {
-            throw ex;
         } finally {
             driver.quit();
         }
@@ -147,28 +139,16 @@ public class RawStatsHtmlHandler {
         return playerStats;
     }
 
-    private List<RawPlayerStats> getStats(int round, String aflTeam, String homeORaway, WebDriver driver,
-            boolean isLive, String scrapingStatus) throws Exception {
-
-        /*
-         * if(isLive) {
-         * driver.findElement(By.cssSelector("a[href='#live-stats']")).click(); } else {
-         * driver.findElement(By.cssSelector("a[href='#full-time-stats']")).click(); }
-         */
-
-        // driver.findElement(By.cssSelector("a[href='#advanced-stats']")).click();
+    private List<RawPlayerStats> getStats(int round, String aflTeam, String homeORaway, WebDriver driver, String scrapingStatus) {
 
         List<WebElement> statsRecs;
         List<RawPlayerStats> teamStats = new ArrayList<>();
-
-        // System.out.println(driver.getPageSource());
 
         if (homeORaway.equals("h")) {
             statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(0)
                     .findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
             loggerUtils.log("info", "Found home team stats for: round={}; aflTeam={}; ", round, aflTeam);
         } else {
-            // driver.findElement(By.className("fiso-mcfootball-match-player-stats-button-row")).findElements(By.tagName("button")).get(1).click();
             statsRecs = driver.findElements(By.className("fiso-mcfootball-match-player-stats-tables__team")).get(1)
                     .findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
             loggerUtils.log("info", "Found away team stats for: round={}; aflTeam={}; ", round, aflTeam);
@@ -179,12 +159,8 @@ public class RawStatsHtmlHandler {
 
             RawPlayerStats playerStats = new RawPlayerStats();
             playerStats.setRound(round);
-
-            // playerStats.setName(stats.get(0).findElements(By.tagName("span")).get(1).getText());
             playerStats.setName(stats.get(1).getText());
-
             playerStats.setTeam(aflTeam);
-
             playerStats.setJumperNo(Integer.parseInt(stats.get(0).getText()));
             playerStats.setKicks(Integer.parseInt(stats.get(4).getText()));
             playerStats.setHandballs(Integer.parseInt(stats.get(5).getText()));
@@ -201,10 +177,6 @@ public class RawStatsHtmlHandler {
             loggerUtils.log("info", "Player stats: {}", playerStats);
 
             teamStats.add(playerStats);
-
-            // if (teamStats.size() == 22) {
-            // break;
-            // }
         }
 
         return teamStats;
@@ -220,7 +192,7 @@ public class RawStatsHtmlHandler {
         boolean includeAwayTeam = Boolean.parseBoolean(args[5]);
         String scrapingStatus = args[6];
 
-        RawStatsHtmlHandler handler = new RawStatsHtmlHandler();
+        StatsHtmlHandler handler = new StatsHtmlHandler();
         handler.configureLogging("RawPlayerDownloader");
 
         try {

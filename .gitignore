@@ -13,3 +13,4 @@ reports
 .vscode/launch.json
 .vscode/settings.json
 .attach_pid*
+.env

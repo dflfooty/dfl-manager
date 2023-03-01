@@ -48,8 +48,12 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		
 		return fxitureRoundBlocks;
 	}
+
+	public AflFixture getAflFixtureForRoundAndTeam(int round, String team) {
+		return dao.findAflFixtureForRoundAndTeam(round, team);
+	}
 	
-	public List<AflFixture> getAflFixturesPlayedForRound(int round) throws Exception {
+	public List<AflFixture> getAflFixturesPlayedForRound(int round) {
 		
 		List<AflFixture> playedFixtures = new ArrayList<>();
 		List<AflFixture> aflFixtures = dao.findAflFixturesForRound(round);
@@ -64,7 +68,7 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		return playedFixtures;
 	}
 	
-	public AflFixture getPlayedGame(int round, int game) throws Exception {
+	public AflFixture getPlayedGame(int round, int game) {
 		
 		AflFixture playedFixture = null;
 		
@@ -81,7 +85,7 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 		return playedFixture;
 	}
 	
-	public List<String> getAflTeamsPlayedForRound(int round) throws Exception {
+	public List<String> getAflTeamsPlayedForRound(int round) {
 		List<String> playedTeams = new ArrayList<>();
 		
 		List<AflFixture> playedFixtures = getAflFixturesPlayedForRound(round);

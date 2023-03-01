@@ -275,7 +275,7 @@ public class EmailSelectionsHandler {
 
 					loggerUtils.log("info", "Message from {}, has selection in text body", from);
 					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, receivedDate, "noid");
+					validationResult = handleSelectionEmailText(lines, "noid");
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 				} else if (text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
@@ -287,7 +287,7 @@ public class EmailSelectionsHandler {
 
 					loggerUtils.log("info", "Message from {}, has selection in text body", from);
 					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, receivedDate, id);
+					validationResult = handleSelectionEmailText(lines, id);
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 				}
@@ -307,7 +307,7 @@ public class EmailSelectionsHandler {
 
 					loggerUtils.log("info", "Message from {}, has selection in html body", from);
 					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, receivedDate, "noid");
+					validationResult = handleSelectionEmailText(lines, "noid");
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 				} else if (text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
@@ -319,7 +319,7 @@ public class EmailSelectionsHandler {
 
 					loggerUtils.log("info", "Message from {}, has selection in text body", from);
 					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, receivedDate, id);
+					validationResult = handleSelectionEmailText(lines, id);
 					validationResult.setFrom(from);
 					validationResults.add(validationResult);
 				}
@@ -334,14 +334,14 @@ public class EmailSelectionsHandler {
 					if (attachementName.equalsIgnoreCase("selections.txt")) {
 						loggerUtils.log("info", "Message from {}, has selection attachment", from);
 						selectionsFileAttached = true;
-						validationResult = handleSelectionFile(part.getInputStream(), receivedDate);
+						validationResult = handleSelectionFile(part.getInputStream());
 						validationResult.setFrom(from);
 						validationResults.add(validationResult);
 						loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
 					} else if (attachementName.equalsIgnoreCase("WINMAIL.DAT")
 							|| attachementName.equalsIgnoreCase("ATT00001.DAT")) {
 						loggerUtils.log("info", "Message from {}, is a TNEF message", from);
-						validationResult = handleTNEFMessage(part.getInputStream(), from, receivedDate);
+						validationResult = handleTNEFMessage(part.getInputStream(), from);
 						validationResult.setFrom(from);
 						validationResults.add(validationResult);
 						loggerUtils.log("info", "Message from {} handled with ... SUCCESS!", from);
@@ -366,7 +366,7 @@ public class EmailSelectionsHandler {
 		return validationResult;
 	}
 
-	private SelectedTeamValidation handleTNEFMessage(InputStream inputStream, String from, ZonedDateTime receivedDate)
+	private SelectedTeamValidation handleTNEFMessage(InputStream inputStream, String from)
 			throws Exception {
 
 		SelectedTeamValidation validationResult = null;
@@ -380,7 +380,7 @@ public class EmailSelectionsHandler {
 
 				if (filename.equals("selections.txt")) {
 					loggerUtils.log("info", "Message from {}, has selection attachment", from);
-					validationResult = handleSelectionFile(attachment.getRawData(), receivedDate);
+					validationResult = handleSelectionFile(attachment.getRawData());
 				}
 			}
 		}
@@ -390,7 +390,7 @@ public class EmailSelectionsHandler {
 		return validationResult;
 	}
 
-	private SelectedTeamValidation handleSelectionFile(InputStream inputStream, ZonedDateTime receivedDate)
+	private SelectedTeamValidation handleSelectionFile(InputStream inputStream)
 			throws Exception {
 
 		String line = "";
@@ -491,24 +491,16 @@ public class EmailSelectionsHandler {
 			}
 		}
 
-		// TeamSelectionLoaderHandler selectionsLoader = new
-		// TeamSelectionLoaderHandler();
-		// selectionsLoader.execute(teamCode, round, ins, outs);
-
 		Map<String, List<Integer>> insAndOuts = new HashMap<>();
 		insAndOuts.put("in", ins);
 		insAndOuts.put("out", outs);
 
 		SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
 		validationHandler.configureLogging(mdcKey, loggerName, logfile);
-		SelectedTeamValidation validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs,
-				receivedDate, false, "noid");
-
-		return validationResult;
+		return validationHandler.execute(round, teamCode, insAndOuts, emgs, "noid");
 	}
 
-	private SelectedTeamValidation handleSelectionEmailText(String[] emailLines, ZonedDateTime receivedDate, String id)
-			throws Exception {
+	private SelectedTeamValidation handleSelectionEmailText(String[] emailLines, String id) {
 
 		String line = "";
 		String teamCode = "";
@@ -653,7 +645,7 @@ public class EmailSelectionsHandler {
 
 			SelectedTeamValidationHandler validationHandler = new SelectedTeamValidationHandler();
 			validationHandler.configureLogging(mdcKey, loggerName, logfile);
-			validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, receivedDate, false, id);
+			validationResult = validationHandler.execute(round, teamCode, insAndOuts, emgs, id);
 		}
 
 		return validationResult;
@@ -685,28 +677,7 @@ public class EmailSelectionsHandler {
 		return playerNo;
 	}
 
-	/*
-	 * private double getPlayerNoForEmgs(String line) {
-	 * 
-	 * double playerNo; String playerNoStr;
-	 * 
-	 * Pattern pattern = Pattern.compile("[\\s:\\-]"); Matcher matcher =
-	 * pattern.matcher(line);
-	 * 
-	 * if(matcher.find()) { int i = matcher.start(); playerNoStr = line.substring(0,
-	 * i); } else { playerNoStr = line; }
-	 * 
-	 * try { playerNo = Double.parseDouble(playerNoStr); } catch
-	 * (NumberFormatException e) { loggerUtils.log("info",
-	 * "Error parsing player number, number format exception ... oh well.  Error={}"
-	 * , e.getMessage()); playerNo = 0; }
-	 * 
-	 * return playerNo; }
-	 */
-
 	private void sendResponses() throws Exception {
-
-		// for (Map.Entry<String, Boolean> response : this.responses.entrySet()) {
 		for (SelectedTeamValidation validationResult : validationResults) {
 
 			String to = "";
@@ -724,14 +695,7 @@ public class EmailSelectionsHandler {
 			properties.setProperty("mail.smtp.host", outgoingMailHost);
 			properties.setProperty("mail.smtp.port", String.valueOf(outgoingMailPort));
 			properties.setProperty("mail.smtp.starttls.enable", "true");
-			// properties.setProperty("mail.smtp.ssl.enable", "true");
 			properties.setProperty("mail.smtp.auth", "true");
-
-			// properties.setProperty("mail.smtp.socketFactory.port",
-			// String.valueOf(outgoingMailPort));
-			// properties.put("mail.smtp.socketFactory.fallback", "false");
-			// properties.put("mail.smtp.socketFactory.class",
-			// "javax.net.ssl.SSLSocketFactory");
 
 			Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
 				protected PasswordAuthentication getPasswordAuthentication() {
@@ -739,19 +703,14 @@ public class EmailSelectionsHandler {
 				}
 			});
 
-			// Session session = null;
 			MimeMessage message = new MimeMessage(session);
 			message.setFrom(new InternetAddress(this.dflmngrEmailAddr));
 			message.addRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
 
 			loggerUtils.log("info", "Creating response message: to={}; from={};", to, this.dflmngrEmailAddr);
 
-			// boolean isSuccess = response.getValue();
-
-			// if(isSuccess) {
 			if (validationResult.isValid()) {
 				if (teamCode != null && !teamCode.equals("")) {
-					// String teamTo = globalsService.getTeamEmail(teamCode);
 					DflTeam team = dflTeamService.get(teamCode);
 					String teamTo = team.getCoachEmail();
 					loggerUtils.log("info", "Team email: {}", teamTo);
@@ -768,12 +727,6 @@ public class EmailSelectionsHandler {
 			}
 
 			loggerUtils.log("info", "Sending message");
-			// Transport.send(message);
-
-			// String oauthToken = AccessTokenFromRefreshToken.getAccessToken();
-			// Transport smptTransport = OAuth2Authenticator.connectToSmtp(outgoingMailHost,
-			// outgoingMailPort, mailUsername, oauthToken, false);
-			// smptTransport.sendMessage(message, message.getAllRecipients());
 
 			Transport.send(message, message.getAllRecipients());
 		}
@@ -940,8 +893,6 @@ public class EmailSelectionsHandler {
 		} else if (validationResult.roundCompleted) {
 			messageBody = messageBody + "\t- The round you have in your selections.txt has past\n";
 		} else if (validationResult.lockedOut) {
-			// messageBody = messageBody + "\t- The round you have in your selections.txt is
-			// in progress and doesn't allow more selections\n";
 			messageBody = messageBody + "\t- The round you have in your selections as had all AFL games completed.\n";
 		} else if (validationResult.unknownError) {
 			messageBody = messageBody + "\t- Some exception occured follow up with email to xdfl google group.\n";
@@ -983,7 +934,6 @@ public class EmailSelectionsHandler {
 	// internal testing
 	public static void main(String[] args) {
 		try {
-			// JndiProvider.bind();
 			EmailSelectionsHandler selectionHandler = new EmailSelectionsHandler();
 			selectionHandler.execute();
 			System.exit(0);

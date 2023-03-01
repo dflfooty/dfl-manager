@@ -8,19 +8,17 @@ import org.quartz.JobExecutionException;
 import net.dflmngr.handlers.ResultsHandler;
 import net.dflmngr.logging.LoggingUtils;
 
-public class ResultsJob implements Job {
-	private LoggingUtils loggerUtils;
-	
-	public static String ROUND = "ROUND";
-	public static String IS_FINAL = "IS_FINAL";
-	public static String ONGOING = "ONGOING";
+public class ResultsJob implements Job {	
+	private static final String ROUND = "ROUND";
+	private static final String IS_FINAL = "IS_FINAL";
+	private static final String ONGOING = "ONGOING";
 	
 	@Override
 	public void execute(JobExecutionContext context) throws JobExecutionException {
-		loggerUtils = new LoggingUtils("Scheduler");
+		LoggingUtils loggerUtils = new LoggingUtils("Scheduler");
 		
 		try {
-			loggerUtils.log("info", "RoundProgressJob starting ...");
+			loggerUtils.log("info", "RoundResultsJob starting ...");
 			
 			JobDataMap data = context.getJobDetail().getJobDataMap(); 
 			

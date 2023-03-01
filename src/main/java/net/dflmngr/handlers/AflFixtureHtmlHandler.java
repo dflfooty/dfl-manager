@@ -1,5 +1,6 @@
 package net.dflmngr.handlers;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -7,7 +8,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -48,7 +48,7 @@ public class AflFixtureHtmlHandler {
         isExecutable = true;
     }
 
-    public List<AflFixture> execute(Integer aflRound, String aflFixtureUrl) throws Exception {
+    public List<AflFixture> execute(Integer aflRound, String aflFixtureUrl) {
 
         loggerUtils.log("info", "Loading Afl Fixture HTML: aflRound={} url={}", aflRound, aflFixtureUrl);
 
@@ -59,7 +59,7 @@ public class AflFixtureHtmlHandler {
         return games;
     }
 
-    private List<AflFixture> download(Integer aflRound, String aflFixtureUrl) throws Exception {
+    private List<AflFixture> download(Integer aflRound, String aflFixtureUrl) {
 
         List<AflFixture> games = new ArrayList<>();
 
@@ -75,8 +75,8 @@ public class AflFixtureHtmlHandler {
 
 		int webdriverTimeout = globalsService.getWebdriverTimeout();
 		int webdriverWait = globalsService.getWebdriverWait();
-		driver.manage().timeouts().implicitlyWait(webdriverWait, TimeUnit.SECONDS);
-		driver.manage().timeouts().pageLoadTimeout(webdriverTimeout, TimeUnit.SECONDS);
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(webdriverWait));
+		driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(webdriverTimeout));
 
 		driver.get(aflFixtureUrl);
 
@@ -85,7 +85,11 @@ public class AflFixtureHtmlHandler {
 			loggerUtils.log("info", "Try: {}", retry);
 			if(driver.findElements(By.className("match-list")).isEmpty()) {
 				loggerUtils.log("info", "Still waiting, will try again in 5");
-				Thread.sleep(5000);
+				try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
 			} else {
 				break;
 			}
@@ -131,6 +135,12 @@ public class AflFixtureHtmlHandler {
         return games;
     }
 
+    public void report(List<AflFixture> fixtures) {
+        for(AflFixture fixture: fixtures) {
+            loggerUtils.log("info", "Fixture: {}", fixture);
+        }
+    }
+
     public static void main(String[] args) {
 
         int round = Integer.parseInt(args[0]);
@@ -139,15 +149,8 @@ public class AflFixtureHtmlHandler {
         AflFixtureHtmlHandler handler = new AflFixtureHtmlHandler();
         handler.configureLogging("AflFixtureDownloader");
 
-        try {
-            List<AflFixture> fixtures =  handler.execute(round, fixtureUrl);
-
-            for(AflFixture fixture: fixtures) {
-                System.out.println("Fixture: " + fixture);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        List<AflFixture> fixtures =  handler.execute(round, fixtureUrl);
+        handler.report(fixtures);
 
         System.exit(0);
     }

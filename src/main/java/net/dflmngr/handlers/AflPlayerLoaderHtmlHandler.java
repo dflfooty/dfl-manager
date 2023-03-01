@@ -1,11 +1,10 @@
 package net.dflmngr.handlers;
 
-import java.io.InputStream;
-import java.net.URL;
+import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -18,6 +17,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import net.dflmngr.exceptions.HtmlPageLoadException;
+import net.dflmngr.exceptions.UnexpectedHtmlException;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflPlayer;
 import net.dflmngr.model.service.GlobalsService;
@@ -25,6 +26,8 @@ import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 
 public class AflPlayerLoaderHtmlHandler {
 	private LoggingUtils loggerUtils;
+
+	private static final String TXT_CONT_ATTR = "textContent";
 
 	GlobalsService globalsService;
 
@@ -34,7 +37,7 @@ public class AflPlayerLoaderHtmlHandler {
 		globalsService = new GlobalsServiceImpl();
 	}
 
-	public List<AflPlayer> execute(String teamId, String url, boolean useOfficialPlayers) throws Exception {
+	public List<AflPlayer> execute(String teamId, String url, boolean useOfficialPlayers) {
 
 		loggerUtils.log("info", "Loading Afl Players HTML: teamId={}, aflRound={} url={}", teamId, url);
 
@@ -47,13 +50,11 @@ public class AflPlayerLoaderHtmlHandler {
 		return aflPlayers;
 	}
 
-	private List<AflPlayer> unofficialPlayerLoad(String teamId, String url) throws Exception {
+	private List<AflPlayer> unofficialPlayerLoad(String teamId, String url) {
 
 		List<AflPlayer> aflPlayers;
 
-		InputStream teamPageInput = getInputStream(url);
-		Document doc = Jsoup.parse(teamPageInput, "UTF-8", url);
-
+		Document doc = getHtmlDoc(url);
 		aflPlayers = loadPlayers(teamId, doc);
 
 		return aflPlayers;
@@ -73,8 +74,8 @@ public class AflPlayerLoaderHtmlHandler {
 
 		int webdriverTimeout = globalsService.getWebdriverTimeout();
 		int webdriverWait = globalsService.getWebdriverWait();
-		driver.manage().timeouts().implicitlyWait(webdriverWait, TimeUnit.SECONDS);
-		driver.manage().timeouts().pageLoadTimeout(webdriverTimeout, TimeUnit.SECONDS);
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(webdriverWait));
+		driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(webdriverTimeout));
 
 		driver.get(url);
 
@@ -109,15 +110,15 @@ public class AflPlayerLoaderHtmlHandler {
 				noJumper--;
 			}
 
-            String firstName = teamPlayer.findElement(By.className("player-item__name")).getAttribute("textContent").trim();
+            String firstName = teamPlayer.findElement(By.className("player-item__name")).getAttribute(TXT_CONT_ATTR).trim();
 
             List<WebElement> nameChilds = teamPlayer.findElement(By.className("player-item__name")).findElements(By.xpath("./*"));
             for(WebElement child : nameChilds) {
-                firstName = firstName.replaceFirst(child.getAttribute("textContent"), "").trim();
+                firstName = firstName.replaceFirst(child.getAttribute(TXT_CONT_ATTR), "").trim();
             }
             aflPlayer.setFirstName(firstName);
 
-			String secondName = teamPlayer.findElement(By.className("player-item__last-name")).getAttribute("textContent").trim();
+			String secondName = teamPlayer.findElement(By.className("player-item__last-name")).getAttribute(TXT_CONT_ATTR).trim();
 			aflPlayer.setSecondName(secondName);
 
 			aflPlayer.setName(firstName + " " + secondName);
@@ -136,95 +137,94 @@ public class AflPlayerLoaderHtmlHandler {
 		List<AflPlayer> aflPlayers = new ArrayList<>();
 
 		Element playerContent = doc.getElementById("content-area");
-		Element playerList = playerContent.getElementsByTag("table").get(1);
 
-		int noJumper = 99;
+		int defaultJumperNumber = 99;
 
-		Elements playerRecs = playerList.getElementsByTag("tr");
-		for (Element playerRec : playerRecs) {
+		if(playerContent != null) {
+			Element playerList = playerContent.getElementsByTag("table").get(1);
+			Elements playerRecs = playerList.getElementsByTag("tr");
+			for (Element playerRec : playerRecs) {
 
-			Elements playerRecFields = playerRec.getElementsByTag("td");
+				Elements playerRecFields = playerRec.getElementsByTag("td");
 
-			if (!playerRecFields.isEmpty()) {
-				AflPlayer aflPlayer = new AflPlayer();
-				aflPlayer.setTeamId(teamId);
-
-				String name = playerRecFields.get(0).text();
-				aflPlayer.setName(name);
-
-				String[] nameParts = name.split(" ");
-
-				if (nameParts.length == 2) {
-					aflPlayer.setFirstName(nameParts[0]);
-					aflPlayer.setSecondName(nameParts[1]);
-				} else if (nameParts.length == 3) {
-					aflPlayer.setFirstName(nameParts[0]);
-					aflPlayer.setSecondName(nameParts[2]);
-				} else {
-					aflPlayer.setFirstName(nameParts[0]);
-					aflPlayer.setSecondName(String.join(" ", Arrays.copyOfRange(nameParts, 1, nameParts.length)));
+				if (!playerRecFields.isEmpty()) {
+					AflPlayer aflPlayer = extractAflPlayer(teamId, playerRecFields, defaultJumperNumber);
+					if(aflPlayer.getJumperNo() == defaultJumperNumber) {
+						defaultJumperNumber--;
+					}
+					aflPlayers.add(aflPlayer);
 				}
-
-				String jumperNoString = playerRecFields.get(2).text();
-				if (StringUtils.isNumeric(jumperNoString)) {
-					aflPlayer.setJumperNo(Integer.parseInt(jumperNoString));
-				} else {
-					aflPlayer.setJumperNo(noJumper);
-					noJumper--;
-				}
-
-				aflPlayer.setPlayerId(aflPlayer.getTeamId() + aflPlayer.getJumperNo());
-
-				loggerUtils.log("info", "Extraced player data: {}", aflPlayer);
-
-				aflPlayers.add(aflPlayer);
 			}
+		} else {
+			throw new UnexpectedHtmlException();
 		}
 
 		return aflPlayers;
 	}
 
-	private InputStream getInputStream(String url) throws Exception {
+	private AflPlayer extractAflPlayer(String teamId, Elements playerRecFields, int defaultJumperNumber) {
+		AflPlayer aflPlayer = new AflPlayer();
+		aflPlayer.setTeamId(teamId);
 
-		InputStream inputStream = null;
+		String name = playerRecFields.get(0).text();
+		aflPlayer.setName(name);
 
-		boolean isStreamOpen = false;
-		int maxRetries = 10;
+		String[] nameParts = name.split(" ");
+
+		if (nameParts.length == 2) {
+			aflPlayer.setFirstName(nameParts[0]);
+			aflPlayer.setSecondName(nameParts[1]);
+		} else if (nameParts.length == 3) {
+			aflPlayer.setFirstName(nameParts[0]);
+			aflPlayer.setSecondName(nameParts[2]);
+		} else {
+			aflPlayer.setFirstName(nameParts[0]);
+			aflPlayer.setSecondName(String.join(" ", Arrays.copyOfRange(nameParts, 1, nameParts.length)));
+		}
+
+		String jumperNoString = playerRecFields.get(2).text();
+		if (StringUtils.isNumeric(jumperNoString)) {
+			aflPlayer.setJumperNo(Integer.parseInt(jumperNoString));
+		} else {
+			aflPlayer.setJumperNo(defaultJumperNumber);
+		}
+
+		aflPlayer.setPlayerId(aflPlayer.getTeamId() + aflPlayer.getJumperNo());
+
+		loggerUtils.log("info", "Extraced player data: {}", aflPlayer);
+
+		return aflPlayer;
+
+	}
+
+	private Document getHtmlDoc(String url) {
+
+		Document doc = null;
+	
+		boolean pageOpen = false;
 		int retries = 0;
+		int maxRetries = 5;
 
-		while (!isStreamOpen) {
-			boolean exception = false;
+		while(!pageOpen) {
 			try {
-				inputStream = new URL(url).openStream();
-			} catch (Exception ex) {
-				exception = true;
+				doc = Jsoup.connect(url).get();
+			} catch (IOException e) {
 				retries++;
-				loggerUtils.log("info", "Failed to open team page retries {} of {}", retries, maxRetries);
-				if (retries == maxRetries) {
-					Exception ex2 = new Exception("Max re-tries hit failed", ex);
-					throw ex2;
-				}
-				try {
-					loggerUtils.log("info", "Waiting...");
-					TimeUnit.SECONDS.sleep(5);
-				} catch (Exception ex3) {
-				}
+				if(retries == maxRetries) {
+					throw new HtmlPageLoadException(url);
+				}	
 			}
-			if (!exception) {
-				if (inputStream == null) {
-					retries++;
-					loggerUtils.log("info", "Failed to open team page retries {} of {}", retries, maxRetries);
-					if (retries == maxRetries) {
-						Exception ex = new Exception("Max re-tries hit failed");
-						throw ex;
-					}
-				} else {
-					isStreamOpen = true;
-				}
+
+			if(doc != null) {
+				pageOpen = true;
 			}
 		}
 
-		return inputStream;
+		return doc;
+	}
+
+	public void report(List<AflPlayer> players) {
+		loggerUtils.log("info", "Loaded players: {}", players);
 	}
 
 	public static void main(String[] args) {
@@ -237,7 +237,7 @@ public class AflPlayerLoaderHtmlHandler {
 
 		try {
 			List<AflPlayer> players = handler.execute(teamId, url, useOfficial);
-			System.out.println(players);
+			handler.report(players);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

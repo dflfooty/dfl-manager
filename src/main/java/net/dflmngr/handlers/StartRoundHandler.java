@@ -3,6 +3,10 @@ package net.dflmngr.handlers;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import net.dflmngr.exceptions.UnknownSelectionIndicatorException;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.entity.DflFixture;
@@ -112,7 +116,7 @@ public class StartRoundHandler {
 			
 			if(!fromScoresCalculator && earlyGamesCompleted) {
 				loggerUtils.log("info", "No early games or early games completed, sending start round email.");
-				sendFirstGameEmail(round, emailOveride);
+				sendFirstGameEmail(round);
 			}
 			
 			loggerUtils.log("info", "Start round completed");
@@ -132,7 +136,7 @@ public class StartRoundHandler {
 		}
 	}
 		
-	private void sendFirstGameEmail(int round, String emailOveride) throws Exception {
+	private void sendFirstGameEmail(int round) {
 		
 		String dflMngrEmail = globalsService.getEmailConfig().get("dflmngrEmailAddr");
 		
@@ -141,7 +145,7 @@ public class StartRoundHandler {
 		List<DflFixture> roundFixtures = dflFixtureService.getFixturesForRound(round);
 		
 		String body = "<html>\n<body>\n";
-		body = "<p>This week in round " + round + "</p>\n";
+		body = body + "<p>This week in round " + round + "</p>\n";
 		body = body + "<p>DFL Manager has made the following predictions:</p>\n";
 		body = body + "<p><ul type=none>\n";
 						
@@ -206,6 +210,7 @@ public class StartRoundHandler {
 					case "O" : outs.add(selection); break;
 					case "E1" : emg1 = selection; break;
 					case "E2" : emg2 = selection; break;
+					default: throw new UnknownSelectionIndicatorException(selection.getInOrOut());
 				}
 			}
 			
@@ -290,13 +295,15 @@ public class StartRoundHandler {
 	}
 	
 	public static void main(String[] args) {
+
+		final Logger logger = LoggerFactory.getLogger("stdout-logger");
 		
 		try {
 			String email = null;
 			int round = 0;
 			
 			if(args.length > 2 || args.length < 1) {
-				System.out.println("usage: RawStatsReport <round> optional [<email>]");
+				logger.info("usage: RawStatsReport <round> optional [<email>]");
 			} else {
 				
 				round = Integer.parseInt(args[0]);

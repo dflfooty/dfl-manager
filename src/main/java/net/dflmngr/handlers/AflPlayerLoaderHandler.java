@@ -1,13 +1,10 @@
 package net.dflmngr.handlers;
 
-//import java.text.DateFormat;
-// java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflPlayer;
 import net.dflmngr.model.entity.AflTeam;
@@ -26,6 +23,8 @@ import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 
 public class AflPlayerLoaderHandler {
 	private LoggingUtils loggerUtils;
+
+	private static final String NOT_ALPHA_REGEX = "[^a-zA-Z]";
 
 	private AflTeamService aflTeamService;
 	private AflPlayerService aflPlayerService;
@@ -66,7 +65,7 @@ public class AflPlayerLoaderHandler {
 
 	}
 
-	private void processTeams(List<AflTeam> aflTeams) throws Exception {
+	private void processTeams(List<AflTeam> aflTeams) {
 
 		List<AflPlayer> aflPlayers = new ArrayList<>();
 
@@ -143,7 +142,7 @@ public class AflPlayerLoaderHandler {
 		Map<Integer, AflPlayer> aflPlayerUpdates = new HashMap<>();
 
 		for(AflPlayer aflPlayer : aflPlayers) {
-			String aflPlayerCrossRef = (aflPlayer.getName().replaceAll("[^a-zA-Z]", "") + "-" + globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase())).toLowerCase();
+			String aflPlayerCrossRef = (aflPlayer.getName().replaceAll(NOT_ALPHA_REGEX, "") + "-" + globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase())).toLowerCase();
 			loggerUtils.log("info", "Searching for player: {}", aflPlayerCrossRef);
 			DflPlayer dflPlayer = dflPlayerCrossRefs.get(aflPlayerCrossRef);
 
@@ -172,15 +171,15 @@ public class AflPlayerLoaderHandler {
 
 		    boolean matched = false;
 
-		    String dflCheckOne = ((dflPlayer.getFirstName() + dflPlayer.getInitial() + dflPlayer.getLastName()).replaceAll("[^a-zA-Z]", "") + "-" + dflPlayer.getAflClub()).toLowerCase();
-		    String dflCheckTwo = (dflPlayer.getLastName().replaceAll("[^a-zA-Z]", "") + "-" + dflPlayer.getAflClub()).toLowerCase();
-		    String dflCheckThree = (dflPlayer.getFirstName().replaceAll("[^a-zA-Z]", "") + "-" + dflPlayer.getAflClub()).toLowerCase();
+		    String dflCheckOne = ((dflPlayer.getFirstName() + dflPlayer.getInitial() + dflPlayer.getLastName()).replaceAll(NOT_ALPHA_REGEX, "") + "-" + dflPlayer.getAflClub()).toLowerCase();
+		    String dflCheckTwo = (dflPlayer.getLastName().replaceAll(NOT_ALPHA_REGEX, "") + "-" + dflPlayer.getAflClub()).toLowerCase();
+		    String dflCheckThree = (dflPlayer.getFirstName().replaceAll(NOT_ALPHA_REGEX, "") + "-" + dflPlayer.getAflClub()).toLowerCase();
 
 		    for(AflPlayer aflPlayer : aflUnmatchedPlayers) {
 
 		    	String aflTeamName = globalsService.getAflTeamMap(aflPlayer.getTeamId().toLowerCase());
 
-		    	String aflCheckOne = (aflPlayer.getName().replaceAll("[^a-zA-Z]", "") + "-" + aflTeamName).toLowerCase();
+		    	String aflCheckOne = (aflPlayer.getName().replaceAll(NOT_ALPHA_REGEX, "") + "-" + aflTeamName).toLowerCase();
 
 		    	loggerUtils.log("info", "Check one {} vs {}", dflCheckOne, aflCheckOne);
 
@@ -197,7 +196,7 @@ public class AflPlayerLoaderHandler {
 		    	}
 
 		    	if(!matched) {
-		    		String aflCheckTwo = (aflPlayer.getSecondName().replaceAll("[^a-zA-Z]", "") + "-" + aflTeamName).toLowerCase();
+		    		String aflCheckTwo = (aflPlayer.getSecondName().replaceAll(NOT_ALPHA_REGEX, "") + "-" + aflTeamName).toLowerCase();
 
 		    		loggerUtils.log("info", "Check two {} vs {}", dflCheckTwo, aflCheckTwo);
 
@@ -215,7 +214,7 @@ public class AflPlayerLoaderHandler {
 		    	}
 
 		    	if(!matched) {
-		    		String aflCheckThree = (aflPlayer.getFirstName().replaceAll("[^a-zA-Z]", "") + "-" + aflTeamName).toLowerCase();
+		    		String aflCheckThree = (aflPlayer.getFirstName().replaceAll(NOT_ALPHA_REGEX, "") + "-" + aflTeamName).toLowerCase();
 
 		    		loggerUtils.log("info", "Check three {} vs {}", dflCheckThree, aflCheckThree);
 

@@ -54,7 +54,6 @@ public class LadderCalculatorHandler {
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -167,7 +166,7 @@ public class LadderCalculatorHandler {
 		float averageFor = (float)pointsFor / round;
 		int pointsAgainst = oppositionScore;
 		float averageAgainst = (float)pointsAgainst / round;
-		int pts = (teamScore > oppositionScore ? 4 : (teamScore == oppositionScore ? 2 : 0));
+		int pts = calculateWinLossDrawPts(teamScore, oppositionScore);
 		float percentage = ((float)pointsFor / pointsAgainst) * 100;
 		
 		if(round > 1) {
@@ -199,6 +198,17 @@ public class LadderCalculatorHandler {
 		loggerUtils.log("info", "New ladder={}", newLadder);
 		
 		return newLadder;
+	}
+
+	private int calculateWinLossDrawPts(int teamScore, int oppositionScore) {
+		final int WIN = 4;
+		final int DRAW = 2;
+		final int LOSS = 0;
+
+		if(teamScore > oppositionScore) {
+			return WIN;
+		}
+		return teamScore == oppositionScore ? DRAW : LOSS;
 	}
 
 }

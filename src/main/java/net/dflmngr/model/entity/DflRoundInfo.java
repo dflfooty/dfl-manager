@@ -1,7 +1,6 @@
 package net.dflmngr.model.entity;
 
 import java.time.ZonedDateTime;
-//import java.util.Date;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -11,8 +10,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-//import javax.persistence.Temporal;
-//import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "dfl_round_info")

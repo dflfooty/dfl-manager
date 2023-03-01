@@ -38,7 +38,17 @@ public class SelectionsHandler {
 	String loggerName;
 	String logfile;
 
-	public SelectionsHandler() {}
+	DflTeamServiceImpl dflTeamService;
+	InsAndOutsService insAndOutsService;
+	DflSelectedTeamService dflSelectedTeamService;
+	DflTeamPlayerService dflTeamPlayerService;
+
+	public SelectionsHandler() {
+		dflTeamService = new DflTeamServiceImpl();
+		insAndOutsService = new InsAndOutsServiceImpl();
+		dflSelectedTeamService = new DflSelectedTeamServiceImpl();
+		dflTeamPlayerService = new DflTeamPlayerServiceImpl();
+	}
 
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
 		loggerUtils = new LoggingUtils(logfile);
@@ -58,9 +68,6 @@ public class SelectionsHandler {
 
 			loggerUtils.log("info", "Creating team selections");
 
-			DflTeamServiceImpl dflTeamService = new DflTeamServiceImpl();
-			InsAndOutsService insAndOutsService = new InsAndOutsServiceImpl();
-
 			List<DflTeam> teams = dflTeamService.findAll();
 
 			for(DflTeam team : teams) {
@@ -70,6 +77,8 @@ public class SelectionsHandler {
 
 			dflTeamService.close();
 			insAndOutsService.close();
+			dflSelectedTeamService.close();
+			dflTeamPlayerService.close();
 
 			loggerUtils.log("info", "Team selections created");
 
@@ -78,15 +87,12 @@ public class SelectionsHandler {
 		}
 	}
 
-	private void createTeamSelections(int round, String teamCode, List<InsAndOuts> insAndOuts) throws Exception {
+	private void createTeamSelections(int round, String teamCode, List<InsAndOuts> insAndOuts) {
 
 		loggerUtils.log("info", "Creating team selections");
 		loggerUtils.log("info", "Working with team={}", teamCode);
 
-		DflSelectedTeamService dflSelectedTeamService = new DflSelectedTeamServiceImpl();
-		DflTeamPlayerService dflTeamPlayerService = new DflTeamPlayerServiceImpl();
-
-		List<DflSelectedPlayer> selectedTeam = new ArrayList<>();
+		List<DflSelectedPlayer> selectedTeam = null;
 
 		List<DflSelectedPlayer> tmpSelectedTeam = null;
 		List<DflSelectedPlayer> previousSelectedTeam = null;
@@ -102,115 +108,15 @@ public class SelectionsHandler {
 
 		loggerUtils.log("info", "Final ins and outs: {}", insAndOuts);
 
-		if(insAndOuts != null && insAndOuts.size() > 0) {
-			List<DflSelectedPlayer> oldEmergencies = new ArrayList<>();
-
-			loggerUtils.log("info", "Removing previous emergencies");
-			for(DflSelectedPlayer player : tmpSelectedTeam) {
-				if(player.isEmergency() != 0) {
-					loggerUtils.log("info", "Previous emergency seletecPlayer={}", player);
-					oldEmergencies.add(player);
-				}
-			}
-			tmpSelectedTeam.removeAll(oldEmergencies);
-
-			for(InsAndOuts inOrOut : insAndOuts) {
-				if(inOrOut.getInOrOut().equals(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.IN)) {
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, inOrOut.getTeamPlayerId());
-
-					DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-					selectedPlayer.setPlayerId(teamPlayer.getPlayerId());
-					selectedPlayer.setRound(round);
-					selectedPlayer.setTeamCode(teamCode);
-					selectedPlayer.setTeamPlayerId(inOrOut.getTeamPlayerId());
-					selectedPlayer.setDnp(false);
-					selectedPlayer.setEmergency(0);
-					selectedPlayer.setScoreUsed(true);
-
-					loggerUtils.log("info", "Adding player to selected team: player={}", selectedPlayer);
-					tmpSelectedTeam.add(selectedPlayer);
-				} else if(inOrOut.getInOrOut().equals(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.OUT)) {
-					DflSelectedPlayer droppedPlayer = null;
-					for(DflSelectedPlayer selectedPlayer : tmpSelectedTeam) {
-						if(inOrOut.getTeamPlayerId() == selectedPlayer.getTeamPlayerId()) {
-							droppedPlayer = selectedPlayer;
-							loggerUtils.log("info", "Dropping player from selected team: player={}", droppedPlayer);
-							break;
-						}
-					}
-					tmpSelectedTeam.remove(droppedPlayer);
-				} else {
-					DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, inOrOut.getTeamPlayerId());
-
-					DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-					selectedPlayer.setPlayerId(teamPlayer.getPlayerId());
-					selectedPlayer.setRound(round);
-					selectedPlayer.setTeamCode(teamCode);
-					selectedPlayer.setTeamPlayerId(inOrOut.getTeamPlayerId());
-
-				if(inOrOut.getInOrOut().equals(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.EMG1)) {
-					selectedPlayer.setEmergency(1);
-				} else {
-					selectedPlayer.setEmergency(2);
-				}
-					selectedPlayer.setDnp(false);
-					selectedPlayer.setScoreUsed(false);
-
-					loggerUtils.log("info", "Adding player as emergency to selected team: player={}", selectedPlayer);
-					tmpSelectedTeam.add(selectedPlayer);
-				}
-			}
-
-			List<Integer> selectedPlayerIds = new ArrayList<>();
-
-			for(DflSelectedPlayer tmpSelectedPlayer : tmpSelectedTeam) {
-				if(selectedPlayerIds.contains(tmpSelectedPlayer.getPlayerId())) {
-					loggerUtils.log("info", "Duplicate selected player: player={}", tmpSelectedPlayer);
-				} else {
-					DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-					selectedPlayer.setPlayerId(tmpSelectedPlayer.getPlayerId());
-					selectedPlayer.setRound(round);
-					selectedPlayer.setTeamCode(teamCode);
-					selectedPlayer.setTeamPlayerId(tmpSelectedPlayer.getTeamPlayerId());
-					selectedPlayer.setDnp(false);
-					selectedPlayer.setEmergency(tmpSelectedPlayer.isEmergency());
-
-					if(tmpSelectedPlayer.isEmergency() != 0) {
-						selectedPlayer.setScoreUsed(false);
-					} else {
-						selectedPlayer.setScoreUsed(true);
-					}
-
-					selectedPlayer.setHasPlayed(false);
-					selectedPlayer.setReplacementInd(null);
-
-					selectedTeam.add(selectedPlayer);
-					selectedPlayerIds.add(tmpSelectedPlayer.getPlayerId());
-				}
-			}
+		if(insAndOuts != null && !insAndOuts.isEmpty()) {
+			selectedTeam = applyInsAndOuts(round, teamCode, tmpSelectedTeam, insAndOuts);
 		} else {
 			if(previousSelectedTeam != null) {
-				for(DflSelectedPlayer prevSelectedPlayer : previousSelectedTeam) {
-					DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-					selectedPlayer.setPlayerId(prevSelectedPlayer.getPlayerId());
-					selectedPlayer.setRound(round);
-					selectedPlayer.setTeamCode(teamCode);
-					selectedPlayer.setTeamPlayerId(prevSelectedPlayer.getTeamPlayerId());
-					selectedPlayer.setDnp(false);
-					selectedPlayer.setEmergency(prevSelectedPlayer.isEmergency());
-
-					if(prevSelectedPlayer.isEmergency() != 0) {
-						selectedPlayer.setScoreUsed(false);
-					} else {
-						selectedPlayer.setScoreUsed(true);
-					}
-
-					selectedTeam.add(selectedPlayer);
-				}
+				selectedTeam = usePreviousTeam(round, teamCode, previousSelectedTeam);
 			}
 		}
 
-		if(selectedTeam != null && selectedTeam.size() > 0) {
+		if(selectedTeam != null && !selectedTeam.isEmpty()) {
 			loggerUtils.log("info", "Saving selected to DB: selected team={}", selectedTeam);
 			dflSelectedTeamService.replaceTeamForRound(round, teamCode, selectedTeam);
 
@@ -221,6 +127,131 @@ public class SelectionsHandler {
 		} else {
 			loggerUtils.log("info", "Error Selecting team for round={} teamCode={}", round, teamCode);
 		}
+	}
+
+	private List<DflSelectedPlayer> applyInsAndOuts(int round, String teamCode, List<DflSelectedPlayer> tmpSelectedTeam, List<InsAndOuts> insAndOuts) {
+		List<DflSelectedPlayer> oldEmergencies = new ArrayList<>();
+
+		loggerUtils.log("info", "Removing previous emergencies");
+		for(DflSelectedPlayer player : tmpSelectedTeam) {
+			if(player.isEmergency() != 0) {
+				loggerUtils.log("info", "Previous emergency seletecPlayer={}", player);
+				oldEmergencies.add(player);
+			}
+		}
+		tmpSelectedTeam.removeAll(oldEmergencies);
+
+		for(InsAndOuts inOrOut : insAndOuts) {
+			if(inOrOut.getInOrOut().equals(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.IN)) {
+				tmpSelectedTeam.add(applyIn(round, teamCode, inOrOut.getTeamPlayerId()));
+			} else if(inOrOut.getInOrOut().equals(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.OUT)) {
+				tmpSelectedTeam.remove(applyOut(tmpSelectedTeam, inOrOut.getTeamPlayerId()));
+			} else {
+				tmpSelectedTeam.add(applyEmg(round, teamCode, inOrOut.getTeamPlayerId(), inOrOut.getInOrOut()));
+			}
+		}
+
+		return setSelectedPlayers(round, teamCode, tmpSelectedTeam);
+	}
+
+	private DflSelectedPlayer applyIn(int round, String teamCode, int teamPlayerId) {
+		DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, teamPlayerId);
+
+		DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+		selectedPlayer.setPlayerId(teamPlayer.getPlayerId());
+		selectedPlayer.setRound(round);
+		selectedPlayer.setTeamCode(teamCode);
+		selectedPlayer.setTeamPlayerId(teamPlayerId);
+		selectedPlayer.setDnp(false);
+		selectedPlayer.setEmergency(0);
+		selectedPlayer.setScoreUsed(true);
+
+		loggerUtils.log("info", "Adding player to selected team: player={}", selectedPlayer);
+		
+		return selectedPlayer;
+	}
+
+	private DflSelectedPlayer applyOut(List<DflSelectedPlayer> tmpSelectedTeam, int teamPlayerId) {
+		DflSelectedPlayer droppedPlayer = null;
+		for(DflSelectedPlayer selectedPlayer : tmpSelectedTeam) {
+			if(teamPlayerId == selectedPlayer.getTeamPlayerId()) {
+				droppedPlayer = selectedPlayer;
+				loggerUtils.log("info", "Dropping player from selected team: player={}", droppedPlayer);
+				break;
+			}
+		}
+
+		return droppedPlayer;
+	}
+
+	private DflSelectedPlayer applyEmg(int round, String teamCode, int teamPlayerId, String emgInd) {
+		DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, teamPlayerId);
+
+		DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+		selectedPlayer.setPlayerId(teamPlayer.getPlayerId());
+		selectedPlayer.setRound(round);
+		selectedPlayer.setTeamCode(teamCode);
+		selectedPlayer.setTeamPlayerId(teamPlayerId);
+
+		if(emgInd.equals(DomainDecodes.INS_AND_OUTS.IN_OR_OUT.EMG1)) {
+			selectedPlayer.setEmergency(1);
+		} else {
+			selectedPlayer.setEmergency(2);
+		}
+		selectedPlayer.setDnp(false);
+		selectedPlayer.setScoreUsed(false);
+
+		loggerUtils.log("info", "Adding player as emergency to selected team: player={}", selectedPlayer);
+
+		return selectedPlayer;
+	}
+
+	private List<DflSelectedPlayer> setSelectedPlayers(int round, String teamCode, List<DflSelectedPlayer> tmpSelectedTeam) {
+		List<DflSelectedPlayer> selectedTeam = new ArrayList<>();
+		List<Integer> selectedPlayerIds = new ArrayList<>();
+
+		for(DflSelectedPlayer tmpSelectedPlayer : tmpSelectedTeam) {
+			if(selectedPlayerIds.contains(tmpSelectedPlayer.getPlayerId())) {
+				loggerUtils.log("info", "Duplicate selected player: player={}", tmpSelectedPlayer);
+			} else {
+				DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+				selectedPlayer.setPlayerId(tmpSelectedPlayer.getPlayerId());
+				selectedPlayer.setRound(round);
+				selectedPlayer.setTeamCode(teamCode);
+				selectedPlayer.setTeamPlayerId(tmpSelectedPlayer.getTeamPlayerId());
+				selectedPlayer.setDnp(false);
+				selectedPlayer.setEmergency(tmpSelectedPlayer.isEmergency());
+				selectedPlayer.setScoreUsed(tmpSelectedPlayer.isEmergency() == 0);
+				selectedPlayer.setHasPlayed(false);
+				selectedPlayer.setReplacementInd(null);
+
+				selectedTeam.add(selectedPlayer);
+				selectedPlayerIds.add(tmpSelectedPlayer.getPlayerId());
+			}
+		}
+
+		return selectedTeam;
+	}
+
+	private List<DflSelectedPlayer> usePreviousTeam(int round, String teamCode, List<DflSelectedPlayer> previousSelectedTeam) {
+		List<DflSelectedPlayer> selectedTeam = new ArrayList<>();
+
+		for(DflSelectedPlayer prevSelectedPlayer : previousSelectedTeam) {
+			DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+			selectedPlayer.setPlayerId(prevSelectedPlayer.getPlayerId());
+			selectedPlayer.setRound(round);
+			selectedPlayer.setTeamCode(teamCode);
+			selectedPlayer.setTeamPlayerId(prevSelectedPlayer.getTeamPlayerId());
+			selectedPlayer.setDnp(false);
+			selectedPlayer.setEmergency(prevSelectedPlayer.isEmergency());
+			selectedPlayer.setScoreUsed(prevSelectedPlayer.isEmergency() == 0);
+			selectedPlayer.setHasPlayed(false);
+			selectedPlayer.setReplacementInd(null);
+
+			selectedTeam.add(selectedPlayer);
+		}
+
+		return selectedTeam;
 	}
 
 	public static void main(String[] args) {

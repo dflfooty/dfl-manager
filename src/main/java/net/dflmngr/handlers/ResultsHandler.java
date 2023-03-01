@@ -67,73 +67,16 @@ public class ResultsHandler {
 				this.emailOverride = emailOverride;
 			}
 			
-			if(!isFinal) {
-				loggerUtils.log("info", "Completing AFL games");
-				AflGameCompletionCheckerHandler gameCompletor = new AflGameCompletionCheckerHandler();
-				gameCompletor.configureLogging(mdcKey, loggerName, logfile);
-				gameCompletor.execute();
-			}
-			
-			List<Integer> roundsToProcess = new ArrayList<>();
-			if(inputRound == 0) {
-				loggerUtils.log("info", "Check for multiple rounds");
-				List<Integer> aflRounds = aflFixtureService.getAflRoundsToScrape();
-				List<DflRoundInfo> dflRoundsInfo = dflRoundInfoService.findAll();
-				
-				loggerUtils.log("info", "Inprogress AFL rounds {}", aflRounds);
-				
-				for(DflRoundInfo roundInfo : dflRoundsInfo) {
-					for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
-						if(aflRounds.contains(roundMapping.getAflRound()) && !roundsToProcess.contains(roundMapping.getRound())) {
-							roundsToProcess.add(roundMapping.getRound());
-						}
-					}
-				}
-			} else {
-				loggerUtils.log("info", "Using specfic round");
-				roundsToProcess.add(inputRound);
-			}
-			
-			loggerUtils.log("info", "Rounds to process, rounds={} ....", roundsToProcess);
+			comppleteAflGames(isFinal);
+			List<Integer> roundsToProcess = getRoundsToProcess(inputRound);
 			
 			for(int round : roundsToProcess) {
 				loggerUtils.log("info", "Handling round={} ....", round);
-				
-				if(!skipStats) {
-					loggerUtils.log("info", "Getting stats");
-					RawPlayerStatsHandler statsHandler = new RawPlayerStatsHandler();
-					statsHandler.configureLogging(mdcKey, loggerName, logfile);
-					boolean scrapeAll = false;
-					if(inputRound != 0) {
-						scrapeAll = true;
-					}
-					statsHandler.execute(round, scrapeAll);
-				}
-	
-				loggerUtils.log("info", "Calculating scores");
-				ScoresCalculatorHandler scoresCalculator = new ScoresCalculatorHandler();
-				scoresCalculator.configureLogging(mdcKey, loggerName, logfile);
-				scoresCalculator.execute(round);
 
-				if(round <= 18) {
-					loggerUtils.log("info", "Calculating Ladder");
-					LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
-					ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
-					if(isFinal) {
-						loggerUtils.log("info", "Ladder is not live");
-						ladderCalculator.execute(round, false);
-					} else {
-						loggerUtils.log("info", "Ladder is live");
-						ladderCalculator.execute(round, true);
-					}
-				}
-				
-				if(sendReport) {
-					loggerUtils.log("info", "Writing report");
-					ResultsReport resultsReport = new ResultsReport();
-					resultsReport.configureLogging(mdcKey, loggerName, logfile);
-					resultsReport.execute(round, isFinal, emailOverride);
-				}
+				getStats(inputRound, round, skipStats);
+				calcuateScores(round);
+				calculateLadder(round, isFinal);
+				sendReport(round, isFinal, sendReport);
 				
 				loggerUtils.log("info", "Handled round={} ....", round);
 			}
@@ -142,6 +85,84 @@ public class ResultsHandler {
 
 		} catch (Exception ex) {
 			loggerUtils.log("error", "Error in ... ", ex);
+		}
+	}
+
+	private List<Integer> getRoundsToProcess(int round) {
+		List<Integer> roundsToProcess = new ArrayList<>();
+		if(round == 0) {
+			loggerUtils.log("info", "Check for multiple rounds");
+			List<Integer> aflRounds = aflFixtureService.getAflRoundsToScrape();
+			List<DflRoundInfo> dflRoundsInfo = dflRoundInfoService.findAll();
+			
+			loggerUtils.log("info", "Inprogress AFL rounds {}", aflRounds);
+			
+			for(DflRoundInfo roundInfo : dflRoundsInfo) {
+				for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
+					if(aflRounds.contains(roundMapping.getAflRound()) && !roundsToProcess.contains(roundMapping.getRound())) {
+						roundsToProcess.add(roundMapping.getRound());
+					}
+				}
+			}
+		} else {
+			loggerUtils.log("info", "Using specfic round");
+			roundsToProcess.add(round);
+		}
+
+		loggerUtils.log("info", "Rounds to process, rounds={} ....", roundsToProcess);
+		return roundsToProcess;
+	}
+
+	private void comppleteAflGames(boolean isFinal) {
+		if(!isFinal) {
+			loggerUtils.log("info", "Completing AFL games");
+			AflGameCompletionCheckerHandler gameCompletor = new AflGameCompletionCheckerHandler();
+			gameCompletor.configureLogging(mdcKey, loggerName, logfile);
+			gameCompletor.execute();
+		}
+	}
+
+	private void getStats(int inputRound, int round, boolean skipStats) {
+		if(!skipStats) {
+			loggerUtils.log("info", "Getting stats");
+			RawPlayerStatsHandler statsHandler = new RawPlayerStatsHandler();
+			statsHandler.configureLogging(mdcKey, loggerName, logfile);
+			boolean scrapeAll = false;
+			if(inputRound != 0) {
+				scrapeAll = true;
+			}
+			statsHandler.execute(round, scrapeAll);
+		}
+	}
+
+	private void calcuateScores(int round) {
+		loggerUtils.log("info", "Calculating scores");
+		ScoresCalculatorHandler scoresCalculator = new ScoresCalculatorHandler();
+		scoresCalculator.configureLogging(mdcKey, loggerName, logfile);
+		scoresCalculator.execute(round);
+	}
+
+	private void calculateLadder(int round, boolean isFinal) {
+		if(round <= 18) {
+			loggerUtils.log("info", "Calculating Ladder");
+			LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
+			ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
+			if(isFinal) {
+				loggerUtils.log("info", "Ladder is not live");
+				ladderCalculator.execute(round, false);
+			} else {
+				loggerUtils.log("info", "Ladder is live");
+				ladderCalculator.execute(round, true);
+			}
+		}
+	}
+
+	private void sendReport(int round, boolean isFinal, boolean sendReport) {
+		if(sendReport) {
+			loggerUtils.log("info", "Writing report");
+			ResultsReport resultsReport = new ResultsReport();
+			resultsReport.configureLogging(mdcKey, loggerName, logfile);
+			resultsReport.execute(round, isFinal, emailOverride);
 		}
 	}
 	
@@ -185,8 +206,6 @@ public class ResultsHandler {
 			if(cli.hasOption("rp")) {
 				sendReport = true;
 			}
-
-			//JndiProvider.bind();
 			
 			ResultsHandler resultsHandler = new ResultsHandler();
 			resultsHandler.configureLogging("batch.name", "batch-logger", ("ResultsHandler_R" + round));

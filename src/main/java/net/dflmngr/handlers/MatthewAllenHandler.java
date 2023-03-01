@@ -13,7 +13,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflFixture;
 import net.dflmngr.model.entity.DflMatthewAllen;
@@ -59,7 +58,6 @@ public class MatthewAllenHandler {
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -99,105 +97,67 @@ public class MatthewAllenHandler {
 		playerScores.putAll(dflPlayerScoresService.getForRoundAndTeamWithKey(round, awayTeam));
 		
 		List<DflPlayerScores> selectedPlayerScores = new ArrayList<>();
-		
-		List<DflSelectedPlayer> selectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, homeTeam);
-		
-		for(DflSelectedPlayer player : selectedTeam) {
-			DflPlayerScores playerScore = playerScores.get(player.getPlayerId());
-			if(playerScore != null) {
-				selectedPlayerScores.add(playerScore);
-			}
-		}
-		
-		selectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, awayTeam);
-		
-		for(DflSelectedPlayer player : selectedTeam) {
-			DflPlayerScores playerScore = playerScores.get(player.getPlayerId());
-			if(playerScore != null) {
-				selectedPlayerScores.add(playerScore);
-			}
-		}
-		
+		selectedPlayerScores.addAll(getPlayerScores(round, homeTeam, playerScores));
+		selectedPlayerScores.addAll(getPlayerScores(round, awayTeam, playerScores));
+				
 		Collections.sort(selectedPlayerScores, Collections.reverseOrder());
 		
 		List<DflMatthewAllen> votes = new ArrayList<>();
-		DflPlayerScores lastVoteGetter = null;
-		int voteValue = 3;
-		
-		for(DflPlayerScores playerScore : selectedPlayerScores) {
+
+		for(int voteValue = 3; voteValue == 0; voteValue--) {
+			DflPlayerScores playerScore = playerScores.get(0);
+			DflPlayerScores playerScoreNext = playerScores.get(1);
+
 			DflPlayer player = dflPlayerService.get(playerScore.getPlayerId());
-			DflMatthewAllen vote = new DflMatthewAllen();
-			if(voteValue == 3) {
-				loggerUtils.log("info", "3 votes .... {}-{}: {} {}", player.getPlayerId(), playerScore.getTeamCode(), player.getFirstName(), player.getLastName());
-				lastVoteGetter = playerScore;
-				vote.setRound(round);
-				vote.setGame(game);
-				vote.setPlayerId(playerScore.getPlayerId());
-				vote.setVotes(3);
-				voteValue--;
-			} else if(voteValue == 2) {
-				if(lastVoteGetter.getScore() == playerScore.getScore()) {
-					loggerUtils.log("info", "3 votes .... {}-{}: {} {}", player.getPlayerId(), playerScore.getTeamCode(), player.getFirstName(), player.getLastName());
-					lastVoteGetter = playerScore;
-					vote.setRound(round);
-					vote.setGame(game);
-					vote.setPlayerId(playerScore.getPlayerId());
-					vote.setVotes(3);
-				} else {
-					loggerUtils.log("info", "2 votes .... {}-{}: {} {}", player.getPlayerId(), playerScore.getTeamCode(), player.getFirstName(), player.getLastName());
-					lastVoteGetter = playerScore;
-					vote.setRound(round);
-					vote.setGame(game);
-					vote.setPlayerId(playerScore.getPlayerId());
-					vote.setVotes(2);
-					voteValue--;
-				}
-			} else if(voteValue == 1) {
-				if(lastVoteGetter.getScore() == playerScore.getScore()) {
-					loggerUtils.log("info", "2 votes .... {}-{}: {} {}", player.getPlayerId(), playerScore.getTeamCode(), player.getFirstName(), player.getLastName());
-					lastVoteGetter = playerScore;
-					vote.setRound(round);
-					vote.setGame(game);
-					vote.setPlayerId(playerScore.getPlayerId());
-					vote.setVotes(2);
-				} else {
-					loggerUtils.log("info", "1 vote .... {}-{}: {} {}", player.getPlayerId(), playerScore.getTeamCode(), player.getFirstName(), player.getLastName());
-					lastVoteGetter = playerScore;
-					vote.setRound(round);
-					vote.setGame(game);
-					vote.setPlayerId(playerScore.getPlayerId());
-					vote.setVotes(1);
-					voteValue--;
-				}
-			} else if(voteValue == 0) {
-				if(lastVoteGetter.getScore() == playerScore.getScore()) {
-					loggerUtils.log("info", "1 vote .... {}-{}: {} {}", player.getPlayerId(), playerScore.getTeamCode(), player.getFirstName(), player.getLastName());
-					lastVoteGetter = playerScore;
-					vote.setRound(round);
-					vote.setGame(game);
-					vote.setPlayerId(playerScore.getPlayerId());
-					vote.setVotes(1);
-				} else {
-					voteValue--;
-				}
+
+			votes.add(setVotes(round, game, player, playerScore, votes, voteValue));
+
+			if(voteValue == 1 && playerScore.getScore() == playerScoreNext.getScore()) {
+				player = dflPlayerService.get(playerScoreNext.getPlayerId());
+				votes.add(setVotes(round, game, player, playerScore, votes, voteValue));	
 			}
-			
-			if(voteValue == -1) {
-				break;
-			}
-			
-			DflMatthewAllen lastVotes = dflMatthewAllenService.getLastVotes(playerScore.getPlayerId());
-			
-			if(lastVotes == null) {
-				vote.setTotal(vote.getVotes());
-			} else {
-				vote.setTotal(lastVotes.getTotal() + vote.getVotes());
-			}
-			
-			votes.add(vote);
 		}
 		
 		dflMatthewAllenService.insertAll(votes, false);
+	}
+
+	private List<DflPlayerScores> getPlayerScores(int round, String team, Map<Integer, DflPlayerScores> playerScores) {
+		List<DflPlayerScores> selectedPlayerScores = new ArrayList<>();
+		List<DflSelectedPlayer> selectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, team);
+
+		for(DflSelectedPlayer player : selectedTeam) {
+			DflPlayerScores playerScore = playerScores.get(player.getPlayerId());
+			if(playerScore != null) {
+				selectedPlayerScores.add(playerScore);
+			}
+		}
+
+		return selectedPlayerScores;
+	}
+
+	private DflMatthewAllen setVotes(int round, int game, DflPlayer player, DflPlayerScores playerScore, List<DflMatthewAllen> currentVoteGetters, int votes) {
+
+		for(DflMatthewAllen voteGetter : currentVoteGetters) {
+			if(voteGetter.getScore() == playerScore.getScore()) {
+				votes = voteGetter.getVotes();
+			}
+		}
+
+		DflMatthewAllen vote = new DflMatthewAllen();
+		loggerUtils.log("info", "{} votes .... {}-{}: {} {}", votes, player.getPlayerId(), playerScore.getTeamCode(), player.getFirstName(), player.getLastName());
+		vote.setRound(round);
+		vote.setGame(game);
+		vote.setPlayerId(playerScore.getPlayerId());
+		vote.setVotes(votes);
+
+		DflMatthewAllen lastVotes = dflMatthewAllenService.getLastVotes(playerScore.getPlayerId());
+		if(lastVotes == null) {
+			vote.setTotal(vote.getVotes());
+		} else {
+			vote.setTotal(lastVotes.getTotal() + vote.getVotes());
+		}
+
+		return vote;
 	}
 	
 	public static void main(String[] args) {
@@ -213,9 +173,7 @@ public class MatthewAllenHandler {
 			CommandLine cli = parser.parse(options, args);
 			
 			round = ((Number)cli.getParsedOptionValue("r")).intValue();
-		
-			//ndiProvider.bind();
-			
+						
 			MatthewAllenHandler matthewAllenHandler = new MatthewAllenHandler();
 			matthewAllenHandler.configureLogging("batch.name", "batch-logger", ("MathenAllenMedal_R" + round));
 			matthewAllenHandler.execute(round);

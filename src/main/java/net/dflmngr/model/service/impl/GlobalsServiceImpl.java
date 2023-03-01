@@ -5,14 +5,22 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import net.dflmngr.exceptions.MissingGlobalConfig;
 import net.dflmngr.model.dao.GlobalsDao;
 import net.dflmngr.model.dao.impl.GlobalsDaoImpl;
 import net.dflmngr.model.entity.Globals;
 import net.dflmngr.model.entity.keys.GlobalsPK;
 import net.dflmngr.model.service.GlobalsService;
 
-public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>implements GlobalsService {
+public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK> implements GlobalsService {
+
+	private static final String PARAMS = "params";
+	private static final String VALUE = "value";
+	private static final String DFL_REF = "dflRef";
+	private static final String AFL_REF = "aflRef";
 
 	GlobalsDao dao;
 
@@ -31,8 +39,12 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		Globals globals = dao.findById(pk);
 
-		valueAndParams.put("value", globals.getValue());
-		valueAndParams.put("params", globals.getParams());
+		try {
+			valueAndParams.put(VALUE, globals.getValue());
+			valueAndParams.put(PARAMS, globals.getParams());
+		} catch (NullPointerException e) {
+			throw new MissingGlobalConfig(code, groupCode);
+		}
 
 		return valueAndParams;
 	}
@@ -49,6 +61,8 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		if(globals != null) {
 			value = globals.getValue();
+		} else {
+			throw new MissingGlobalConfig(code, groupCode);	
 		}
 
 		return value;
@@ -84,7 +98,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String currentYear = "";
 		String code = "currentYear";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		currentYear = getValue(code, groupCode);
 
@@ -95,14 +109,14 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		List<String> aflFixtureUrl = new ArrayList<>();
 		String code = "aflFixtureUrl";
-		String groupCode = "aflRef";
+		String groupCode = AFL_REF;
 
 		Map<String, String> valueAndParams = getValueAndParams(code, groupCode);
 
-		aflFixtureUrl.add(valueAndParams.get("value"));
+		aflFixtureUrl.add(valueAndParams.get(VALUE));
 
-		if(valueAndParams.containsKey("params")) {
-			String params = valueAndParams.get("params");
+		if(valueAndParams.containsKey(PARAMS)) {
+			String params = valueAndParams.get(PARAMS);
 			if(params != null) {
 				String[] parts = params.split(";");
 				aflFixtureUrl.addAll(Arrays.asList(parts));
@@ -137,25 +151,22 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		Map<String, String> data = getValueAndParams(code, groupCode);
 
-		ground.put("ground", data.get("value"));
-		ground.put("timezone", data.get("params"));
+		ground.put("ground", data.get(VALUE));
+		ground.put("timezone", data.get(PARAMS));
 
 		return ground;
 	}
 
 	public List<String> getTeamCodes() {
-
 		String groupCode = "teamCode";
-		List<String> teamCodes = getCodes(groupCode);
-
-		return teamCodes;
+		return getCodes(groupCode);
 	}
 
 	public String getAppDir() {
 
 		String appDir = "";
 		String code = "appDir";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		appDir = getValue(code, groupCode);
 
@@ -166,7 +177,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String reportDir = "";
 		String code = "reportDir";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		reportDir = getValue(code, groupCode);
 
@@ -177,7 +188,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String standardLockoutTime = "";
 		String code = "standardLockoutTime";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		standardLockoutTime = getValue(code, groupCode);
 
@@ -199,7 +210,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String aflRoundsMax = "";
 		String code = "aflRoundsMax";
-		String groupCode = "aflRef";
+		String groupCode = AFL_REF;
 
 		aflRoundsMax = getValue(code, groupCode);
 
@@ -212,7 +223,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String emailParam = "";
 		String code = "dflmngrEmailAddr";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		emailParam = getValue(code, groupCode);
 		emailConfig.put(code, emailParam);
@@ -252,7 +263,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String statsUrl = "";
 		String code = "aflStatsUrl";
-		String groupCode = "aflRef";
+		String groupCode = AFL_REF;
 
 		statsUrl = getValue(code, groupCode);
 
@@ -263,7 +274,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String emailerRoot = "";
 		String code = "emailerRoot";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		emailerRoot = getValue(code, groupCode);
 
@@ -285,7 +296,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String currentRound = "";
 		String code = "currentRound";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		currentRound = getValue(code, groupCode);
 
@@ -296,7 +307,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String preSeasonFixtureUrl = "";
 		String code = "preSeasonFixture";
-		String groupCode = "aflRef";
+		String groupCode = AFL_REF;
 
 		preSeasonFixtureUrl = getValue(code, groupCode);
 
@@ -307,7 +318,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String browserPath = "";
 		String code = "browserPath";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		browserPath = getValue(code, groupCode);
 
@@ -318,7 +329,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		int webriverWait = 0;
 		String code = "webdriverWait";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		webriverWait = Integer.parseInt(getValue(code, groupCode));
 
@@ -329,7 +340,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		int webdriverTimeout = 0;
 		String code = "webdriverTimeout";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		webdriverTimeout = Integer.parseInt(getValue(code, groupCode));
 
@@ -350,7 +361,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 		dao.beginTransaction();
 		GlobalsPK pk = new GlobalsPK();
 		pk.setCode("currentRound");
-		pk.setGroupCode("dflRef");
+		pk.setGroupCode(DFL_REF);
 		Globals currentRound = dao.findById(pk);
 		currentRound.setValue(Integer.toString(newRound));
 		dao.persist(currentRound);
@@ -381,18 +392,13 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 		    String roundTemplate = entry.getValue();
 
 			String[] games = roundTemplate.substring(0, roundTemplate.length()-1).substring(1).split("\\]\\[");
-			//String[] games = s2.split("][");
 
 			Map<Integer, String[]> roundFixtures = new HashMap<>();
-
-			System.out.print(round + " - ");
 
 			for(int j = 0; j < games.length; j++) {
 				String[] g = games[j].split(",");
 				roundFixtures.put(j+1, g);
-				System.out.print(j+1 + ": " + g[0] + " vs " + g[1] + " ");
 			}
-			System.out.print("\n");
 
 			fixtureTemplate.put(round, roundFixtures);
 		}
@@ -415,7 +421,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 		boolean cutoff = false;
 		int roundCutoff = 0;
 		String code = "medalsRoundCutoff";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		roundCutoff = Integer.parseInt(getValue(code, groupCode));
 
@@ -430,7 +436,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 		String onlineBaseUrl = "";
 		String code = "onlineBaseUrl";
-		String groupCode = "dflRef";
+		String groupCode = DFL_REF;
 
 		onlineBaseUrl = getValue(code, groupCode);
 
@@ -454,10 +460,30 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK>im
 
 	public boolean getUseOfficalPlayers() {
 		String code = "useOfficialPlayers";
-		String groupCode = "aflRef";
+		String groupCode = AFL_REF;
 
 		String value = getValue(code, groupCode);
 
 		return Boolean.parseBoolean(value);
+	}
+
+	public boolean getSplitDflRounds() {
+		String code = "splitDflRounds";
+		String groupCode = DFL_REF;
+
+		String value = getValue(code, groupCode);
+
+		return Boolean.parseBoolean(value);
+	}
+
+	public List<Integer> getStatRounds() {
+		String code = "statRounds";
+		String groupCode = DFL_REF;
+
+		String value = getValue(code, groupCode);
+
+		return Stream.of(value.split(","))
+			.map(Integer::parseInt)
+			.collect(Collectors.toList());		
 	}
 }

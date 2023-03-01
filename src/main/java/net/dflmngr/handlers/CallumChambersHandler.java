@@ -13,7 +13,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflCallumChambers;
 import net.dflmngr.model.entity.DflPlayer;
@@ -60,7 +59,6 @@ public class CallumChambersHandler {
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -134,6 +132,16 @@ public class CallumChambersHandler {
 		
 		Collections.sort(medalStandings, Collections.reverseOrder());
 	}
+
+	public void report() {			
+		loggerUtils.log("info", "Callum Chambers top 5 for round");
+		for(int i = 0; i < 5; i++) {
+			DflCallumChambers standing = medalStandings.get(i);
+			loggerUtils.log("info", "{}. {}, {}, {}, {} - {}",
+							i+1, standing.getPlayerId(), standing.getTeamCode(), standing.getDraftOrder(), 
+							standing.getTeamPlayerId(), standing.getTotalScore());
+		}
+	}
 	
 	public static void main(String[] args) {
 		
@@ -150,21 +158,12 @@ public class CallumChambersHandler {
 			CommandLine cli = parser.parse(options, args);
 			
 			round = ((Number)cli.getParsedOptionValue("r")).intValue();
-							
-			//JndiProvider.bind();
-				
+
 			CallumChambersHandler callumChambersHandler = new CallumChambersHandler();
 			callumChambersHandler.configureLogging("batch.name", "batch-logger", ("CallumChambersHandler_R" + round));
 			callumChambersHandler.execute(round);
-			
-			List<DflCallumChambers> standings = callumChambersHandler.getMedalStandings();
-			
-			System.out.println("Callum Chambers top 5 for round " + round);
-			for(int i = 0; i < 5; i++) {
-				DflCallumChambers standing = standings.get(i);
-				String out = i+1 + ". " + standing.getPlayerId() + ", " + standing.getTeamCode() + ", " + standing.getDraftOrder() + ", " + standing.getTeamPlayerId() + " - " + standing.getTotalScore();
-				System.out.println(out);
-			}
+						
+			callumChambersHandler.report();
 			
 		} catch (ParseException ex) {
 			HelpFormatter formatter = new HelpFormatter();

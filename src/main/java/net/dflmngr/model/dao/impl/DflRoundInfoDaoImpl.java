@@ -31,8 +31,7 @@ public class DflRoundInfoDaoImpl extends GenericDaoImpl<DflRoundInfo, Integer> i
 		}
 
 		criteriaQuery.where(roundMappingAflRoundIn);
-		List<DflRoundInfo> entitys = entityManager.createQuery(criteriaQuery.distinct(true)).getResultList();
 
-		return entitys;
+		return entityManager.createQuery(criteriaQuery.distinct(true)).getResultList();
 	}
 }

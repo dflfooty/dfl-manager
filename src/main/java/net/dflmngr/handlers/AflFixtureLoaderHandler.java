@@ -43,28 +43,24 @@ public class AflFixtureLoaderHandler {
 		}	
 	}
 	
-	public void execute(List<Integer> aflRounds) throws Exception {
-		
-		try {
-			loggerUtils.log("info", "Executing AflFixtureLoader for rounds: {}", aflRounds);
-			
-			List<AflFixture> allGames = new ArrayList<>();
+	public void execute(List<Integer> aflRounds) {
 
-			List<String> aflFixtureUrlParts = globalsService.getAflFixtureUrl();
-			
-			for(Integer aflRound : aflRounds) {
-				String aflFixtureUrl = aflFixtureUrlParts.get(0) + aflRound;
-				allGames.addAll(aflFixtureHtmlHandler.execute(aflRound, aflFixtureUrl));
-			}
-			
-			loggerUtils.log("info", "Saveing data to DB");
-			
-			aflFixtureService.updateLoadedFixtures(allGames);
-			
-			loggerUtils.log("info", "AflFixtureLoader Complete");
-		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+		loggerUtils.log("info", "Executing AflFixtureLoader for rounds: {}", aflRounds);
+		
+		List<AflFixture> allGames = new ArrayList<>();
+
+		List<String> aflFixtureUrlParts = globalsService.getAflFixtureUrl();
+		
+		for(Integer aflRound : aflRounds) {
+			String aflFixtureUrl = aflFixtureUrlParts.get(0) + aflRound;			
+			allGames.addAll(aflFixtureHtmlHandler.execute(aflRound, aflFixtureUrl));
 		}
+		
+		loggerUtils.log("info", "Saveing data to DB");
+		
+		aflFixtureService.updateLoadedFixtures(allGames);
+		
+		loggerUtils.log("info", "AflFixtureLoader Complete");
 	}
 		
 	// For internal testing

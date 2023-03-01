@@ -11,7 +11,7 @@ import net.dflmngr.model.service.RawPlayerStatsService;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.model.service.impl.RawPlayerStatsServiceImpl;
 
-public class RawStatsDownloaderHandler {
+public class StatsDownloaderHandler {
 	private LoggingUtils loggerUtils;
 
 	boolean isExecutable;
@@ -22,11 +22,17 @@ public class RawStatsDownloaderHandler {
 	RawPlayerStatsService rawPlayerStatsService;
 	GlobalsService globalsService;
 
-	public RawStatsDownloaderHandler() {
+	int round;
+	String statsUrl;
+
+	public StatsDownloaderHandler(int round, String statsUrl) {
 		rawPlayerStatsService = new RawPlayerStatsServiceImpl();
 		globalsService = new GlobalsServiceImpl();
 
 		isExecutable = false;
+
+		this.round = round;
+		this.statsUrl = statsUrl;
 	}
 
 	public void configureLogging(String logfile) {
@@ -35,12 +41,16 @@ public class RawStatsDownloaderHandler {
 		isExecutable = true;
 	}
 
-	public void execute(int round, String homeTeam, String awayTeam, String statsUrl, boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus) {
+	public void execute(String homeTeam, String awayTeam, boolean includeHomeTeam, boolean includeAwayTeam, String scrapingStatus, boolean isStatsRound) {
 
 		try {
 			if(!isExecutable) {
 				configureLogging(defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
+			}
+
+			if(isStatsRound) {
+				loggerUtils.log("info", "Running for Stats round: AFL round={}", round);
 			}
 
 			loggerUtils.log("info", "Downloading AFL stats: round={}, homeTeam={} awayTeam={} url={}", round, homeTeam, awayTeam, statsUrl);
@@ -50,7 +60,7 @@ public class RawStatsDownloaderHandler {
 			for(int i = 0; i < 5; i++) {
 				loggerUtils.log("info", "Attempt {}", i);
 				try {
-					RawStatsHtmlHandler htmlHandler = new RawStatsHtmlHandler();
+					StatsHtmlHandler htmlHandler = new StatsHtmlHandler();
 					htmlHandler.configureLogging(logfile);
 
 					playerStats = htmlHandler.execute(round, homeTeam, awayTeam, statsUrl, includeHomeTeam, includeAwayTeam, scrapingStatus);
@@ -75,16 +85,19 @@ public class RawStatsDownloaderHandler {
 			if(statsDownloaded) {
 				loggerUtils.log("info", "Saving player stats to database");
 
+				if(isStatsRound) {
 
-				if(includeHomeTeam) {
-					rawPlayerStatsService.removeStatsForRoundAndTeam(round, homeTeam);
-				}
-				if(includeAwayTeam) {
-					rawPlayerStatsService.removeStatsForRoundAndTeam(round, awayTeam);
-				}
-				rawPlayerStatsService.insertAll(playerStats, false);
+				} else {
+					if(includeHomeTeam) {
+						rawPlayerStatsService.removeStatsForRoundAndTeam(round, homeTeam);
+					}
+					if(includeAwayTeam) {
+						rawPlayerStatsService.removeStatsForRoundAndTeam(round, awayTeam);
+					}
+					rawPlayerStatsService.insertAll(playerStats, false);
 
-				loggerUtils.log("info", "Player stats saved");
+					loggerUtils.log("info", "Player stats saved");
+				}
 			} else {
 				loggerUtils.log("info", "Player stats were not downloaded");
 			}
@@ -106,10 +119,11 @@ public class RawStatsDownloaderHandler {
 		boolean includeHomeTeam = Boolean.parseBoolean(args[4]);
 		boolean includeAwayTeam = Boolean.parseBoolean(args[5]);
 		String scrapingStatus = args[6];
+		boolean isStatsRound = Boolean.parseBoolean(args[6]);
 
-		RawStatsDownloaderHandler handler = new RawStatsDownloaderHandler();
+		StatsDownloaderHandler handler = new StatsDownloaderHandler(round, statsUrl);
 		handler.configureLogging("RawPlayerDownloader");
-		handler.execute(round, homeTeam, awayTeam, statsUrl, includeHomeTeam, includeAwayTeam, scrapingStatus);
+		handler.execute(homeTeam, awayTeam, includeHomeTeam, includeAwayTeam, scrapingStatus, isStatsRound);
 
 		System.exit(0);
 	}

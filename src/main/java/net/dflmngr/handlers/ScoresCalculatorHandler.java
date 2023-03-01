@@ -14,6 +14,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import net.dflmngr.exceptions.UnknownPositionException;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflFixture;
 import net.dflmngr.model.entity.DflPlayer;
@@ -192,7 +193,7 @@ public class ScoresCalculatorHandler {
 		return score;
 	}
 
-	private void handleTeamScores(int round, DflRoundInfo dflRoundInfo, Map<Integer, DflPlayerPredictedScores> predictedScores) throws Exception {
+	private void handleTeamScores(int round, DflRoundInfo dflRoundInfo, Map<Integer, DflPlayerPredictedScores> predictedScores) {
 
 		List<DflTeam> teams = dflTeamService.findAll();
 		List<DflTeamScores> scores = new ArrayList<>();
@@ -215,7 +216,7 @@ public class ScoresCalculatorHandler {
 		dflTeamScoresService.replaceAllForRound(round, scores);
 	}
 
-	private int calculateTeamScore(List<DflSelectedPlayer> selectedTeam, DflRoundInfo dflRoundInfo, Map<Integer, DflPlayerPredictedScores> predictedScores) throws Exception {
+	private int calculateTeamScore(List<DflSelectedPlayer> selectedTeam, DflRoundInfo dflRoundInfo, Map<Integer, DflPlayerPredictedScores> predictedScores) {
 
 		int teamScore = 0;
 
@@ -285,6 +286,7 @@ public class ScoresCalculatorHandler {
 					case "fb" :
 						fbCount++;
 						break;
+					default: throw new UnknownPositionException(position);
 				}
 			}
 
@@ -328,12 +330,9 @@ public class ScoresCalculatorHandler {
 
 				scores.put(selectedPlayer.getPlayerId(), playerScore.getScore());
 
-				if(playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
-					selectedPlayer.setHasPlayed(true);
-				} else {
-					selectedPlayer.setHasPlayed(false);
-				}
+				selectedPlayer.setHasPlayed(playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub())));
 				selectedPlayer.setDnp(false);
+
 				if(selectedPlayer.isEmergency() == 0) {
 					selectedPlayer.setScoreUsed(true);
 					played22.add(selectedPlayer);
@@ -468,6 +467,7 @@ public class ScoresCalculatorHandler {
 											replacement = emergency;
 										}
 										break;
+									default: throw new UnknownPositionException(emgPosition);
 								}
 							}
 						}
@@ -497,12 +497,11 @@ public class ScoresCalculatorHandler {
 		}
 
 		for(DflSelectedPlayer player : played22) {
-			if(!player.isDnp()) {
-				if(scores.containsKey(player.getPlayerId())) {
-					teamScore = teamScore + scores.get(player.getPlayerId());
-					loggerUtils.log("info", "Calculating scores team={}, playerId={}. teamplayer={}, playerscore={}, teamscore={}",
-					         player.getTeamCode(), player.getPlayerId(), player.getTeamPlayerId(), scores.get(player.getPlayerId()), teamScore);
-				}
+			if(!player.isDnp() && scores.containsKey(player.getPlayerId())) {
+				teamScore = teamScore + scores.get(player.getPlayerId());
+				loggerUtils.log("info", "Calculating scores team={}, playerId={}. teamplayer={}, playerscore={}, teamscore={}",
+							player.getTeamCode(), player.getPlayerId(), player.getTeamPlayerId(), scores.get(player.getPlayerId()), teamScore);
+
 			}
 		}
 

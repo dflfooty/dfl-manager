@@ -15,6 +15,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import net.dflmngr.exceptions.UnknownPositionException;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflBest22;
 import net.dflmngr.model.entity.DflPlayer;
@@ -50,7 +51,6 @@ public class Best22Handler {
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -110,6 +110,7 @@ public class Best22Handler {
 				case "Mid": midScores.put(playerId, total); break;
 				case "FB": fbScores.put(playerId, total); break;
 				case "Def": defScores.put(playerId, total); break;
+				default: throw new UnknownPositionException(position);
 			}
 		}
 		
@@ -201,6 +202,7 @@ public class Best22Handler {
 			case "FB": selectionCount = 1; break;
 			case "Def": selectionCount = 5; break;
 			case "Bench": selectionCount = 4; break;
+			default: throw new UnknownPositionException(position);
 		}
 		
 		loggerUtils.log("info", "Selecting {} players for {}", selectionCount, position);
@@ -216,8 +218,8 @@ public class Best22Handler {
 	}
 	
 	private Map<Integer, Integer> sortByValue(Map<Integer, Integer> unsortedMap) {
-		Comparator<Integer> comparator = new ValueComparator<Integer, Integer>(unsortedMap);
-		TreeMap<Integer, Integer> sortedMap = new TreeMap<Integer, Integer>(comparator);
+		Comparator<Integer> comparator = new ValueComparator<>(unsortedMap);
+		TreeMap<Integer, Integer> sortedMap = new TreeMap<>(comparator);
 		sortedMap.putAll(unsortedMap);
 		return sortedMap;
 	}
@@ -258,6 +260,13 @@ class ValueComparator<K, V extends Comparable<V>> implements Comparator<K>{
  
 	@Override
 	public int compare(K s1, K s2) {
-		return -map.get(s1).compareTo(map.get(s2));//descending order	
+		int c = map.get(s1).compareTo(map.get(s2));
+		if(c > 0) {
+			return -1;
+		} else if(c < 0) {
+			return 1;
+		} else {
+			return 0;
+		}	
 	}
 }

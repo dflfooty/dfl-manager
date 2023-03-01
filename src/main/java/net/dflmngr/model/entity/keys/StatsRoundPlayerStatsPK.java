@@ -2,7 +2,7 @@ package net.dflmngr.model.entity.keys;
 
 import java.io.Serializable;
 
-public class RawPlayerStatsPK implements Serializable {
+public class StatsRoundPlayerStatsPK implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -36,7 +36,7 @@ public class RawPlayerStatsPK implements Serializable {
 
 	@Override
 	public String toString() {
-		return "RawPlayerStatsPK [round=" + round + ", name=" + name + ", team=" + team + "]";
+		return "StatsRoundStatsPK [round=" + round + ", name=" + name + ", team=" + team + "]";
 	}
 
 	@Override
@@ -57,7 +57,7 @@ public class RawPlayerStatsPK implements Serializable {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		RawPlayerStatsPK other = (RawPlayerStatsPK) obj;
+		StatsRoundPlayerStatsPK other = (StatsRoundPlayerStatsPK) obj;
 		if (name == null) {
 			if (other.name != null)
 				return false;

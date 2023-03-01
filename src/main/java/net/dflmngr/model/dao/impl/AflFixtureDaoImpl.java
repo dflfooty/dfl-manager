@@ -20,6 +20,20 @@ public class AflFixtureDaoImpl extends GenericDaoImpl<AflFixture, AflFixturePK> 
 	public AflFixtureDaoImpl() {
 		super(AflFixture.class);
 	}
+
+	public AflFixture findAflFixtureForRoundAndTeam(int round, String team) {
+
+		criteriaBuilder = entityManager.getCriteriaBuilder();
+		criteriaQuery = criteriaBuilder.createQuery(entityClass);
+		entity = criteriaQuery.from(entityClass);
+
+		Predicate roundEquals = criteriaBuilder.equal(entity.get(AflFixture_.round), round);
+		Predicate homeTeamEquals = criteriaBuilder.equal(entity.get(AflFixture_.homeTeam), team);
+		Predicate awayTeamEquals = criteriaBuilder.equal(entity.get(AflFixture_.awayTeam), team);
+
+		criteriaQuery.where(criteriaBuilder.and(roundEquals, criteriaBuilder.or(homeTeamEquals, awayTeamEquals)));
+		return entityManager.createQuery(criteriaQuery).getSingleResult();
+	}
 	
 	public List<AflFixture> findAflFixturesForRound(int round) {
 		

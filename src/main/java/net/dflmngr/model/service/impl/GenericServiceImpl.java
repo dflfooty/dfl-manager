@@ -7,85 +7,84 @@ import net.dflmngr.model.service.GenericService;
 
 public class GenericServiceImpl<E, K> implements GenericService<E, K>  {
 	
-	public GenericDao<E, K> dao;
+	private GenericDao<E, K> d;
 	
     protected void setDao(GenericDao<E, K> dao) {
-        this.dao = dao;
+        this.d = dao;
     }
     
     public E get(K id) {
-    	E entity = dao.findById(id);
-    	return entity;
+    	return d.findById(id);
     }
 	
 	public List<E> findAll() {
-		return dao.findAll();
+		return d.findAll();
 	}
 	
 	public void insert(E entity) {
-		dao.beginTransaction();
-		dao.persist(entity);
-		dao.commit();
+		d.beginTransaction();
+		d.persist(entity);
+		d.commit();
 	}
 	
 	public void update(E entity) {
-		dao.merge(entity);
+		d.merge(entity);
 	}
 	
 	public void insertAll(List<E> entitys, boolean inTx) {
 		
 		if(!inTx) {
-			dao.beginTransaction();
+			d.beginTransaction();
 		}
 		
 		for(E e : entitys) {
-			dao.persist(e);
+			d.persist(e);
 		}
 		
 		if(!inTx) {
-			dao.commit();
+			d.commit();
 		}
 	}
 	
 	public void updateAll(List<E> entitys, boolean inTx) {
 		
 		if(!inTx) {
-			dao.beginTransaction();
+			d.beginTransaction();
 		}
 		
 		for(E e : entitys) {
-			dao.merge(e);
+			d.merge(e);
 		}
 		
 		if(!inTx) {
-			dao.commit();
+			d.commit();
 		}
 	}
 	
 	public void delete(E entity) {
-		dao.remove(entity);
+		d.remove(entity);
 	}
 	
 	public void replaceAll(List<E> entitys) {
-		dao.beginTransaction();
+		d.beginTransaction();
 		List<E> existingEntitys = findAll();
 		for(E entity : existingEntitys) {
-			dao.remove(entity);
+			d.remove(entity);
 		}
 		
-		dao.flush();
+		d.flush();
 		
 		for(E entity : entitys) {
-			dao.persist(entity);
+			d.persist(entity);
 		}
-		dao.commit();
+		d.commit();
 	}
 	
 	public void refresh(E entity) {
-		dao.refresh(entity);
+		d.refresh(entity);
 	}
 	
 	public void close() {
-		dao.close();
+		d.close();
 	}
 }

@@ -8,13 +8,11 @@ import java.util.Map;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-//import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
 
-//import io.github.bonigarcia.wdm.PhantomJsDriverManager;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflPlayer;
 import net.dflmngr.model.entity.DflPreseasonScores;
@@ -44,10 +42,7 @@ public class PreSeasonStatsHandler {
 	String loggerName;
 	String logfile;
 	
-	public PreSeasonStatsHandler() {
-		
-		//PhantomJsDriverManager.getInstance().setup();
-		
+	public PreSeasonStatsHandler() {		
 		dflPlayerService = new DflPlayerServiceImpl();
 		globalsService = new GlobalsServiceImpl();
 		dflPreseasonScoresService = new DflPreseasonScoresServiceImpl();
@@ -56,7 +51,6 @@ public class PreSeasonStatsHandler {
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
 		loggerUtils = new LoggingUtils(logfile);
 		this.mdcKey = mdcKey;
 		this.loggerName = loggerName;
@@ -96,8 +90,7 @@ public class PreSeasonStatsHandler {
 		List<String> statsUrls = new ArrayList<>();
 		
 		String preSeasonFixtureUrl = globalsService.getPreSeasonFixtureUrl();
-		
-		//WebDriver driver = new PhantomJSDriver();
+
 		WebDriver driver = new HtmlUnitDriver(BrowserVersion.CHROME) {
 	        @Override
 	        protected WebClient newWebClient(BrowserVersion version) {
@@ -139,7 +132,6 @@ public class PreSeasonStatsHandler {
 		
 		Map<String, Integer> allStats = new HashMap<>();
 		
-		//WebDriver driver = new PhantomJSDriver();
 		WebDriver driver = new HtmlUnitDriver(BrowserVersion.CHROME) {
 	        @Override
 	        protected WebClient newWebClient(BrowserVersion version) {
