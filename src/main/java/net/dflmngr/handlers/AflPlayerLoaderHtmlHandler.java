@@ -69,6 +69,8 @@ public class AflPlayerLoaderHtmlHandler {
         chromeOptions.addArguments("--no-sandbox");
         chromeOptions.addArguments("--disable-gpu");
         chromeOptions.addArguments("--headless");
+		chromeOptions.addArguments("--disable-dev-shm-usage");
+		chromeOptions.addArguments("--remote-allow-origins=*");
 
 		WebDriver driver = new ChromeDriver(chromeOptions);
 

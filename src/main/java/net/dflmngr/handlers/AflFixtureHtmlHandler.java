@@ -70,6 +70,7 @@ public class AflFixtureHtmlHandler {
         chromeOptions.addArguments("--disable-gpu");
         chromeOptions.addArguments("--headless");
         chromeOptions.addArguments("--disable-dev-shm-usage");
+        chromeOptions.addArguments("--remote-allow-origins=*");
 
 		WebDriver driver = new ChromeDriver(chromeOptions);
 
