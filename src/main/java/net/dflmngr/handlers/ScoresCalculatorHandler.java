@@ -14,6 +14,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import net.dflmngr.exceptions.MissingGlobalConfig;
 import net.dflmngr.exceptions.UnknownPositionException;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.AflFixture;
@@ -303,23 +304,27 @@ public class ScoresCalculatorHandler {
 					dnpPlayers.add(selectedPlayer);
 				} else {
 					loggerUtils.log("info", "Checking if average will be used");
-					int round = globalsService.getUseAverage(player.getAflClub());
+					try {
+						int round = globalsService.getUseAverage(player.getAflClub());
 
-					if(round == selectedPlayer.getRound()) {
-						int score = predictedScores.get(selectedPlayer.getPlayerId()).getPredictedScore();
-						scores.put(selectedPlayer.getPlayerId(), score);
-
-						selectedPlayer.setHasPlayed(true);
-
-						loggerUtils.log("info", "Using average score={}", score);
-
-						if(selectedPlayer.isEmergency() == 0) {
-							selectedPlayer.setScoreUsed(true);
-							played22.add(selectedPlayer);
-						} else {
-							selectedPlayer.setScoreUsed(false);
-							emergencies.add(selectedPlayer);
+						if(round == selectedPlayer.getRound()) {
+							int score = predictedScores.get(selectedPlayer.getPlayerId()).getPredictedScore();
+							scores.put(selectedPlayer.getPlayerId(), score);
+	
+							selectedPlayer.setHasPlayed(true);
+	
+							loggerUtils.log("info", "Using average score={}", score);
+	
+							if(selectedPlayer.isEmergency() == 0) {
+								selectedPlayer.setScoreUsed(true);
+								played22.add(selectedPlayer);
+							} else {
+								selectedPlayer.setScoreUsed(false);
+								emergencies.add(selectedPlayer);
+							}
 						}
+					} catch (MissingGlobalConfig e) {
+						loggerUtils.log("info", "Average not used ");
 					}
 				}
 			} else {
