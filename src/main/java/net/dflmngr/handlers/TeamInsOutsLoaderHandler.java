@@ -97,9 +97,9 @@ public class TeamInsOutsLoaderHandler {
 		InsAndOutsService insAndOutsService = new InsAndOutsServiceImpl();
 		List<InsAndOuts> insAndOuts = new ArrayList<>();
 		
-		setIns(teamCode, round, ins);
-		setOuts(teamCode, round, outs);
-		setEmgs(teamCode, round, emgs);
+		insAndOuts.addAll(setIns(teamCode, round, ins));
+		insAndOuts.addAll(setOuts(teamCode, round, outs));
+		insAndOuts.addAll(setEmgs(teamCode, round, emgs));
 
 		loggerUtils.log("info", "Saving ins and outs to database: ", insAndOuts);
 		insAndOutsService.saveTeamInsAndOuts(insAndOuts);
