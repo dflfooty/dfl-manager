@@ -667,7 +667,7 @@ public class EmailSelectionsHandler {
 		}
 
 		try {
-			playerNo = Integer.parseInt(playerNoStr);
+			playerNo = Integer.parseInt(playerNoStr.trim());
 		} catch (NumberFormatException e) {
 			loggerUtils.log("info", "Error parsing player number, number format exception ... oh well.  Error={}",
 					e.getMessage());
