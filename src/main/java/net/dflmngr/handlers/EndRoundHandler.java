@@ -376,7 +376,7 @@ public class EndRoundHandler {
 		defaultedSelectedPlayer.setTeamPlayerId(selectedPlayer.getTeamPlayerId());
 		defaultedSelectedPlayer.setDnp(false);
 		defaultedSelectedPlayer.setEmergency(selectedPlayer.isEmergency());
-		defaultedSelectedPlayer.setScoreUsed(defaultedSelectedPlayer.isEmergency() != 0);
+		defaultedSelectedPlayer.setScoreUsed(defaultedSelectedPlayer.isEmergency() == 0);
 
 		return defaultedSelectedPlayer;
 	}
