@@ -104,18 +104,21 @@ public class MatthewAllenHandler {
 		
 		List<DflMatthewAllen> votes = new ArrayList<>();
 
-		for(int voteValue = 3; voteValue == 0; voteValue--) {
-			DflPlayerScores playerScore = playerScores.get(0);
-			DflPlayerScores playerScoreNext = playerScores.get(1);
+		for(int voteValue = 3; voteValue > 0; voteValue--) {
+			DflPlayerScores playerScore = selectedPlayerScores.get(0);
+			DflPlayerScores playerScoreNext = selectedPlayerScores.get(1);
 
 			DflPlayer player = dflPlayerService.get(playerScore.getPlayerId());
 
 			votes.add(setVotes(round, game, player, playerScore, votes, voteValue));
 
-			if(voteValue == 1 && playerScore.getScore() == playerScoreNext.getScore()) {
+			if(playerScore.getScore() == playerScoreNext.getScore()) {
 				player = dflPlayerService.get(playerScoreNext.getPlayerId());
-				votes.add(setVotes(round, game, player, playerScore, votes, voteValue));	
+				votes.add(setVotes(round, game, player, playerScore, votes, voteValue));
+				selectedPlayerScores.remove(1);	
 			}
+
+			selectedPlayerScores.remove(0);
 		}
 		
 		dflMatthewAllenService.insertAll(votes, false);
@@ -144,7 +147,7 @@ public class MatthewAllenHandler {
 		}
 
 		DflMatthewAllen vote = new DflMatthewAllen();
-		loggerUtils.log("info", "{} votes .... {}-{}: {} {}", votes, player.getPlayerId(), playerScore.getTeamCode(), player.getFirstName(), player.getLastName());
+		loggerUtils.log("info", "{} votes .... {}-{}: {} {} - {}", votes, player.getPlayerId(), playerScore.getTeamCode(), player.getFirstName(), player.getLastName(), playerScore.getScore());
 		vote.setRound(round);
 		vote.setGame(game);
 		vote.setPlayerId(playerScore.getPlayerId());
