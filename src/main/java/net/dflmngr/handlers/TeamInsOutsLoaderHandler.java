@@ -229,14 +229,12 @@ public class TeamInsOutsLoaderHandler {
 		loggerUtils.log("info", "Working with team={}", teamCode);
 				
 		List<DflSelectedPlayer> tmpSelectedTeam = null;
-		List<DflSelectedPlayer> previousSelectedTeam = null;
 			
 		if(round == 1) {
 			tmpSelectedTeam = new ArrayList<>();
 			loggerUtils.log("info", "Round 1: no previous team");
 		} else {
-			previousSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round-1, teamCode);
-			tmpSelectedTeam = previousSelectedTeam;
+			tmpSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round-1, teamCode);
 			loggerUtils.log("info", "Not round 1: previous team: {}", tmpSelectedTeam);
 		}
 						
@@ -245,7 +243,7 @@ public class TeamInsOutsLoaderHandler {
 		if(insAndOuts != null && !insAndOuts.isEmpty()) {
 			tmpSelectedTeam.removeAll(getOldEmergencies(tmpSelectedTeam));
 			setInsAndOuts(round, teamCode, insAndOuts, tmpSelectedTeam);	
-			selectTeam(round, teamCode, tmpSelectedTeam, previousSelectedTeam);
+			selectTeam(round, teamCode, tmpSelectedTeam);
 			createPredictions(round, teamCode);
 		}
 	}
@@ -329,12 +327,13 @@ public class TeamInsOutsLoaderHandler {
 		return selectedPlayer;
 	}
 
-	private void selectTeam(int round, String teamCode, List<DflSelectedPlayer> tmpSelectedTeam, List<DflSelectedPlayer> previousSelectedTeam) {
+	private void selectTeam(int round, String teamCode, List<DflSelectedPlayer> tmpSelectedTeam) {
 		List<DflSelectedPlayer> selectedTeam = new ArrayList<>();
 		List<Integer> selectedPlayerIds = new ArrayList<>();
 		
-		Map<Integer, DflSelectedPlayer> previousSelectedTeamMap = (previousSelectedTeam == null) 
-			? new HashMap<>() :	previousSelectedTeam.stream().collect(Collectors.toMap(DflSelectedPlayer::getPlayerId, player -> player));
+		List<DflSelectedPlayer> currentSelectedTeam = dflSelectedTeamService.getSelectedTeamForRound(round, teamCode);
+		Map<Integer, DflSelectedPlayer> currentSelectedTeamMap = (currentSelectedTeam == null) 
+		? new HashMap<>() :	currentSelectedTeam.stream().collect(Collectors.toMap(DflSelectedPlayer::getPlayerId, player -> player));
 		
 		for(DflSelectedPlayer tmpSelectedPlayer : tmpSelectedTeam) {
 			if(selectedPlayerIds.contains(tmpSelectedPlayer.getPlayerId())) {
@@ -347,12 +346,12 @@ public class TeamInsOutsLoaderHandler {
 				selectedPlayer.setTeamPlayerId(tmpSelectedPlayer.getTeamPlayerId());
 				selectedPlayer.setEmergency(tmpSelectedPlayer.isEmergency());
 				
-				if(previousSelectedTeamMap.containsKey(tmpSelectedPlayer.getPlayerId())) {
-					DflSelectedPlayer previousSelectedPlayer = previousSelectedTeamMap.get(tmpSelectedPlayer.getPlayerId());
-					selectedPlayer.setDnp(previousSelectedPlayer.isDnp());
-					selectedPlayer.setScoreUsed(previousSelectedPlayer.isScoreUsed());
-					selectedPlayer.setHasPlayed(previousSelectedPlayer.hasPlayed());
-					selectedPlayer.setReplacementInd(previousSelectedPlayer.getReplacementInd());
+				if(currentSelectedTeamMap.containsKey(tmpSelectedPlayer.getPlayerId())) {
+					DflSelectedPlayer currentSelectedPlayer = currentSelectedTeamMap.get(tmpSelectedPlayer.getPlayerId());
+					selectedPlayer.setDnp(currentSelectedPlayer.isDnp());
+					selectedPlayer.setScoreUsed(currentSelectedPlayer.isScoreUsed());
+					selectedPlayer.setHasPlayed(currentSelectedPlayer.hasPlayed());
+					selectedPlayer.setReplacementInd(currentSelectedPlayer.getReplacementInd());
 				} else {
 					selectedPlayer.setDnp(false);
 					selectedPlayer.setScoreUsed(tmpSelectedPlayer.isEmergency() == 0);
