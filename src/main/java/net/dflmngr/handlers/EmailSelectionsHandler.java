@@ -176,26 +176,28 @@ public class EmailSelectionsHandler {
 
 			try {
 
-				String from = InternetAddress.toString(messages[i].getFrom());
-				String contentType = messages[i].getContentType();
+				Message message = messages[i];
+				String from = InternetAddress.toString(message.getFrom());
+				Instant instant = message.getReceivedDate().toInstant();
+				ZonedDateTime receivedDate = ZonedDateTime.ofInstant(instant, ZoneId.of(DflmngrUtils.defaultTimezone));
 
-				if (contentType.contains("multipart")) {
-					Multipart multipart = (Multipart) messages[i].getContent();
+
+				if(message.isMimeType("multipart/*")) {
+					Multipart multipart = (Multipart) message.getContent();
 
 					for (int j = 0; j < multipart.getCount(); j++) {
 						BodyPart part = multipart.getBodyPart(j);
-
-						Instant instant = messages[i].getReceivedDate().toInstant();
-						ZonedDateTime receivedDate = ZonedDateTime.ofInstant(instant,
-								ZoneId.of(DflmngrUtils.defaultTimezone));
-
 						validationResult = scanEmailPartsAndValidate(part, receivedDate, from);
-
 						if (validationResult != null) {
 							break;
 						}
 					}
+				} else if(message.isMimeType("text/plain")) {
+					validationResult = handleTextEmailContent(message.getContent().toString(), from);
+				} else if(message.isMimeType("text/html")) {
+					validationResult = handleHtmlEmailContent(message.getContent().toString(), from);
 				}
+
 				if (validationResult == null) {
 					validationResult = new SelectedTeamValidation();
 					loggerUtils.log("info", "Selection file or selection body is missing.");
@@ -268,61 +270,9 @@ public class EmailSelectionsHandler {
 		if (content instanceof InputStream || content instanceof String) {
 
 			if (part.isMimeType("text/plain")) {
-				String text = ((String) content).trim();
-				if (text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
-					text = text.substring(0, text.indexOf("[end]"));
-					String[] lines = text.split("\\R+");
-
-					loggerUtils.log("info", "Message from {}, has selection in text body", from);
-					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, "noid");
-					validationResult.setFrom(from);
-					validationResults.add(validationResult);
-				} else if (text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
-					text = text.substring(text.indexOf("[start id="), text.indexOf("[end]"));
-					String[] lines = text.split("\\R+");
-
-					String idLine = lines[0];
-					String id = idLine.split("=")[1].trim().replaceAll("]", "");
-
-					loggerUtils.log("info", "Message from {}, has selection in text body", from);
-					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, id);
-					validationResult.setFrom(from);
-					validationResults.add(validationResult);
-				}
+				validationResult = handleTextEmailContent(content.toString().trim(), from);
 			} else if (part.isMimeType("text/html")) {
-				Document document = Jsoup.parse((String) content);
-				document.outputSettings(new Document.OutputSettings().prettyPrint(false));// makes html() preserve
-																							// linebreaks and spacing
-				document.select("br").append("\\n");
-				document.select("p").prepend("\\n\\n");
-				String s = document.body().html().replaceAll("\\\\n", "\n");
-				String text = Jsoup.clean(s, "", Safelist.none(), new Document.OutputSettings().prettyPrint(false))
-						.trim();
-
-				if (text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
-					text = text.substring(0, text.indexOf("[end]"));
-					String[] lines = text.split("\\R+");
-
-					loggerUtils.log("info", "Message from {}, has selection in html body", from);
-					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, "noid");
-					validationResult.setFrom(from);
-					validationResults.add(validationResult);
-				} else if (text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
-					text = text.substring(text.indexOf("[start id="), text.indexOf("[end]"));
-					String[] lines = text.split("\\R+");
-
-					String idLine = lines[0];
-					String id = idLine.split("=")[1].trim().replaceAll("]", "");
-
-					loggerUtils.log("info", "Message from {}, has selection in text body", from);
-					selectionsFileAttached = true;
-					validationResult = handleSelectionEmailText(lines, id);
-					validationResult.setFrom(from);
-					validationResults.add(validationResult);
-				}
+				validationResult = handleHtmlEmailContent(content.toString(), from);
 			}
 
 			if (validationResult == null) {
@@ -361,6 +311,73 @@ public class EmailSelectionsHandler {
 					}
 				}
 			}
+		}
+
+		return validationResult;
+	}
+
+	private SelectedTeamValidation handleTextEmailContent(String text, String from) {
+		SelectedTeamValidation validationResult = null;
+
+		if (text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
+			text = text.substring(0, text.indexOf("[end]"));
+			String[] lines = text.split("\\R+");
+
+			loggerUtils.log("info", "Message from {}, has selection in text body", from);
+			selectionsFileAttached = true;
+			validationResult = handleSelectionEmailText(lines, "noid");
+			validationResult.setFrom(from);
+			validationResults.add(validationResult);
+		} else if (text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
+			text = text.substring(text.indexOf("[start id="), text.indexOf("[end]"));
+			String[] lines = text.split("\\R+");
+
+			String idLine = lines[0];
+			String id = idLine.split("=")[1].trim().replaceAll("]", "");
+
+			loggerUtils.log("info", "Message from {}, has selection in text body", from);
+			selectionsFileAttached = true;
+			validationResult = handleSelectionEmailText(lines, id);
+			validationResult.setFrom(from);
+			validationResults.add(validationResult);
+		}
+
+		return validationResult;
+	}
+
+	private SelectedTeamValidation handleHtmlEmailContent(String content, String from) {
+		SelectedTeamValidation validationResult = null;
+
+		Document document = Jsoup.parse(content);
+		document.outputSettings(new Document.OutputSettings().prettyPrint(false));// makes html() preserve
+																					// linebreaks and spacing
+		document.select("br").append("\\n");
+		document.select("p").prepend("\\n\\n");
+		String s = document.body().html().replaceAll("\\\\n", "\n");
+		String text = Jsoup.clean(s, "", Safelist.none(), new Document.OutputSettings().prettyPrint(false))
+				.trim();
+
+		if (text.indexOf("[team]") == 0 && text.indexOf("[end]") != -1) {
+			text = text.substring(0, text.indexOf("[end]"));
+			String[] lines = text.split("\\R+");
+
+			loggerUtils.log("info", "Message from {}, has selection in html body", from);
+			selectionsFileAttached = true;
+			validationResult = handleSelectionEmailText(lines, "noid");
+			validationResult.setFrom(from);
+			validationResults.add(validationResult);
+		} else if (text.indexOf("[start id=") != -1 && text.indexOf("[end]") != -1) {
+			text = text.substring(text.indexOf("[start id="), text.indexOf("[end]"));
+			String[] lines = text.split("\\R+");
+
+			String idLine = lines[0];
+			String id = idLine.split("=")[1].trim().replaceAll("]", "");
+
+			loggerUtils.log("info", "Message from {}, has selection in text body", from);
+			selectionsFileAttached = true;
+			validationResult = handleSelectionEmailText(lines, id);
+			validationResult.setFrom(from);
+			validationResults.add(validationResult);
 		}
 
 		return validationResult;
