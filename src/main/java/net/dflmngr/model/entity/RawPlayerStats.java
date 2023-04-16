@@ -26,6 +26,7 @@ public class RawPlayerStats implements Serializable {
 	@Id
 	String team;
 	
+	@Id
 	@Column(name="jumper_no")
 	private int jumperNo;
 	
