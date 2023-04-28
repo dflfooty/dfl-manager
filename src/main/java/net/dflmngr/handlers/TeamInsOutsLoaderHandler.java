@@ -348,10 +348,11 @@ public class TeamInsOutsLoaderHandler {
 				
 				if(currentSelectedTeamMap.containsKey(tmpSelectedPlayer.getPlayerId())) {
 					DflSelectedPlayer currentSelectedPlayer = currentSelectedTeamMap.get(tmpSelectedPlayer.getPlayerId());
-					selectedPlayer.setDnp(currentSelectedPlayer.isDnp());
-					selectedPlayer.setScoreUsed(currentSelectedPlayer.isScoreUsed());
+
 					selectedPlayer.setHasPlayed(currentSelectedPlayer.hasPlayed());
-					selectedPlayer.setReplacementInd(currentSelectedPlayer.getReplacementInd());
+					selectedPlayer.setDnp(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.isDnp() : tmpSelectedPlayer.isDnp());
+					selectedPlayer.setScoreUsed(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.isScoreUsed() : tmpSelectedPlayer.isScoreUsed());
+					selectedPlayer.setReplacementInd(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.getReplacementInd() : tmpSelectedPlayer.getReplacementInd());
 				} else {
 					selectedPlayer.setDnp(false);
 					selectedPlayer.setScoreUsed(tmpSelectedPlayer.isEmergency() == 0);
