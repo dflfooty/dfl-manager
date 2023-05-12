@@ -15,5 +15,5 @@ COPY --from=build_step /build/target/dependency/*.jar \
                        /app/lib/
 
 WORKDIR /app
-CMD java -classpath /app/dflmngr.jar:/app/lib/dependency/* net.dflmngr.scheduler.JobScheduler
+CMD java -classpath /app/dflmngr.jar:/app/lib/* net.dflmngr.scheduler.JobScheduler
 
