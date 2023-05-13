@@ -5,15 +5,21 @@ WORKDIR /build
 RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:17-jdk-focal
+
+# Install chrome
+RUN apt-get install -y wget
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+RUN apt-get install ./google-chrome-stable_current_amd64.deb
+
 RUN mkdir /app && \
-    mkdir /app/lib
+    mkdir /app/target
 
 COPY --from=build_step /build/target/dflmngr.jar \
-                       /build/bin \
+                       /build/tager/dependency \
+                       /app/target/
+COPY --from=build_step /build/bin \
                        /app/
-COPY --from=build_step /build/target/dependency/*.jar \
-                       /app/lib/
 
 WORKDIR /app
-CMD java -classpath /app/dflmngr.jar:/app/lib/* net.dflmngr.scheduler.JobScheduler
+CMD java -classpath /app/target/dflmngr.jar:/app/target/dependency/* net.dflmngr.scheduler.JobScheduler
 
