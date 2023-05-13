@@ -18,7 +18,7 @@ RUN mkdir /app && \
     mkdir /app/target
 
 COPY --from=build_step /build/target/dflmngr.jar \
-                       /build/tagert/dependency \
+                       /build/target/dependency \
                        /app/target/
 COPY --from=build_step /build/bin \
                        /app/
