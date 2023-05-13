@@ -15,13 +15,16 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
 RUN apt-get update && apt-get -y install google-chrome-stable
 
 RUN mkdir /app && \
-    mkdir /app/target
+    mkdir /app/target && \
+    mkdir /app/target/dependency && \
+    mkdir /app/bin
 
 COPY --from=build_step /build/target/dflmngr.jar \
-                       /build/target/dependency \
                        /app/target/
-COPY --from=build_step /build/bin \
-                       /app/
+COPY --from=build_step /build/target/dependency/*.jar \
+                       /app/target/dependency/
+COPY --from=build_step /build/bin/*.sh \
+                       /app/bin/
 
 WORKDIR /app
 CMD java -classpath /app/target/dflmngr.jar:/app/target/dependency/* net.dflmngr.scheduler.JobScheduler
