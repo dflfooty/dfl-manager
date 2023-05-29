@@ -26,6 +26,7 @@ public class StatsRoundPlayerStats implements Serializable {
 	@Id
 	String team;
 	
+	@Id
 	@Column(name="jumper_no")
 	private int jumperNo;
 	

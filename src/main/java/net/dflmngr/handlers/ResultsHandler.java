@@ -16,8 +16,10 @@ import net.dflmngr.model.entity.DflRoundInfo;
 import net.dflmngr.model.entity.DflRoundMapping;
 import net.dflmngr.model.service.AflFixtureService;
 import net.dflmngr.model.service.DflRoundInfoService;
+import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
+import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.reports.ResultsReport;
 
 public class ResultsHandler {
@@ -25,6 +27,7 @@ public class ResultsHandler {
 	
 	AflFixtureService aflFixtureService;
 	DflRoundInfoService dflRoundInfoService;
+	GlobalsService globalsService;
 	
 	boolean isExecutable;
 	
@@ -41,6 +44,7 @@ public class ResultsHandler {
 	public ResultsHandler() {
 		aflFixtureService = new AflFixtureServiceImpl();
 		dflRoundInfoService = new DflRoundInfoServiceImpl();
+		globalsService = new GlobalsServiceImpl();
 	}
 	
 	public void configureLogging(String mdcKey, String loggerName, String logfile) {
@@ -80,6 +84,10 @@ public class ResultsHandler {
 				
 				loggerUtils.log("info", "Handled round={} ....", round);
 			}
+
+			aflFixtureService.close();
+			dflRoundInfoService.close();
+			globalsService.close();
 			
 			loggerUtils.log("info", "ResultsHandler complete");
 
@@ -97,10 +105,12 @@ public class ResultsHandler {
 			
 			loggerUtils.log("info", "Inprogress AFL rounds {}", aflRounds);
 			
-			for(DflRoundInfo roundInfo : dflRoundsInfo) {
-				for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
-					if(aflRounds.contains(roundMapping.getAflRound()) && !roundsToProcess.contains(roundMapping.getRound())) {
-						roundsToProcess.add(roundMapping.getRound());
+			if(!isStatsRoundOnly(aflRounds)) {
+				for(DflRoundInfo roundInfo : dflRoundsInfo) {
+					for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
+						if(aflRounds.contains(roundMapping.getAflRound()) && !roundsToProcess.contains(roundMapping.getRound())) {
+							roundsToProcess.add(roundMapping.getRound());
+						}
 					}
 				}
 			}
@@ -111,6 +121,18 @@ public class ResultsHandler {
 
 		loggerUtils.log("info", "Rounds to process, rounds={} ....", roundsToProcess);
 		return roundsToProcess;
+	}
+
+	private boolean isStatsRoundOnly(List<Integer> aflRounds) {
+		boolean isStatsRound = false;
+
+		if(aflRounds.size() == 1) {
+			List<Integer> statRounds = globalsService.getStatRounds();
+			isStatsRound = statRounds.contains(aflRounds.get(0));
+		}		
+
+		loggerUtils.log("info", "Stats AFL round only: {} AFL rounds: {}", isStatsRound, aflRounds);
+		return isStatsRound;
 	}
 
 	private void comppleteAflGames(boolean isFinal) {
