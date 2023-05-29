@@ -41,6 +41,7 @@
 		<class>net.dflmngr.model.entity.Process</class>
 		<class>net.dflmngr.model.entity.DflBest22</class>
 		<class>net.dflmngr.model.entity.DflSelectionIds</class>
+		<class>net.dflmngr.model.entity.StatsRoundPlayerStats</class>
 
 		<shared-cache-mode>NONE</shared-cache-mode>
 
