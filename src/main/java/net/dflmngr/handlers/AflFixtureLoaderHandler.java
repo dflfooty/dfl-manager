@@ -39,7 +39,7 @@ public class AflFixtureLoaderHandler {
 			aflTeamService = new AflTeamServiceImpl();
 			aflFixtureHtmlHandler = new AflFixtureHtmlHandler();
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}	
 	}
 	

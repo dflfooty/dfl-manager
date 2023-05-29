@@ -96,7 +96,7 @@ public class JobScheduler {
 			
 			loggerUtils.log("info", "Scheduled job: {}", jobName);
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 
@@ -166,7 +166,7 @@ public class JobScheduler {
 				loggerUtils.log("info", "Job not scheduled as it will not run");
 			}
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	

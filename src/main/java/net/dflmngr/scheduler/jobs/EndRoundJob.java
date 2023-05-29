@@ -31,7 +31,7 @@ public class EndRoundJob implements Job {
 			endRound.execute(round, null);
 			loggerUtils.log("info", "EndRoundJob completed");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 }

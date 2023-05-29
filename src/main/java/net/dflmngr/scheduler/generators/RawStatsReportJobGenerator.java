@@ -41,7 +41,7 @@ public class RawStatsReportJobGenerator {
 			dflRoundInfoService = new DflRoundInfoServiceImpl();
 			aflFixtureService = new AflFixtureServiceImpl();
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	
@@ -76,7 +76,7 @@ public class RawStatsReportJobGenerator {
 				loggerUtils.log("info", "RawStatsReportJobGenerator completed");
 			}
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	

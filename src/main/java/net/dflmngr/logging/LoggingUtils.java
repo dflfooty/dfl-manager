@@ -49,4 +49,30 @@ public class LoggingUtils {
 			}
 		}
 	}
+
+	public void logException(String msg, Throwable ex) {
+
+		String callingClass = Thread.currentThread().getStackTrace()[2].getClassName();
+		String callingClassShort = callingClass.substring(callingClass.lastIndexOf(".")+1, callingClass.length());
+		String callingMethod = Thread.currentThread().getStackTrace()[2].getMethodName();
+		int lineNo = Thread.currentThread().getStackTrace()[2].getLineNumber();
+		
+		String loggerMsg = "[" + callingClassShort + "." +  callingMethod + "(Line:" + lineNo +")] - " + msg;
+
+		if(stdoutLogging) {
+			loggerMsg = "[" + process + "]" + loggerMsg;
+		} else {
+			MDC.put(loggerKey, logFileBase);
+		}
+		
+		try {
+			logger.error(msg, ex);
+		} catch (Exception intEx) {
+			logger.error("Error in ... ", intEx);
+		} finally {
+			if(!stdoutLogging)  {
+				MDC.remove(loggerKey);	
+			}
+		}
+	}
 }

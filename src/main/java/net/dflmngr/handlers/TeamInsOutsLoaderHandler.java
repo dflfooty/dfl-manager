@@ -72,7 +72,7 @@ public class TeamInsOutsLoaderHandler {
 			dflTeamPlayerService.close();
 						
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 

@@ -87,7 +87,7 @@ public class MatthewAllenHandler {
 			loggerUtils.log("info", "MatthewAllenHandler complete");
 			
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	

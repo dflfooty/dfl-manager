@@ -38,7 +38,7 @@ public class InsAndOutsReportJob implements Job {
 			insAndOutsReport.execute(round, reportType, null);
 			loggerUtils.log("info", "InsAndOutsReportJob completed");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 }

@@ -146,7 +146,7 @@ public class EmailSelectionsHandler {
 
 			loggerUtils.log("info", "Email Selections Handler Completed");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 
@@ -229,7 +229,7 @@ public class EmailSelectionsHandler {
 					}
 				}
 			} catch (Exception ex) {
-				loggerUtils.log("error", "Error in ... ", ex);
+				loggerUtils.logException("Error in ... ", ex);
 				try {
 					String from = InternetAddress.toString(messages[i].getFrom());
 					validationResult = new SelectedTeamValidation();

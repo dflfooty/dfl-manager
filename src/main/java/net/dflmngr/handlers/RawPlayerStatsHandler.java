@@ -96,7 +96,7 @@ public class RawPlayerStatsHandler {
 			loggerUtils.log("info", "Player stats downaloded");
 
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 

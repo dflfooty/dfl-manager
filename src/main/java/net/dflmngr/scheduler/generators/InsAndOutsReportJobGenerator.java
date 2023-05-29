@@ -43,7 +43,7 @@ public class InsAndOutsReportJobGenerator {
 			dflRoundInfoService = new DflRoundInfoServiceImpl();
 			globalsService = new GlobalsServiceImpl();
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 		
@@ -73,7 +73,7 @@ public class InsAndOutsReportJobGenerator {
 				loggerUtils.log("info", "InsAndOutsReportJobGenerator completed");
 			}
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	

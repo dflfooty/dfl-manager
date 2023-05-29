@@ -108,7 +108,7 @@ public class SelectedTeamValidationHandler {
 			aflFixtureService.close();
 
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 
 		return validationResult;

@@ -48,7 +48,7 @@ public class ResultsJob implements Job {
 			resultsHandler.execute(round, isFinal, null, skipStats, sendReport);
 			loggerUtils.log("info", "{} completed", logFile);
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 
 	}

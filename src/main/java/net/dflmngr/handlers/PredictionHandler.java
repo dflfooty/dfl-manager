@@ -90,7 +90,7 @@ public class PredictionHandler {
 			dflSelectedTeamService.close();
 
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 

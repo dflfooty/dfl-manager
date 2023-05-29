@@ -34,7 +34,7 @@ public class RawStatsReportJob implements Job {
 			rawStatsReport.execute(round, isFinal, null);
 			loggerUtils.log("info", "RawStatsReportJob completed");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 }

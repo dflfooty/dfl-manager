@@ -102,7 +102,7 @@ public class StatsDownloaderHandler {
 				loggerUtils.log("info", "Player stats were not downloaded");
 			}
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		} finally {
 			rawPlayerStatsService.close();
 			globalsService.close();

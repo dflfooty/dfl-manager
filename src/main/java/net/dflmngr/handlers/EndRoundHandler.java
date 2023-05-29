@@ -194,7 +194,7 @@ public class EndRoundHandler {
 			loggerUtils.log("info", "End round completed");
 
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 
 	}

@@ -89,7 +89,7 @@ public class StatsRoundPlayerStatsHandler {
 			loggerUtils.log("info", "Stats round player stats downaloded");
 
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 

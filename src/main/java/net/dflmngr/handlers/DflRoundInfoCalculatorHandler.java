@@ -69,7 +69,7 @@ public class DflRoundInfoCalculatorHandler {
 			lockoutFormat.setTimeZone(TimeZone.getTimeZone(defaultTimezone));
 			
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	
@@ -111,7 +111,7 @@ public class DflRoundInfoCalculatorHandler {
 			
 			loggerUtils.log("info", "DflRoundInfoCalculator Complete");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 

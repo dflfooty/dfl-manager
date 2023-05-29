@@ -28,7 +28,7 @@ public class EmailSelectionsJob implements Job {
 			emailSelectionsHandler.execute();
 			loggerUtils.log("info", "EmailSelectionsJob completed");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 }

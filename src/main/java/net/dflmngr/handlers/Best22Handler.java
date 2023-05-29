@@ -75,7 +75,7 @@ public class Best22Handler {
 			loggerUtils.log("info", "Best22Handler complete");
 			
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	

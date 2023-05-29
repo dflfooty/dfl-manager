@@ -84,7 +84,7 @@ public class ResultsHandler {
 			loggerUtils.log("info", "ResultsHandler complete");
 
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 

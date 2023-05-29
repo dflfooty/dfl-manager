@@ -32,7 +32,7 @@ public class StartRoundJob implements Job {
 			startRound.execute(round, null, false);
 			loggerUtils.log("info", "StartRoundJob completed");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 }

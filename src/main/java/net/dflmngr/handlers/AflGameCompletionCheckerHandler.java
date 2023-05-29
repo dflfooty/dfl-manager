@@ -110,7 +110,7 @@ public class AflGameCompletionCheckerHandler {
 			loggerUtils.log("info", "AflGameCompletionChecker comlpeted");
 
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 

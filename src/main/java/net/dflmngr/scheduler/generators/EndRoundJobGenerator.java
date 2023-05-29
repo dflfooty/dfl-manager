@@ -34,7 +34,7 @@ public class EndRoundJobGenerator {
 			dflRoundInfoService = new DflRoundInfoServiceImpl();
 			globalsService = new GlobalsServiceImpl();
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	
@@ -56,7 +56,7 @@ public class EndRoundJobGenerator {
 			
 			loggerUtils.log("info", "EndRoundJobGenerator completed");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	

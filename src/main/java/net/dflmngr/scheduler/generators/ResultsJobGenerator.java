@@ -43,7 +43,7 @@ public class ResultsJobGenerator {
 			dflRoundInfoService = new DflRoundInfoServiceImpl();
 			aflFixtureService = new AflFixtureServiceImpl();
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	
@@ -83,7 +83,7 @@ public class ResultsJobGenerator {
 			loggerUtils.log("info", "ResultsJobGenerator completed");
 			
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		} finally {
 			dflRoundInfoService.close();
 			aflFixtureService.close();

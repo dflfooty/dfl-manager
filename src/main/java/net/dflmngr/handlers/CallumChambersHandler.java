@@ -90,7 +90,7 @@ public class CallumChambersHandler {
 			globalsService.close();
 			
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	

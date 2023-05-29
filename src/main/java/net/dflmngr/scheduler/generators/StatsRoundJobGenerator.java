@@ -33,7 +33,7 @@ public class StatsRoundJobGenerator {
 			globalsService = new GlobalsServiceImpl();
 			aflFixtureService = new AflFixtureServiceImpl();
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	
@@ -54,7 +54,7 @@ public class StatsRoundJobGenerator {
 								
 			loggerUtils.log("info", "StatsRoundJobGenerator completed");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		} finally {
 			globalsService.close();
 			aflFixtureService.close();

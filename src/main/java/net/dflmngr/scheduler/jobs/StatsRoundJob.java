@@ -31,7 +31,7 @@ public class StatsRoundJob implements Job {
 			statsRoundHandler.execute(round);
 			loggerUtils.log("info", "{} completed", logFile);
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 
 	}

@@ -83,7 +83,7 @@ public class SelectionsHandler {
 			loggerUtils.log("info", "Team selections created");
 
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 

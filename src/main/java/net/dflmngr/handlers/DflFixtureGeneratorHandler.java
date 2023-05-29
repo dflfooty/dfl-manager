@@ -56,7 +56,7 @@ public class DflFixtureGeneratorHandler {
 			loggerUtils.log("info", "DflFixtureGeneratorHandler completed");
 			
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 	

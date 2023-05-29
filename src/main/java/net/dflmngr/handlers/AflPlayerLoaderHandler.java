@@ -43,7 +43,7 @@ public class AflPlayerLoaderHandler {
 			globalsService = new GlobalsServiceImpl();
 			dflUnmatchedPlayerService = new DflUnmatchedPlayerServiceImpl();
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 	}
 
@@ -60,7 +60,7 @@ public class AflPlayerLoaderHandler {
 
 			loggerUtils.log("info", "AflPlayerLoader Complete");
 		} catch (Exception ex) {
-			loggerUtils.log("error", "Error in ... ", ex);
+			loggerUtils.logException("Error in ... ", ex);
 		}
 
 	}
