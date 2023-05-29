@@ -207,9 +207,11 @@ public class EndRoundHandler {
 
 		DflRoundInfo roundInfo = dflRoundInfoService.get(round + 1);
 
-		if (roundInfo == null || roundInfo.getRoundMapping().size() == 1) {
+		boolean splitDflRounds = globalsService.getSplitDflRounds();
+
+		if (roundInfo == null || roundInfo.getRoundMapping().size() == 1 || !splitDflRounds) {
 			roundsToDefault.add(round + 1);
-			loggerUtils.log("info", "No round info or single round; Using round={}", roundsToDefault);
+			loggerUtils.log("info", "No round info or single round or not using split DFL rounds; Using round={}", roundsToDefault);
 		} else {
 			List<Integer> coversAflRounds = new ArrayList<>();
 
