@@ -1,15 +1,20 @@
 package net.dflmngr.handlers;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.RawPlayerStats;
+import net.dflmngr.model.entity.StatsRoundPlayerStats;
 import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.RawPlayerStatsService;
+import net.dflmngr.model.service.StatsRoundPlayerStatsService;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.model.service.impl.RawPlayerStatsServiceImpl;
+import net.dflmngr.model.service.impl.StatsRoundPlayerStatsServiceImpl;
 
 public class StatsDownloaderHandler {
 	private LoggingUtils loggerUtils;
@@ -20,6 +25,7 @@ public class StatsDownloaderHandler {
 	String logfile;
 
 	RawPlayerStatsService rawPlayerStatsService;
+	StatsRoundPlayerStatsService statsRoundPlayerStatsService;
 	GlobalsService globalsService;
 
 	int round;
@@ -27,6 +33,7 @@ public class StatsDownloaderHandler {
 
 	public StatsDownloaderHandler(int round, String statsUrl) {
 		rawPlayerStatsService = new RawPlayerStatsServiceImpl();
+		statsRoundPlayerStatsService = new StatsRoundPlayerStatsServiceImpl();
 		globalsService = new GlobalsServiceImpl();
 
 		isExecutable = false;
@@ -82,11 +89,24 @@ public class StatsDownloaderHandler {
 					loggerUtils.log("info", "Exception stacktrace={}", ExceptionUtils.getStackTrace(ex));
 				}
 			}
-			if(statsDownloaded) {
+			if(statsDownloaded && playerStats != null) {
 				loggerUtils.log("info", "Saving player stats to database");
 
 				if(isStatsRound) {
-
+					List<StatsRoundPlayerStats> statRoundPlayerStats = new ArrayList<>();
+					for(RawPlayerStats pStats : playerStats) {
+						StatsRoundPlayerStats statRoundpStats = new StatsRoundPlayerStats();
+						BeanUtils.copyProperties(statRoundpStats, pStats);
+						statRoundPlayerStats.add(statRoundpStats);
+					}
+					
+					if(includeHomeTeam) {
+						statsRoundPlayerStatsService.removeStatsForRoundAndTeam(round, homeTeam);
+					}
+					if(includeAwayTeam) {
+						statsRoundPlayerStatsService.removeStatsForRoundAndTeam(round, awayTeam);
+					}
+					statsRoundPlayerStatsService.insertAll(statRoundPlayerStats, false);
 				} else {
 					if(includeHomeTeam) {
 						rawPlayerStatsService.removeStatsForRoundAndTeam(round, homeTeam);
@@ -95,9 +115,9 @@ public class StatsDownloaderHandler {
 						rawPlayerStatsService.removeStatsForRoundAndTeam(round, awayTeam);
 					}
 					rawPlayerStatsService.insertAll(playerStats, false);
-
-					loggerUtils.log("info", "Player stats saved");
 				}
+
+				loggerUtils.log("info", "Player stats saved");
 			} else {
 				loggerUtils.log("info", "Player stats were not downloaded");
 			}
@@ -105,6 +125,7 @@ public class StatsDownloaderHandler {
 			loggerUtils.logException("Error in ... ", ex);
 		} finally {
 			rawPlayerStatsService.close();
+			statsRoundPlayerStatsService.close();
 			globalsService.close();
 		}
 	}
