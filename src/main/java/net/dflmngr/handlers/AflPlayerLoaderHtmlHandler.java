@@ -213,7 +213,7 @@ public class AflPlayerLoaderHtmlHandler {
 			} catch (IOException e) {
 				retries++;
 				if(retries == maxRetries) {
-					throw new HtmlPageLoadException(url);
+					throw new HtmlPageLoadException(url, e);
 				}	
 			}
 
