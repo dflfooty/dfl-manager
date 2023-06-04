@@ -180,7 +180,7 @@ public class AflGameCompletionCheckerHandler {
 
 				if (!driver.findElements(By.className("styles__Scoreboard-sc-14r16wm-0")).isEmpty()) {
 					WebElement scorecard = driver.findElement(By.className("styles__Scoreboard-sc-14r16wm-0"));
-					if (scorecard.findElement(By.className("styles__State-lxmyn6-2")).getText().equals("Full Time")) {
+					if (scorecard.findElement(By.className("styles__State-sc-lxmyn6-2")).getText().equals("Full Time")) {
 						gameCompleted = true;
 					} else {
 						gameCompleted = false;
