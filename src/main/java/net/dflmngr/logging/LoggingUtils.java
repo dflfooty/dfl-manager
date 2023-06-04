@@ -1,5 +1,6 @@
 package net.dflmngr.logging;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -67,6 +68,8 @@ public class LoggingUtils {
 		
 		try {
 			logger.error(msg, ex);
+			String stacktrace = ExceptionUtils.getStackTrace(ex);
+			logger.error(stacktrace);
 		} catch (Exception intEx) {
 			logger.error("Error in ... ", intEx);
 		} finally {
