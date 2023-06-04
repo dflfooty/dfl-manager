@@ -192,7 +192,7 @@ public class AflGameCompletionCheckerHandler {
 					loggerUtils.log("info", "Page failed to load");
 				}
 			} catch (Exception ex) {
-				throw new HtmlPageLoadException(statsUrl);
+				throw new HtmlPageLoadException(statsUrl, ex);
 			} finally {
 				driver.quit();
 			}
