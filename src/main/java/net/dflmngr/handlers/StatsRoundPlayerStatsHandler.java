@@ -114,7 +114,7 @@ public class StatsRoundPlayerStatsHandler {
 
 			StatsDownloaderHandler handler = new StatsDownloaderHandler(round, fullStatsUrl);
 			handler.configureLogging("StatsRoundPlayerDownloader");
-			handler.execute(homeTeam, awayTeam, includeHomeTeam, includeAwayTeam, "Completed", true);
+			handler.execute(homeTeam, awayTeam, includeHomeTeam, includeAwayTeam, "Finalized", true);
 		}
 	}
 
