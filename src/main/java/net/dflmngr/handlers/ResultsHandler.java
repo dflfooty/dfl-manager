@@ -30,13 +30,7 @@ public class ResultsHandler {
 	GlobalsService globalsService;
 	
 	boolean isExecutable;
-	
-	String defaultMdcKey = "batch.name";
-	String defaultLoggerName = "batch-logger";
 	String defaultLogfile = "RoundProgress";
-	
-	String mdcKey;
-	String loggerName;
 	String logfile;
 	
 	String emailOverride;
@@ -47,10 +41,8 @@ public class ResultsHandler {
 		globalsService = new GlobalsServiceImpl();
 	}
 	
-	public void configureLogging(String mdcKey, String loggerName, String logfile) {
+	public void configureLogging(String logfile) {
 		loggerUtils = new LoggingUtils(logfile);
-		this.mdcKey = mdcKey;
-		this.loggerName = loggerName;
 		this.logfile = logfile;
 		isExecutable = true;
 		emailOverride = null;
@@ -60,7 +52,7 @@ public class ResultsHandler {
 		
 		try{
 			if(!isExecutable) {
-				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
+				configureLogging(defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
 			
@@ -139,7 +131,7 @@ public class ResultsHandler {
 		if(!isFinal) {
 			loggerUtils.log("info", "Completing AFL games");
 			AflGameCompletionCheckerHandler gameCompletor = new AflGameCompletionCheckerHandler();
-			gameCompletor.configureLogging(mdcKey, loggerName, logfile);
+			gameCompletor.configureLogging(logfile);
 			gameCompletor.execute();
 		}
 	}
@@ -148,7 +140,7 @@ public class ResultsHandler {
 		if(!skipStats) {
 			loggerUtils.log("info", "Getting stats");
 			RawPlayerStatsHandler statsHandler = new RawPlayerStatsHandler();
-			statsHandler.configureLogging(mdcKey, loggerName, logfile);
+			statsHandler.configureLogging(logfile);
 			boolean scrapeAll = false;
 			if(inputRound != 0) {
 				scrapeAll = true;
@@ -160,7 +152,7 @@ public class ResultsHandler {
 	private void calcuateScores(int round) {
 		loggerUtils.log("info", "Calculating scores");
 		ScoresCalculatorHandler scoresCalculator = new ScoresCalculatorHandler();
-		scoresCalculator.configureLogging(mdcKey, loggerName, logfile);
+		scoresCalculator.configureLogging(logfile);
 		scoresCalculator.execute(round);
 	}
 
@@ -168,7 +160,7 @@ public class ResultsHandler {
 		if(round <= 18) {
 			loggerUtils.log("info", "Calculating Ladder");
 			LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
-			ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
+			ladderCalculator.configureLogging(logfile);
 			if(isFinal) {
 				loggerUtils.log("info", "Ladder is not live");
 				ladderCalculator.execute(round, false);
@@ -183,7 +175,7 @@ public class ResultsHandler {
 		if(sendReport) {
 			loggerUtils.log("info", "Writing report");
 			ResultsReport resultsReport = new ResultsReport();
-			resultsReport.configureLogging(mdcKey, loggerName, logfile);
+			resultsReport.configureLogging(logfile);
 			resultsReport.execute(round, isFinal, emailOverride);
 		}
 	}
@@ -230,7 +222,7 @@ public class ResultsHandler {
 			}
 			
 			ResultsHandler resultsHandler = new ResultsHandler();
-			resultsHandler.configureLogging("batch.name", "batch-logger", ("ResultsHandler_R" + round));
+			resultsHandler.configureLogging("ResultsHandler_R" + round);
 			resultsHandler.execute(round, isFinal, email, skipStats, sendReport);
 			
 			System.exit(0);

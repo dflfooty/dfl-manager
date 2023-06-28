@@ -3,22 +3,22 @@ package net.dflmngr.logging;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 public class LoggingUtils {
 	
 	private Logger logger;
-	
-	private String loggerKey;
-	private String logFileBase;
-
 	private String process;
-	private boolean stdoutLogging;
 
 	public LoggingUtils(String process) {
 		this.process = process;
-		this.stdoutLogging = true;
-		logger = LoggerFactory.getLogger("stdout-logger");
+
+		boolean logToSyslog = Boolean.parseBoolean(System.getenv().getOrDefault("LOG_TO_SYSLOG", "false"));
+		
+		if(logToSyslog) {
+			logger = LoggerFactory.getLogger("stdout-with-syslog-logger");
+		} else {
+			logger = LoggerFactory.getLogger("stdout-logger");
+		}
 	}
 	
 	public void log(String level, String msg, Object...arguments) {
@@ -28,14 +28,8 @@ public class LoggingUtils {
 		String callingMethod = Thread.currentThread().getStackTrace()[2].getMethodName();
 		int lineNo = Thread.currentThread().getStackTrace()[2].getLineNumber();
 		
-		String loggerMsg = "[" + callingClassShort + "." +  callingMethod + "(Line:" + lineNo +")] - " + msg;
+		String loggerMsg = "[" + process + "]" + "[" + callingClassShort + "." +  callingMethod + "(Line:" + lineNo +")] - " + msg;
 
-		if(stdoutLogging) {
-			loggerMsg = "[" + process + "]" + loggerMsg;
-		} else {
-			MDC.put(loggerKey, logFileBase);
-		}
-		
 		try {
 			switch (level) {
 				case "info" : logger.info(loggerMsg, arguments); break;
@@ -44,38 +38,16 @@ public class LoggingUtils {
 			}
 		} catch (Exception ex) {
 			logger.error("Error in ... ", ex);
-		} finally {
-			if(!stdoutLogging)  {
-				MDC.remove(loggerKey);	
-			}
 		}
 	}
 
-	public void logException(String msg, Throwable ex) {
-
-		String callingClass = Thread.currentThread().getStackTrace()[2].getClassName();
-		String callingClassShort = callingClass.substring(callingClass.lastIndexOf(".")+1, callingClass.length());
-		String callingMethod = Thread.currentThread().getStackTrace()[2].getMethodName();
-		int lineNo = Thread.currentThread().getStackTrace()[2].getLineNumber();
-		
-		String loggerMsg = "[" + callingClassShort + "." +  callingMethod + "(Line:" + lineNo +")] - " + msg;
-
-		if(stdoutLogging) {
-			loggerMsg = "[" + process + "]" + loggerMsg;
-		} else {
-			MDC.put(loggerKey, logFileBase);
-		}
-		
+	public void logException(String msg, Throwable ex) {		
 		try {
 			logger.error(msg, ex);
 			String stacktrace = ExceptionUtils.getStackTrace(ex);
 			logger.error(stacktrace);
 		} catch (Exception intEx) {
 			logger.error("Error in ... ", intEx);
-		} finally {
-			if(!stdoutLogging)  {
-				MDC.remove(loggerKey);	
-			}
-		}
+		} 
 	}
 }

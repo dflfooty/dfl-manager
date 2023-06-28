@@ -40,13 +40,7 @@ public class RawPlayerStatsHandler {
 	RawPlayerStatsService rawPlayerStatsService;
 
 	boolean isExecutable;
-
-	String defaultMdcKey = "batch.name";
-	String defaultLoggerName = "batch-logger";
 	String defaultLogfile = "RawPlayerStatsHandler";
-
-	String mdcKey;
-	String loggerName;
 	String logfile;
 
 	public RawPlayerStatsHandler() {
@@ -59,10 +53,8 @@ public class RawPlayerStatsHandler {
 		isExecutable = false;
 	}
 
-	public void configureLogging(String mdcKey, String loggerName, String logfile) {
+	public void configureLogging(String logfile) {
 		loggerUtils = new LoggingUtils(logfile);
-		this.mdcKey = mdcKey;
-		this.loggerName = loggerName;
 		this.logfile = logfile;
 		isExecutable = true;
 	}
@@ -71,7 +63,7 @@ public class RawPlayerStatsHandler {
 
 		try {
 			if(!isExecutable) {
-				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
+				configureLogging(defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
 
@@ -343,7 +335,7 @@ public class RawPlayerStatsHandler {
 			}
 
 			RawPlayerStatsHandler testing = new RawPlayerStatsHandler();
-			testing.configureLogging("batch.name", "batch-logger", "RawPlayerStatsHandlerTesting");
+			testing.configureLogging("RawPlayerStatsHandlerTesting");
 			testing.execute(round, isFinal);
 			System.exit(0);
 

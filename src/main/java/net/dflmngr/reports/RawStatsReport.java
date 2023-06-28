@@ -15,7 +15,6 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import net.dflmngr.handlers.RawPlayerStatsHandler;
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.RawPlayerStats;
 import net.dflmngr.model.service.GlobalsService;
@@ -27,12 +26,7 @@ import net.dflmngr.utils.EmailUtils;
 
 public class RawStatsReport {
 	private LoggingUtils loggerUtils;
-	String defaultMdcKey = "online.name";
-	String defaultLoggerName = "online-logger";
 	String defaultLogfile = "RawStatsReport";
-	
-	String mdcKey;
-	String loggerName;
 	String logfile;
 	
 	String emailOverride;
@@ -52,9 +46,7 @@ public class RawStatsReport {
 		isExecutable = false;
 	}
 	
-	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		this.mdcKey = mdcKey;
-		this.loggerName = loggerName;
+	public void configureLogging(String logfile) {
 		this.logfile = logfile;
 		
 		loggerUtils = new LoggingUtils(logfile);
@@ -65,7 +57,7 @@ public class RawStatsReport {
 		
 		try {
 			if(!isExecutable) {
-				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
+				configureLogging(defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
 			
@@ -76,7 +68,7 @@ public class RawStatsReport {
 			}
 			
 			RawPlayerStatsHandler rawPlayerStatsHandler = new RawPlayerStatsHandler();
-			rawPlayerStatsHandler.configureLogging(this.mdcKey, this.loggerName, this.logfile);
+			rawPlayerStatsHandler.configureLogging(this.logfile);
 			rawPlayerStatsHandler.execute(round, isFinal);
 			
 			List<RawPlayerStats> playerStats = rawPlayerStatsService.getForRound(round);
@@ -217,7 +209,7 @@ public class RawStatsReport {
 				//JndiProvider.bind();
 				
 				RawStatsReport rawStatsReport = new RawStatsReport();
-				rawStatsReport.configureLogging("batch.name", "batch-logger", "RawStatsReport");
+				rawStatsReport.configureLogging("RawStatsReport");
 				rawStatsReport.execute(round, false, email);
 			}
 		} catch (Exception ex) {

@@ -22,15 +22,12 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import net.dflmngr.handlers.LadderCalculatorHandler;
-//import net.dflmngr.jndi.JndiProvider;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.entity.DflFixture;
 import net.dflmngr.model.entity.DflLadder;
 import net.dflmngr.model.entity.DflPlayer;
 import net.dflmngr.model.entity.DflPlayerPredictedScores;
 import net.dflmngr.model.entity.DflPlayerScores;
-//import net.dflmngr.model.entity.DflRoundInfo;
-//import net.dflmngr.model.entity.DflRoundMapping;
 import net.dflmngr.model.entity.DflSelectedPlayer;
 import net.dflmngr.model.entity.DflTeam;
 import net.dflmngr.model.entity.DflTeamPlayer;
@@ -69,7 +66,6 @@ import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 import net.dflmngr.model.service.impl.InsAndOutsServiceImpl;
 import net.dflmngr.model.service.impl.RawPlayerStatsServiceImpl;
 import net.dflmngr.reports.struct.ResultsFixtureTabTeamStruct;
-//import net.dflmngr.utils.AmazonS3Utils;
 import net.dflmngr.utils.DflmngrUtils;
 import net.dflmngr.utils.EmailUtils;
 
@@ -77,13 +73,7 @@ public class ResultsReport {
 	private LoggingUtils loggerUtils;
 	
 	boolean isExecutable;
-	
-	String defaultMdcKey = "batch.name";
-	String defaultLoggerName = "batch-logger";
 	String defaultLogfile = "RoundProgress";
-	
-	String mdcKey;
-	String loggerName;
 	String logfile;
 	
 	RawPlayerStatsService rawPlayerStatsService;
@@ -142,11 +132,8 @@ public class ResultsReport {
 		currentPredictedTeamScores = new HashMap<>();
 	}
 	
-	public void configureLogging(String mdcKey, String loggerName, String logfile) {
-		//loggerUtils = new LoggingUtils(loggerName, mdcKey, logfile);
+	public void configureLogging(String logfile) {
 		loggerUtils = new LoggingUtils(logfile);
-		this.mdcKey = mdcKey;
-		this.loggerName = loggerName;
 		this.logfile = logfile;
 		isExecutable = true;
 	}
@@ -155,7 +142,7 @@ public class ResultsReport {
 		
 		try{
 			if(!isExecutable) {
-				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
+				configureLogging(defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
 			
@@ -1209,7 +1196,7 @@ public class ResultsReport {
 		if(round <= 18) {
 			loggerUtils.log("info", "Calculating Live Ladder");
 			LadderCalculatorHandler ladderCalculator = new LadderCalculatorHandler();
-			ladderCalculator.configureLogging(mdcKey, loggerName, logfile);
+			ladderCalculator.configureLogging(logfile);
 			ladderCalculator.execute(round, true);
 			
 			List<DflLadder> ladder = dflLadderService.getLadderForRound(round);
@@ -1378,7 +1365,7 @@ private String selectionSummary(int round, List<DflTeam> teams) {
 				//JndiProvider.bind();
 				
 				ResultsReport report = new ResultsReport();
-				report.configureLogging("batch.name", "batch-logger", "ResultsReport");
+				report.configureLogging("ResultsReport");
 				report.execute(round, isFinal, email);
 			}
 		} catch (Exception ex) {

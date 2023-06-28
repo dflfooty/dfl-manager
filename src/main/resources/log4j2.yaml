@@ -1,0 +1,46 @@
+Configuration:
+  name: DFLManager
+  status: fatal
+  dest: err
+
+  appenders:
+    Console:
+      name: STDOUT
+      target: SYSTEM_OUT
+      PatternLayout:
+        Pattern: "%p %c %m%n"
+    Syslog:
+      name: SYSLOG
+      format: RFC5424
+      host: ${env:SYSLOG_HOST:-localhost}
+      port: ${env:SYSLOG_PORT:-1601}
+      protocol: TCP
+      facility: "LOCAL0"
+      appName: DFLManager
+      messageId: Worker
+      id: W
+  
+  Loggers:
+    logger:
+      - 
+        name: stdout-logger
+        level: info
+        additivity: false
+        AppenderRef:
+          ref: STDOUT
+      -
+        name: syslog-logger
+        level: info
+        additivity: false
+        AppenderRef:
+          ref: SYSLOG
+      - 
+        name: stdout-with-syslog-logger
+        level: info
+        additivity: false
+        AppenderRef:
+          - ref: STDOUT
+          - ref: SYSLOG
+    Root:
+      level: info
+

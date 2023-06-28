@@ -42,7 +42,7 @@ public class ResultsJob implements Job {
 			}
 			
 			ResultsHandler resultsHandler = new ResultsHandler();
-			resultsHandler.configureLogging("online.name", "online-logger", logFile);
+			resultsHandler.configureLogging(logFile);
 
 			loggerUtils.log("info", "Running {}", logFile);
 			resultsHandler.execute(round, isFinal, null, skipStats, sendReport);

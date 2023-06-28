@@ -57,13 +57,7 @@ public class ScoresCalculatorHandler {
 	private LoggingUtils loggerUtils;
 
 	boolean isExecutable;
-
-	String defaultMdcKey = "batch.name";
-	String defaultLoggerName = "batch-logger";
 	String defaultLogfile = "RoundProgress";
-
-	String mdcKey;
-	String loggerName;
 	String logfile;
 
 	RawPlayerStatsService rawPlayerStatsService;
@@ -92,10 +86,8 @@ public class ScoresCalculatorHandler {
 		dflPlayerPredictedScoresService = new DflPlayerPredictedScoresServiceImpl();
 	}
 
-	public void configureLogging(String mdcKey, String loggerName, String logfile) {
+	public void configureLogging(String logfile) {
 		loggerUtils = new LoggingUtils(logfile);
-		this.mdcKey = mdcKey;
-		this.loggerName = loggerName;
 		this.logfile = logfile;
 		isExecutable = true;
 	}
@@ -104,7 +96,7 @@ public class ScoresCalculatorHandler {
 
 		try{
 			if(!isExecutable) {
-				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
+				configureLogging(defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
 
@@ -536,7 +528,7 @@ public class ScoresCalculatorHandler {
 			round = ((Number)cli.getParsedOptionValue("r")).intValue();
 
 			ScoresCalculatorHandler scoresCalculatorHandler = new ScoresCalculatorHandler();
-			scoresCalculatorHandler.configureLogging("batch.name", "batch-logger", ("ScoresCalculatorHandler_R" + round));
+			scoresCalculatorHandler.configureLogging("ScoresCalculatorHandler_R" + round);
 			scoresCalculatorHandler.execute(round);
 		} catch (ParseException ex) {
 			HelpFormatter formatter = new HelpFormatter();

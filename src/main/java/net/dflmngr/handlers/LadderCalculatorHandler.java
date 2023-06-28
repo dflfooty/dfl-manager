@@ -28,13 +28,7 @@ public class LadderCalculatorHandler {
 	private LoggingUtils loggerUtils;
 	
 	boolean isExecutable;
-	
-	String defaultMdcKey = "batch.name";
-	String defaultLoggerName = "batch-logger";
 	String defaultLogfile = "RoundProgress";
-	
-	String mdcKey;
-	String loggerName;
 	String logfile;
 	
 	DflLadderService dflLadderService;
@@ -53,10 +47,8 @@ public class LadderCalculatorHandler {
 		dflPlayerPredictedScoresService = new DflPlayerPredictedScoresServiceImpl();
 	}
 	
-	public void configureLogging(String mdcKey, String loggerName, String logfile) {
+	public void configureLogging(String logfile) {
 		loggerUtils = new LoggingUtils(logfile);
-		this.mdcKey = mdcKey;
-		this.loggerName = loggerName;
 		this.logfile = logfile;
 		isExecutable = true;
 	}
@@ -65,7 +57,7 @@ public class LadderCalculatorHandler {
 		
 		try{
 			if(!isExecutable) {
-				configureLogging(defaultMdcKey, defaultLoggerName, defaultLogfile);
+				configureLogging(defaultLogfile);
 				loggerUtils.log("info", "Default logging configured");
 			}
 						
