@@ -1,6 +1,6 @@
 Configuration:
   name: DFLManager
-  status: fatal
+  status: ${LOGGING_LOG_LEVEL:-fatal}
   dest: err
 
   appenders:
