@@ -1,7 +1,7 @@
 Configuration:
   name: DFLManager
-  status: ${LOGGING_LOG_LEVEL:-fatal}
-  dest: out
+  status: ${env:LOGGING_LOG_LEVEL:-fatal}
+  dest: err
 
   appenders:
     Console:
@@ -13,7 +13,7 @@ Configuration:
       name: SYSLOG
       format: RFC5424
       host: ${env:SYSLOG_HOST:-localhost}
-      port: ${env:SYSLOG_PORT:-1601}
+      port: ${env:SYSLOG_PORT:-1514}
       protocol: TCP
       facility: "LOCAL0"
       appName: DFLManager
