@@ -15,7 +15,7 @@ Configuration:
       host: ${env:SYSLOG_HOST:-localhost}
       port: ${env:SYSLOG_PORT:-1514}
       protocol: TCP
-      facility: "LOCAL0"
+      facility: LOCAL0
       appName: DFLManager
       messageId: Worker
       newline: true
