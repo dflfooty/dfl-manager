@@ -3,7 +3,7 @@ Configuration:
   status: ${env:LOGGING_LOG_LEVEL:-fatal}
   dest: err
 
-  appenders:
+  Appenders:
     Console:
       name: STDOUT
       target: SYSTEM_OUT
@@ -21,7 +21,7 @@ Configuration:
       newline: true
   
   Loggers:
-    logger:
+    Logger:
       - 
         name: stdout-logger
         level: info
