@@ -583,7 +583,7 @@ public class SelectedTeamValidationHandler {
 		if(ffCount > 2 || fwdCount > 6 || midCount > 6 || defCount > 6 || fbCount > 2 || rckCount > 2) {
 			List<Double> emgs = validationResult.getEmergencies();
 			for(DflPlayer player : emgPlayers) {
-				switch(player.getPosition()) {
+				switch(player.getPosition().toLowerCase()) {
 					case "ff" :
 						if(ffCount > 2) {
 							validationResult.emergencyFfWarning = true;
