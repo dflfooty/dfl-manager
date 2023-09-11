@@ -26,6 +26,8 @@ COPY --from=build_step /build/target/dependency/*.jar \
 COPY --from=build_step /build/bin/*.sh \
                        /app/bin/
 
+RUN chmod 700 $HOME/.ssh
+
 WORKDIR /app
 CMD java -classpath /app/target/dflmngr.jar:/app/target/dependency/* net.dflmngr.scheduler.JobScheduler
 
