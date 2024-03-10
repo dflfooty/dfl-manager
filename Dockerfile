@@ -20,7 +20,7 @@ WORKDIR /app
 
 COPY --from=build /app/target/dflmngr.jar target/
 COPY --from=build /app/target/dependency/*.jar dependency/
-COPY --from=build /app/bin/*.sh bin/
+COPY bin/*.sh bin/
 
 RUN mkdir "$HOME"/.ssh && chmod 700 "$HOME"/.ssh
 
