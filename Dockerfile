@@ -19,7 +19,7 @@ RUN apt-get update && apt-get -y install google-chrome-stable && apt-get clean
 WORKDIR /app
 
 COPY --from=build /app/target/dflmngr.jar target/
-COPY --from=build /app/target/dependency/*.jar dependency/
+COPY --from=build /app/target/dependency/*.jar dependency/target/
 COPY bin/*.sh bin/
 
 RUN mkdir "$HOME"/.ssh && chmod 700 "$HOME"/.ssh
