@@ -1,5 +1,7 @@
 package net.dflmngr.handlers;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +21,7 @@ import net.dflmngr.model.service.GlobalsService;
 import net.dflmngr.model.service.impl.AflFixtureServiceImpl;
 import net.dflmngr.model.service.impl.DflRoundInfoServiceImpl;
 import net.dflmngr.model.service.impl.GlobalsServiceImpl;
+import net.dflmngr.utils.DflmngrUtils;
 
 public class StatsRoundPlayerStatsHandler {
 	private LoggingUtils loggerUtils;
@@ -71,10 +74,9 @@ public class StatsRoundPlayerStatsHandler {
 
 				List<AflFixture> updateFixtures = new ArrayList<>();
 				for(AflFixture fixture : fixturesToProcess) {
-					if(fixture.getEndTime() != null) {
-						fixture.setStatsDownloaded(true);
-						updateFixtures.add(fixture);
-					}
+					fixture.setEndTime(ZonedDateTime.now(ZoneId.of(DflmngrUtils.defaultTimezone)));
+					fixture.setStatsDownloaded(true);
+					updateFixtures.add(fixture);
 				}
 				if(!updateFixtures.isEmpty()) {
 					loggerUtils.log("info", "AFL games final download: {}", updateFixtures);

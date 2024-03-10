@@ -19,6 +19,7 @@ import java.util.TimeZone;
 import java.util.TreeSet;
 
 import net.dflmngr.exceptions.MissingNonStandardLockoutException;
+import net.dflmngr.exceptions.StatsRoundMissingTeamException;
 import net.dflmngr.logging.LoggingUtils;
 import net.dflmngr.model.DomainDecodes;
 import net.dflmngr.model.entity.AflFixture;
@@ -56,6 +57,8 @@ public class DflRoundInfoCalculatorHandler {
 	AflTeamService aflTeamService;
 	
 	String standardLockout;
+
+	List<String> statsRoundTracking;
 	
 	public DflRoundInfoCalculatorHandler() {
 				
@@ -67,6 +70,8 @@ public class DflRoundInfoCalculatorHandler {
 			
 			String defaultTimezone = globalsService.getGroundTimeZone("default");
 			lockoutFormat.setTimeZone(TimeZone.getTimeZone(defaultTimezone));
+
+			configureStatsRoundTracking();
 			
 		} catch (Exception ex) {
 			loggerUtils.logException("Error in ... ", ex);
@@ -80,7 +85,7 @@ public class DflRoundInfoCalculatorHandler {
 		this.logfile = logfile;
 		isExecutable = true;
 	}
-	
+
 	public void execute() {
 		
 		try {
@@ -115,6 +120,21 @@ public class DflRoundInfoCalculatorHandler {
 		}
 	}
 
+	private void configureStatsRoundTracking() {
+		statsRoundTracking = new ArrayList<>();
+		List<Integer> aflStatsRounds = globalsService.getStatRounds();
+
+		for(int aflStatRound : aflStatsRounds) {
+			List<AflFixture> aflFixtures = aflFixtureService.getAflFixturesForRound(aflStatRound);
+			for(AflFixture aflFixture : aflFixtures) {
+				statsRoundTracking.add(aflStatRound + "-" + aflFixture.getHomeTeam());
+				statsRoundTracking.add(aflStatRound + "-" + aflFixture.getAwayTeam());
+			}
+		}
+
+		Collections.sort(statsRoundTracking);
+	}
+
 	private List<DflRoundInfo> createWithSplitRounds(int aflRoundsMax, Map<Integer, List<AflFixture>> aflFixtures) {
 		
 		List<DflRoundInfo> allRoundInfo = new ArrayList<>();
@@ -141,14 +161,14 @@ public class DflRoundInfoCalculatorHandler {
 
 		List<DflRoundInfo> allRoundInfo = new ArrayList<>();
 		int dflRound = 1;
-		int aflStatsRound = globalsService.getStatRounds().get(0);
+		List<Integer> aflStatsRounds = globalsService.getStatRounds();
 
 		for(int aflRound = 1; aflRound <= aflRoundsMax; aflRound++) {
 			
 			loggerUtils.log("info", "Handling round: {}", aflRound);
 			List<AflFixture> aflRoundFixtures = aflFixtures.get(aflRound);
 			
-			if(aflRound != aflStatsRound) {
+			if(!aflStatsRounds.contains(aflRound)) {
 				if(aflRoundFixtures.size() == 9) {
 					allRoundInfo.add(createFullAflRound(dflRound, aflRound, aflRoundFixtures));
 				} else {
@@ -259,9 +279,9 @@ public class DflRoundInfoCalculatorHandler {
 			}
 		}
 
-		int aflStatsRound = globalsService.getStatRounds().get(0);
+		List<Integer> aflStatsRounds = globalsService.getStatRounds();
 
-		loggerUtils.log("info", "Creating round mapping: DFL round={}; AFL round={}; AFL stats round={}", dflRound, aflRound, aflStatsRound);
+		loggerUtils.log("info", "Creating round mapping: DFL round={}; AFL round={}; AFL stats round={}", dflRound, aflRound, aflStatsRounds);
 
 		DflRoundMapping roundMapping = new DflRoundMapping();
 		roundMapping.setRound(dflRound);
@@ -269,8 +289,22 @@ public class DflRoundInfoCalculatorHandler {
 
 		roundMappings.add(roundMapping);
 		
+		int useAflStatsRound = -1;
 		for(String aflTeamId : aflTeamsNotInRound) {
-			AflFixture aflStatsFixture = aflFixtureService.getAflFixtureForRoundAndTeam(aflStatsRound, aflTeamId);
+			for(int aflStatsRound : aflStatsRounds) {
+				String check = aflStatsRound + "-" + aflTeamId;
+				if(statsRoundTracking.contains(check)) {
+					statsRoundTracking.remove(check);
+					useAflStatsRound = aflStatsRound;
+					break;
+				}
+			}
+
+			if(useAflStatsRound == -1) {
+				throw new StatsRoundMissingTeamException(aflTeamId, dflRound, aflRound);
+			}
+
+			AflFixture aflStatsFixture = aflFixtureService.getAflFixtureForRoundAndTeam(useAflStatsRound, aflTeamId);
 
 			roundMapping = new DflRoundMapping();
 			roundMapping.setRound(dflRound);
@@ -350,8 +384,7 @@ public class DflRoundInfoCalculatorHandler {
 							gameStartTimes = new HashMap<>();
 						}
 					}
-				}
-				
+				}	
 			}	
 		}
 		

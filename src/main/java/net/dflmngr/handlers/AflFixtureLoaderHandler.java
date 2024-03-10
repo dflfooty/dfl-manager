@@ -1,6 +1,5 @@
 package net.dflmngr.handlers;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,9 +20,7 @@ import net.dflmngr.model.service.impl.GlobalsServiceImpl;
 
 public class AflFixtureLoaderHandler {
 	private LoggingUtils loggerUtils;
-	
-	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd h:mm a yyyy");
-	
+		
 	GlobalsService globalsService;
 	AflFixtureService aflFixtureService;
 	AflTeamService aflTeamService;
@@ -50,9 +47,11 @@ public class AflFixtureLoaderHandler {
 		List<AflFixture> allGames = new ArrayList<>();
 
 		List<String> aflFixtureUrlParts = globalsService.getAflFixtureUrl();
+		int aflRoundBaseUri = Integer.parseInt(aflFixtureUrlParts.get(1));
 		
 		for(Integer aflRound : aflRounds) {
-			String aflFixtureUrl = aflFixtureUrlParts.get(0) + aflRound;			
+			int aflRoundUri = aflRoundBaseUri + aflRound;
+			String aflFixtureUrl = aflFixtureUrlParts.get(0) + aflRoundUri;
 			allGames.addAll(aflFixtureHtmlHandler.execute(aflRound, aflFixtureUrl));
 		}
 		
@@ -68,29 +67,46 @@ public class AflFixtureLoaderHandler {
 
 		Options options = new Options();
 		Option all = new Option("all", "All rounds");
+		Option startRound = Option.builder("s")
+							.argName("start")
+							.hasArg()
+							.desc("Round to start fixture scraping")
+							.type(Number.class)
+							.build();
+		Option endRound = Option.builder("e")
+							.argName("end")
+							.hasArg()
+							.desc("Round to end fixture scraping")
+							.type(Number.class)
+							.build();
 		options.addOption(all);
+		options.addOption(startRound);
+		options.addOption(endRound);
 
 		try {
-
-			boolean allRounds = false;
 
 			CommandLineParser parser = new DefaultParser();
 			CommandLine cli = parser.parse(options, args);
 			
-			if(cli.hasOption("all")) {
-				allRounds = true;
-			}
-
 			AflFixtureLoaderHandler testing = new AflFixtureLoaderHandler();				
 			List<Integer> testRounds = new ArrayList<>();
 			
-			if(allRounds) {
-				for(int i = 1; i < 24; i++) {
+			if(cli.hasOption("all")) {
+				for(int i = 0; i <= 24; i++) {
+					testRounds.add(i);
+				}
+			} else if(cli.hasOption("s")) {
+				int startAtRound = ((Number) cli.getParsedOptionValue("s")).intValue();
+				int endAtRound = 24;
+				if(cli.hasOption("e")) {
+					endAtRound = ((Number) cli.getParsedOptionValue("e")).intValue();
+				}
+				for(int i = startAtRound; i <= endAtRound; i++) {
 					testRounds.add(i);
 				}
 			} else {
 				int startAtRound = testing.aflFixtureService.getRefreshFixtureStart();
-				for(int i = startAtRound; i < 24; i++) {
+				for(int i = startAtRound; i <= 24; i++) {
 					testRounds.add(i);
 				}
 			}

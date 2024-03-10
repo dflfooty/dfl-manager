@@ -151,7 +151,9 @@ public class AflFixtureServiceImpl extends GenericServiceImpl<AflFixture, AflFix
 
 			fixture.setHomeTeam(updatedFixture.getHomeTeam());
 			fixture.setAwayTeam(updatedFixture.getAwayTeam());
+			fixture.setGround(updatedFixture.getGround());
 			fixture.setStartTime(updatedFixture.getStartTime());
+			fixture.setTimezone(updatedFixture.getTimezone());
 
 			saveFixtures.add(fixture);
 		}

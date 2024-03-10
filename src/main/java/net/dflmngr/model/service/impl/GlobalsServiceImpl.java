@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import net.dflmngr.exceptions.MissingGlobalConfig;
@@ -484,6 +483,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK> i
 
 		return Stream.of(value.split(","))
 			.map(Integer::parseInt)
-			.collect(Collectors.toList());		
+			.sorted()
+			.toList();		
 	}
 }
