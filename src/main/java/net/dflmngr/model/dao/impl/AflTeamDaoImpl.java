@@ -1,6 +1,6 @@
 package net.dflmngr.model.dao.impl;
 
-import javax.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Predicate;
 import net.dflmngr.model.dao.AflTeamDao;
 import net.dflmngr.model.entity.AflTeam;
 import net.dflmngr.model.entity.AflTeam_;

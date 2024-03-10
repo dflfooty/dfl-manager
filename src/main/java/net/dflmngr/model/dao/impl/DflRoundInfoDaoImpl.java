@@ -2,8 +2,8 @@ package net.dflmngr.model.dao.impl;
 
 import java.util.List;
 
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.CriteriaBuilder.In;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 
 import net.dflmngr.model.dao.DflRoundInfoDao;
 import net.dflmngr.model.entity.DflRoundInfo;

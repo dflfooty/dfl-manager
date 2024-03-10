@@ -1,7 +1,7 @@
 package net.dflmngr.model.entity;
 
 import java.io.Serializable;
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import net.dflmngr.model.entity.keys.GlobalsPK;
 

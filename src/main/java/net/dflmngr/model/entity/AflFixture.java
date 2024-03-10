@@ -3,7 +3,7 @@ package net.dflmngr.model.entity;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import net.dflmngr.model.entity.keys.AflFixturePK;
 
