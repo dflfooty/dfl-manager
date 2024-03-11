@@ -1,6 +1,5 @@
 package net.dflmngr.model.dao.impl;
 
-//import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,27 +23,28 @@ public abstract class GenericDaoImpl<E, K> implements GenericDao<E, K> {
 	protected CriteriaDelete<E> criteriaDelete;
 	protected TypedQuery<E> query;
 	protected Root<E> entity;
-	private static EntityManagerFactory factory;
+	private EntityManagerFactory factory;
 	
 	//@PersistenceContext
 	protected EntityManager entityManager;
 	
-	public GenericDaoImpl(Class<E> entityClass) {
-		//ParameterizedType genericSuperclass = (ParameterizedType) getClass().getGenericSuperclass();
-		//this.entityClass = (Class<E>) genericSuperclass.getActualTypeArguments()[0];
+	protected GenericDaoImpl(Class<E> entityClass) {
 		this.entityClass = entityClass;
 
 		String url = System.getenv("JDBC_DATABASE_URL");
 
 		Map<String, Object> configOverrides = new HashMap<>();
 		configOverrides.put("javax.persistence.jdbc.url", url);
+		configOverrides.put("jakarta.persistence.jdbc.url", url);
 
 		Map<String, String> env = System.getenv();
-		for (String envName : env.keySet()) {
-			if(envName.contains("javax.persistence")) {
-				configOverrides.put(envName, env.get(envName));
-			} else if(envName.contains("eclipselink")) {
-				configOverrides.put(envName, env.get(envName));
+		for (Map.Entry<String,String> envVar : env.entrySet()) {
+			String envVarName = envVar.getKey();
+   			String envVarValue = envVar.getValue();
+			if(envVarName.contains("javax.persistence") 
+				|| envVarName.contains("eclipselink")
+				|| envVarName.contains("jakarta.persistence")) {
+				configOverrides.put(envVarName, envVarValue);
 			}
 		}
 		
@@ -66,16 +66,14 @@ public abstract class GenericDaoImpl<E, K> implements GenericDao<E, K> {
 	}
 	
 	public E findById(K id) {
-		E entity = entityManager.find(entityClass, id);
-		return entity;
+		return entityManager.find(entityClass, id);
 	}
 	
 	public List<E> findAll() {		
 		criteriaBuilder = entityManager.getCriteriaBuilder();
 		criteriaQuery = criteriaBuilder.createQuery(entityClass);
 		criteriaQuery.from(entityClass);
-		List<E> entitys = entityManager.createQuery(criteriaQuery).getResultList();
-		return entitys;
+		return entityManager.createQuery(criteriaQuery).getResultList();
 	}
 	
 	public void commit() {
