@@ -16,7 +16,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.mail.BodyPart;
-import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -182,7 +181,6 @@ public class EmailSelectionsHandler {
 				Instant instant = message.getReceivedDate().toInstant();
 				ZonedDateTime receivedDate = ZonedDateTime.ofInstant(instant, ZoneId.of(DflmngrUtils.defaultTimezone));
 
-
 				if(message.isMimeType("multipart/*")) {
 					Multipart multipart = (Multipart) message.getContent();
 
@@ -249,13 +247,7 @@ public class EmailSelectionsHandler {
 
 		loggerUtils.log("info", "Moving messages to Processed folder");
 		Folder processedMessages = store.getFolder("Processed");
-		//inbox.copyMessages(messages, processedMessages);
-
 		((IMAPFolder)inbox).moveMessages(messages, processedMessages);
-
-		//for (int i = 0; i < messages.length; i++) {
-		//	messages[i].setFlag(Flags.Flag.DELETED, true);
-		//}
 
 		inbox.close(true);
 		store.close();
