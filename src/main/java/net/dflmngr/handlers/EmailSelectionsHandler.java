@@ -28,6 +28,7 @@ import javax.mail.Store;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import com.sun.mail.imap.IMAPFolder;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -248,13 +249,13 @@ public class EmailSelectionsHandler {
 
 		loggerUtils.log("info", "Moving messages to Processed folder");
 		Folder processedMessages = store.getFolder("Processed");
-		inbox.copyMessages(messages, processedMessages);
+		//inbox.copyMessages(messages, processedMessages);
 
-		for (int i = 0; i < messages.length; i++) {
-			messages[i].setFlag(Flags.Flag.DELETED, true);
-		}
+		((IMAPFolder)inbox).moveMessages(messages, processedMessages);
 
-		inbox.expunge();
+		//for (int i = 0; i < messages.length; i++) {
+		//	messages[i].setFlag(Flags.Flag.DELETED, true);
+		//}
 
 		inbox.close(true);
 		store.close();
@@ -418,7 +419,7 @@ public class EmailSelectionsHandler {
 		List<Double> emgs = new ArrayList<>();
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
-		loggerUtils.log("info", "Moving messages to Processed folder");
+		loggerUtils.log("info", "Handling selections form file attachement");
 
 		while ((line = reader.readLine()) != null) {
 
@@ -526,7 +527,7 @@ public class EmailSelectionsHandler {
 		List<Integer> outs = new ArrayList<>();
 		List<Double> emgs = new ArrayList<>();
 
-		loggerUtils.log("info", "Moving messages to Processed folder");
+		loggerUtils.log("info", "Handling selections from email text.");
 
 		for (int i = 0; i < emailLines.length; i++) {
 
