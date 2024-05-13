@@ -24,7 +24,7 @@ public class InsAndOutsServiceImpl extends GenericServiceImpl<InsAndOuts, Intege
 		
 		insAndOutsDao.beginTransaction();
 		
-		if(existingInsAndOuts.size() > 0) {
+		if(existingInsAndOuts.isEmpty()) {
 			for(InsAndOuts delete : existingInsAndOuts) {
 				insAndOutsDao.remove(delete);
 			}
@@ -40,10 +40,7 @@ public class InsAndOutsServiceImpl extends GenericServiceImpl<InsAndOuts, Intege
 	}
 	
 	public List<InsAndOuts> getByTeamAndRound(int round, String teamCode) {
-		
-		List<InsAndOuts> insAndOuts = insAndOutsDao.findByTeamAndRound(round, teamCode);
-		
-		return insAndOuts;
+		return insAndOutsDao.findByTeamAndRound(round, teamCode);
 	}
 	
 	public void removeForRound(int round) {
@@ -51,7 +48,7 @@ public class InsAndOutsServiceImpl extends GenericServiceImpl<InsAndOuts, Intege
 		
 		insAndOutsDao.beginTransaction();
 		
-		if(existingInsAndOuts.size() > 0) {
+		if(existingInsAndOuts.isEmpty()) {
 			for(InsAndOuts delete : existingInsAndOuts) {
 				insAndOutsDao.remove(delete);
 			}

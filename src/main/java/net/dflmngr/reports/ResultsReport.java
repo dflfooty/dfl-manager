@@ -232,10 +232,6 @@ public class ResultsReport {
 		workbook.close();
 		out.close();
 		
-		//String s3key = Paths.get("resultsReport", reportName).toString();
-		
-		//AmazonS3Utils.uploadToS3(s3key, reportLocation.toString());
-		
 		return reportLocation.toString();
 	}
 	
@@ -248,7 +244,6 @@ public class ResultsReport {
 		
 		XSSFCellStyle style = workbook.createCellStyle();
 		XSSFFont font = workbook.createFont();
-		//font.setBoldweight(XSSFFont.BOLDWEIGHT_BOLD);
 		font.setBold(true);
 		style.setFont(font);
 				
@@ -291,13 +286,10 @@ public class ResultsReport {
 		
 		XSSFCellStyle style = sheet.getWorkbook().createCellStyle();
 		XSSFFont font = sheet.getWorkbook().createFont();
-		//font.setBoldweight(XSSFFont.BOLDWEIGHT_BOLD);
 		font.setBold(true);
 		style.setFont(font);
 		
 		XSSFCellStyle teamNameStyle = sheet.getWorkbook().createCellStyle();
-		teamNameStyle.setFont(font);
-		//teamNameStyle.setAlignment(XSSFCellStyle.ALIGN_CENTER);
 		teamNameStyle.setAlignment(HorizontalAlignment.CENTER);
 		
 		DflTeam team = dflTeamService.get(fixture.getHomeTeam());
@@ -337,7 +329,6 @@ public class ResultsReport {
 		
 		XSSFCellStyle style = sheet.getWorkbook().createCellStyle();
 		XSSFFont font = sheet.getWorkbook().createFont();
-		//font.setBoldweight(XSSFFont.BOLDWEIGHT_BOLD);
 		font.setBold(true);
 		style.setFont(font);
 		
@@ -348,18 +339,7 @@ public class ResultsReport {
 		
 		List<DflSelectedPlayer> selectedHomeTeam = dflSelectedTeamService.getSelectedTeamForRound(fixture.getRound(), fixture.getHomeTeam());
 		List<DflSelectedPlayer> selectedAwayTeam = dflSelectedTeamService.getSelectedTeamForRound(fixture.getRound(), fixture.getAwayTeam());
-		
-		//DflRoundInfo dflRoundInfo = dflRoundInfoService.get(fixture.getRound());
-		//List<String> playedTeams = new ArrayList<>();
-		//int aflRound = 0;
-		//for(DflRoundMapping roundMapping : dflRoundInfo.getRoundMapping()) {
-		//	int currentAflRound = roundMapping.getAflRound();
-		//	if(aflRound != currentAflRound) {
-		//		playedTeams.addAll(aflFixtureService.getAflTeamsPlayedForRound(currentAflRound));
-		//		aflRound = currentAflRound;
-		//	}
-		//}
-		
+				
 		int playersPlayed = 0;
 		int currentPredictedScore = 0;
 		int homeTotalTrend = 0;
@@ -441,59 +421,6 @@ public class ResultsReport {
 				playerRec.setTrend("");
 			}
 			
-			/*
-			if(score == null) {
-				if(playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
-					playerRec.setPlayed(true);
-					playerRec.setDnp(true);
-					playerRec.setKicks("0");
-					playerRec.setHandballs("0");
-					playerRec.setDisposals("0");
-					playerRec.setMarks("0");
-					playerRec.setHitouts("0");
-					playerRec.setFreesFor("0");
-					playerRec.setFreesAgainst("0");
-					playerRec.setTackles("0");
-					playerRec.setGoals("0");
-					playerRec.setBehinds("0");
-					playerRec.setScore("dnp");
-					playerRec.setTrend("-" + playerRec.getPredicted());
-				} else {
-					playerRec.setPlayed(false);
-					playerRec.setDnp(false);
-					playerRec.setKicks("");
-					playerRec.setHandballs("");
-					playerRec.setDisposals("");
-					playerRec.setMarks("");
-					playerRec.setHitouts("");
-					playerRec.setFreesFor("");
-					playerRec.setFreesAgainst("");
-					playerRec.setTackles("");
-					playerRec.setGoals("");
-					playerRec.setBehinds("");
-					playerRec.setScore("");
-					playerRec.setTrend("");
-				}				
-			} else {
-				RawPlayerStats stats =  playerStats.get(score.getAflPlayerId());
-				
-				playerRec.setPlayed(true);
-				playerRec.setDnp(false);
-				playerRec.setKicksInt(stats.getKicks());
-				playerRec.setHandballsInt(stats.getHandballs());
-				playerRec.setDisposalsInt(stats.getDisposals());
-				playerRec.setMarksInt(stats.getMarks());
-				playerRec.setHitoutsInt(stats.getHitouts());
-				playerRec.setFreesForInt(stats.getFreesFor());
-				playerRec.setFreesAgainstInt(stats.getFreesAgainst());
-				playerRec.setTacklesInt(stats.getTackles());
-				playerRec.setGoalsInt(stats.getGoals());
-				playerRec.setBehindsInt(stats.getBehinds());
-				playerRec.setScoreInt(score.getScore());
-				playerRec.setTrendInt(playerRec.getScoreInt() - playerRec.getPredicted());
-			}
-			*/
-		
 			if(selectedPlayer.isScoreUsed()) {
 				homeTeamData.add(playerRec);
 				if(playerRec.hasPlayed()) {
@@ -520,22 +447,9 @@ public class ResultsReport {
 				}
 				homeTeamEmgData.add(playerRec);
 			}
-			
-			/*
-			if(selectedPlayer.isEmergency() == 0) {
-				homeTeamData.add(playerRec);
-			} else {
-				playerRec.setEmgSort(selectedPlayer.isEmergency());
-				homeTeamEmgData.add(playerRec);
-				if(selectedPlayer.isScoreUsed()) {
-					homeEmgUsed = true;
-				}
-			}
-			*/
 		}
 		
 		playersPlayedCount.put(fixture.getHomeTeam(), playersPlayed);
-		//selectedPlayersCount.put(fixture.getHomeTeam(), selectedHomeTeam.size());
 		selectedPlayersCount.put(fixture.getHomeTeam(), homeTeamData.size());
 		currentPredictedTeamScores.put(fixture.getHomeTeam(), currentPredictedScore);
 		playersPlayed = 0;
@@ -617,60 +531,7 @@ public class ResultsReport {
 				playerRec.setScore("");
 				playerRec.setTrend("");
 			}
-			
-			/*
-			if(score == null) {
-				if(playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
-					playerRec.setPlayed(true);
-					playerRec.setDnp(true);
-					playerRec.setKicks("0");
-					playerRec.setHandballs("0");
-					playerRec.setDisposals("0");
-					playerRec.setMarks("0");
-					playerRec.setHitouts("0");
-					playerRec.setFreesFor("0");
-					playerRec.setFreesAgainst("0");
-					playerRec.setTackles("0");
-					playerRec.setGoals("0");
-					playerRec.setBehinds("0");
-					playerRec.setScore("dnp");
-					playerRec.setTrend("-" + playerRec.getPredicted());
-				} else {
-					playerRec.setPlayed(false);
-					playerRec.setDnp(false);
-					playerRec.setKicks("");
-					playerRec.setHandballs("");
-					playerRec.setDisposals("");
-					playerRec.setMarks("");
-					playerRec.setHitouts("");
-					playerRec.setFreesFor("");
-					playerRec.setFreesAgainst("");
-					playerRec.setTackles("");
-					playerRec.setGoals("");
-					playerRec.setBehinds("");
-					playerRec.setScore("");
-					playerRec.setTrend("");
-				}				
-			} else {
-				RawPlayerStats stats =  playerStats.get(score.getAflPlayerId());
-				
-				playerRec.setPlayed(true);
-				playerRec.setDnp(false);
-				playerRec.setKicksInt(stats.getKicks());
-				playerRec.setHandballsInt(stats.getHandballs());
-				playerRec.setDisposalsInt(stats.getDisposals());
-				playerRec.setMarksInt(stats.getMarks());
-				playerRec.setHitoutsInt(stats.getHitouts());
-				playerRec.setFreesForInt(stats.getFreesFor());
-				playerRec.setFreesAgainstInt(stats.getFreesAgainst());
-				playerRec.setTacklesInt(stats.getTackles());
-				playerRec.setGoalsInt(stats.getGoals());
-				playerRec.setBehindsInt(stats.getBehinds());
-				playerRec.setScoreInt(score.getScore());
-				playerRec.setTrendInt(playerRec.getScoreInt() - playerRec.getPredicted());
-			}
-			/*/
-			
+						
 			if(selectedPlayer.isScoreUsed()) {
 				awayTeamData.add(playerRec);
 				if(playerRec.hasPlayed()) {
@@ -697,22 +558,9 @@ public class ResultsReport {
 				}
 				awayTeamEmgData.add(playerRec);
 			}
-			
-			/*
-			if(selectedPlayer.isEmergency() == 0) {
-				awayTeamData.add(playerRec);
-			} else {
-				playerRec.setEmgSort(selectedPlayer.isEmergency());
-				awayTeamEmgData.add(playerRec);
-				if(selectedPlayer.isScoreUsed()) {
-					awayEmgUsed = true;
-				}
-			}
-			*/
 		}
 		
 		playersPlayedCount.put(fixture.getAwayTeam(), playersPlayed);
-		//selectedPlayersCount.put(fixture.getAwayTeam(), selectedAwayTeam.size());
 		selectedPlayersCount.put(fixture.getAwayTeam(), awayTeamData.size());
 		currentPredictedTeamScores.put(fixture.getAwayTeam(), currentPredictedScore);
 		
@@ -733,14 +581,7 @@ public class ResultsReport {
 		cell.setCellStyle(style);
 		
 		cell = row.createCell(totalsCellBase + 1);
-		
-		/*
-		if(homeEmgUsed) {
-			cell.setCellValue(teamScores.get(fixture.getHomeTeam()).getScore() + "*");
-		} else {
-			cell.setCellValue(teamScores.get(fixture.getHomeTeam()).getScore());
-		}
-		*/
+
 		cell.setCellValue(teamScores.get(fixture.getHomeTeam()).getScore());
 		cell.setCellStyle(style);
 		
@@ -767,13 +608,6 @@ public class ResultsReport {
 		
 		cell = row.createCell(totalsCellBase + 1);
 		
-		/*
-		if(awayEmgUsed) {
-			cell.setCellValue(teamScores.get(fixture.getAwayTeam()).getScore() + "*");
-		} else {
-			cell.setCellValue(teamScores.get(fixture.getAwayTeam()).getScore());
-		}
-		*/
 		cell.setCellValue(teamScores.get(fixture.getAwayTeam()).getScore());
 		cell.setCellStyle(style);
 		
@@ -792,28 +626,8 @@ public class ResultsReport {
 		cell.setCellValue(awayTotalTrend);
 		cell.setCellStyle(style);
 		
-		/*
-		if(!homeEmgUsed && !awayEmgUsed) {
-			sheet.createRow(sheet.getLastRowNum()+1);
-		} else {
-			row = sheet.createRow(sheet.getLastRowNum()+1);
-		}
-		*/
 		sheet.createRow(sheet.getLastRowNum()+1);
 		
-		/*
-		if(homeEmgUsed) {
-			cell = row.createCell(0);
-			cell.setCellValue("* Score includes one or more emerencies");
-			sheet.addMergedRegion(new CellRangeAddress(sheet.getLastRowNum(),sheet.getLastRowNum(),0,(fixtureSheetHeader.length - 1)));
-		}
-		if(awayEmgUsed) {
-			cell = row.createCell(fixtureSheetHeader.length + 1);
-			cell.setCellValue("* Score includes one or more emerencies");
-			sheet.addMergedRegion(new CellRangeAddress(sheet.getLastRowNum(),sheet.getLastRowNum(),(fixtureSheetHeader.length + 1),(fixtureSheetHeader.length * 2)));
-		}
-		*/
-
 		row = sheet.createRow(sheet.getLastRowNum()+1);
 		
 		style = sheet.getWorkbook().createCellStyle();
@@ -1108,10 +922,7 @@ public class ResultsReport {
 	}
 	
 	private String createEmailBody(int round) {
-		
-		//int awayTeamPredictedScore = 0;
-		//int homeTeamPredictedScore = 0;
-		
+
 		Map<String, Integer> currentLadderScores = new HashMap<>();
 		
 		String body = "<html>";
@@ -1129,58 +940,44 @@ public class ResultsReport {
 		
 		for(DflFixture fixture : roundFixtures) {
 			DflTeam homeTeam = dflTeamService.get(fixture.getHomeTeam());
-			//int homeTeamScore = teamScores.get(fixture.getHomeTeam()).getScore();
-			
+
 			int homePlayersPlayed = playersPlayedCount.get(fixture.getHomeTeam());
 			int homeSelectedSize = selectedPlayersCount.get(fixture.getHomeTeam());
 			
 			int homeTeamScore;
 			int homeTeamPredictedScore;
-			//if(playersPlayedCount.get(fixture.getHomeTeam()) == selectedPlayersCount.get(fixture.getHomeTeam())) {
+
 			if(homePlayersPlayed == homeSelectedSize) {
-				//homeTeamPredictedScore = homeTeamScore;
 				homeTeamPredictedScore = teamScores.get(fixture.getHomeTeam()).getScore();
 				homeTeamScore = teamPredictedScores.get(fixture.getHomeTeam()).getPredictedScore();
 			} else {
 				homeTeamPredictedScore = currentPredictedTeamScores.get(fixture.getHomeTeam());
 				homeTeamScore = teamScores.get(fixture.getHomeTeam()).getScore();
 			}
-			//homeTeamPredictedScore = currentPredictedTeamScores.get(fixture.getHomeTeam());
 			
 			DflTeam awayTeam = dflTeamService.get(fixture.getAwayTeam());
-			//int awayTeamScore = teamScores.get(fixture.getAwayTeam()).getScore();
 					
 			int awayPlayersPlayed = playersPlayedCount.get(fixture.getAwayTeam());
 			int awaySelectedSize = selectedPlayersCount.get(fixture.getAwayTeam());
 			
 			int awayTeamScore;
 			int awayTeamPredictedScore;
-			//if(playersPlayedCount.get(fixture.getAwayTeam()) == selectedPlayersCount.get(fixture.getAwayTeam())) {
+
 			if(awayPlayersPlayed == awaySelectedSize) {
-				//awayTeamPredictedScore = awayTeamScore;
 				awayTeamPredictedScore = teamScores.get(fixture.getAwayTeam()).getScore();
 				awayTeamScore = teamPredictedScores.get(fixture.getAwayTeam()).getPredictedScore();
 			} else {
 				awayTeamPredictedScore = currentPredictedTeamScores.get(fixture.getAwayTeam());
 				awayTeamScore = teamScores.get(fixture.getAwayTeam()).getScore();
 			}
-			//awayTeamPredictedScore = currentPredictedTeamScores.get(fixture.getAwayTeam());
 			
 			String resultString = "";
-			//if(homeTeamScore > awayTeamScore) {
 			if(homeTeamPredictedScore > awayTeamPredictedScore) {
 				resultString = " leading ";
 			} else {
 				resultString = " lead by ";
 			}
 			
-			/*
-			body = body + "<li>" 
-				   + homeTeam.getName() + " " + homeTeamScore + " (" + homeTeamPredictedScore + " - " + homePlayersPlayed + "/" + homeSelectedSize + " played)"
-				   + resultString 
-				   + awayTeam.getName() + " " + awayTeamScore + " (" + awayTeamPredictedScore + " - " + awayPlayersPlayed + "/" + awaySelectedSize + " played)"
-				   + "</li>\n";
-			*/
 			body = body + "<li>" 
 					   + homeTeam.getName() + " " + homeTeamPredictedScore + " (" + homeTeamScore + " - " + homePlayersPlayed + "/" + homeSelectedSize + " played)"
 					   + resultString 
@@ -1294,7 +1091,7 @@ private String selectionSummary(int round, List<DflTeam> teams) {
 					
 					text = text + line + "<br>\n";
 				}
-				if(emg1 != null && emg2 != null) {
+				if(emg1 != null || emg2 != null) {
 					String line = "";
 					
 					text = text + "<b>Emgs</b>\n";
@@ -1361,9 +1158,7 @@ private String selectionSummary(int round, List<DflTeam> teams) {
 						System.out.println("usage: RawStatsReport <round> optional [Final <email>]");
 					}
 				}
-				
-				//JndiProvider.bind();
-				
+								
 				ResultsReport report = new ResultsReport();
 				report.configureLogging("ResultsReport");
 				report.execute(round, isFinal, email);
