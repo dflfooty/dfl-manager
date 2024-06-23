@@ -24,7 +24,7 @@ public class InsAndOutsServiceImpl extends GenericServiceImpl<InsAndOuts, Intege
 		
 		insAndOutsDao.beginTransaction();
 		
-		if(existingInsAndOuts.isEmpty()) {
+		if(!existingInsAndOuts.isEmpty()) {
 			for(InsAndOuts delete : existingInsAndOuts) {
 				insAndOutsDao.remove(delete);
 			}
@@ -48,7 +48,7 @@ public class InsAndOutsServiceImpl extends GenericServiceImpl<InsAndOuts, Intege
 		
 		insAndOutsDao.beginTransaction();
 		
-		if(existingInsAndOuts.isEmpty()) {
+		if(!existingInsAndOuts.isEmpty()) {
 			for(InsAndOuts delete : existingInsAndOuts) {
 				insAndOutsDao.remove(delete);
 			}

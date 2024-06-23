@@ -338,33 +338,37 @@ public class TeamInsOutsLoaderHandler {
 		for(DflSelectedPlayer tmpSelectedPlayer : tmpSelectedTeam) {
 			if(selectedPlayerIds.contains(tmpSelectedPlayer.getPlayerId())) {
 				loggerUtils.log("info", "Duplicate selected player: player={}", tmpSelectedPlayer);
-			} else {
-				DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
-				selectedPlayer.setPlayerId(tmpSelectedPlayer.getPlayerId());
-				selectedPlayer.setRound(round);
-				selectedPlayer.setTeamCode(teamCode);
-				selectedPlayer.setTeamPlayerId(tmpSelectedPlayer.getTeamPlayerId());
-				selectedPlayer.setEmergency(tmpSelectedPlayer.isEmergency());
-				
-				if(currentSelectedTeamMap.containsKey(tmpSelectedPlayer.getPlayerId())) {
-					DflSelectedPlayer currentSelectedPlayer = currentSelectedTeamMap.get(tmpSelectedPlayer.getPlayerId());
-
-					selectedPlayer.setHasPlayed(currentSelectedPlayer.hasPlayed());
-					selectedPlayer.setDnp(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.isDnp() : tmpSelectedPlayer.isDnp());
-					selectedPlayer.setScoreUsed(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.isScoreUsed() : tmpSelectedPlayer.isScoreUsed());
-					selectedPlayer.setReplacementInd(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.getReplacementInd() : tmpSelectedPlayer.getReplacementInd());
-				} else {
-					selectedPlayer.setDnp(false);
-					selectedPlayer.setScoreUsed(tmpSelectedPlayer.isEmergency() == 0);
-				}
-				
-				selectedTeam.add(selectedPlayer);
+			} else {				
+				selectedTeam.add(setSelectedPlayer(round, teamCode, tmpSelectedPlayer, currentSelectedTeamMap));
 				selectedPlayerIds.add(tmpSelectedPlayer.getPlayerId());
 			}
 		}
 					
 		loggerUtils.log("info", "Saving selected to DB: selected team={}", selectedTeam);
 		dflSelectedTeamService.replaceTeamForRound(round, teamCode, selectedTeam);
+	}
+
+	private DflSelectedPlayer setSelectedPlayer(int round, String teamCode, DflSelectedPlayer tmpSelectedPlayer, Map<Integer, DflSelectedPlayer> currentSelectedTeamMap) {
+		DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
+		selectedPlayer.setPlayerId(tmpSelectedPlayer.getPlayerId());
+		selectedPlayer.setRound(round);
+		selectedPlayer.setTeamCode(teamCode);
+		selectedPlayer.setTeamPlayerId(tmpSelectedPlayer.getTeamPlayerId());
+		selectedPlayer.setEmergency(tmpSelectedPlayer.isEmergency());
+		
+		if(currentSelectedTeamMap.containsKey(tmpSelectedPlayer.getPlayerId())) {
+			DflSelectedPlayer currentSelectedPlayer = currentSelectedTeamMap.get(tmpSelectedPlayer.getPlayerId());
+
+			selectedPlayer.setHasPlayed(currentSelectedPlayer.hasPlayed());
+			selectedPlayer.setDnp(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.isDnp() : tmpSelectedPlayer.isDnp());
+			selectedPlayer.setScoreUsed(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.isScoreUsed() : tmpSelectedPlayer.isScoreUsed());
+			selectedPlayer.setReplacementInd(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.getReplacementInd() : tmpSelectedPlayer.getReplacementInd());
+		} else {
+			selectedPlayer.setDnp(false);
+			selectedPlayer.setScoreUsed(tmpSelectedPlayer.isEmergency() == 0);
+		}
+
+		return selectedPlayer;
 	}
 
 	private void createPredictions(int round, String teamCode) {
