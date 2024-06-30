@@ -88,6 +88,8 @@ public class AflFixtureHtmlHandler {
 
 		driver.get(aflFixtureUrl);
 
+        List<AflFixture> games = null;
+
 		int retry = 1;
 		while(retry <= 5) {
 			loggerUtils.log("info", "Try: {}", retry);
@@ -99,13 +101,18 @@ public class AflFixtureHtmlHandler {
                     Thread.currentThread().interrupt();
                 }
 			} else {
-				break;
+                try {
+                    WebElement fixtureContent = driver.findElements(By.id("main-content")).get(0);
+		            games = getFixtureData(aflRound, fixtureContent, aflFixtureUrl);
+                } catch (Exception ex) {
+                    loggerUtils.logException("Error loading AFL fxiture", ex);
+                }
+				if(games != null && !games.isEmpty()) {
+                    break;
+                }
 			}
 			retry++;
 		}
-
-        WebElement fixtureContent = driver.findElements(By.id("main-content")).get(0);
-		List<AflFixture> games = getFixtureData(aflRound, fixtureContent, aflFixtureUrl);
 
         driver.quit();
 
