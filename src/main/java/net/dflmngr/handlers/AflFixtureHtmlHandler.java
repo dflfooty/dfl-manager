@@ -75,12 +75,16 @@ public class AflFixtureHtmlHandler {
         chromeOptions.addArguments("--disable-dev-shm-usage");
         chromeOptions.addArguments("--remote-allow-origins=*");
 
+        int webdriverTimeout = globalsService.getWebdriverTimeout();
+		int webdriverWait = globalsService.getWebdriverWait();
+
+        chromeOptions.setImplicitWaitTimeout(Duration.ofSeconds(webdriverWait));
+        chromeOptions.setPageLoadTimeout(Duration.ofSeconds(webdriverTimeout));
+
 		WebDriver driver = new ChromeDriver(chromeOptions);
 
-		int webdriverTimeout = globalsService.getWebdriverTimeout();
-		int webdriverWait = globalsService.getWebdriverWait();
-		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(webdriverWait));
-		driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(webdriverTimeout));
+		//driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(webdriverWait));
+		//driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(webdriverTimeout));
 
 		driver.get(aflFixtureUrl);
 
