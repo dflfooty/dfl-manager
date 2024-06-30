@@ -77,14 +77,10 @@ public class AflFixtureHtmlHandler {
 
         int webdriverTimeout = globalsService.getWebdriverTimeout();
 		int webdriverWait = globalsService.getWebdriverWait();
-
         chromeOptions.setImplicitWaitTimeout(Duration.ofSeconds(webdriverWait));
         chromeOptions.setPageLoadTimeout(Duration.ofSeconds(webdriverTimeout));
 
 		WebDriver driver = new ChromeDriver(chromeOptions);
-
-		//driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(webdriverWait));
-		//driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(webdriverTimeout));
 
 		driver.get(aflFixtureUrl);
 
@@ -152,11 +148,8 @@ public class AflFixtureHtmlHandler {
                 if(timeWithTZ.equalsIgnoreCase("TBC")) {
                     loggerUtils.log("info", "Fixutre start time TBC: round={}, game={}", fixture.getRound(), fixture.getGame());
                 } else {
-                    System.out.println("#### TimeWitTZ: " + timeWithTZ + " ####");
                     String time = timeWithTZ.split("\n")[0].toUpperCase();
-                    System.out.println("#### Time: " + time + " ####");
                     String dateTimeString = date + " " + time + " " + currentYear;
-                    System.out.println("#### DateTime: " + dateTimeString + " ####");
                     try {
                         ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(defaultTimezone));
                         fixture.setStartTime(localStart);
