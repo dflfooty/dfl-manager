@@ -141,7 +141,9 @@ public class AflFixtureHtmlHandler {
                 if(time.equalsIgnoreCase("TBC")) {
                     loggerUtils.log("info", "Fixutre start time TBC: round={}, game={}", fixture.getRound(), fixture.getGame());
                 } else {
+                    System.out.println("#### Time: " + time + " ####");
                     String dateTimeString = date + " " + time.split("\n")[0] + " " + currentYear;
+                    System.out.println("#### DateTime: " + dateTimeString + " ####");
                     try {
                         ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(defaultTimezone));
                         fixture.setStartTime(localStart);
