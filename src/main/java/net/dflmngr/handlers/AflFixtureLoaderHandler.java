@@ -114,6 +114,7 @@ public class AflFixtureLoaderHandler {
 			testing.execute(testRounds);
 		} catch (Exception e) {
 			e.printStackTrace();
+			System.exit(1);
 		}
 	}
 }

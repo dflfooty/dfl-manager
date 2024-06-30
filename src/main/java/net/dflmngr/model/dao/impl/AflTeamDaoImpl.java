@@ -18,8 +18,6 @@ public class AflTeamDaoImpl extends GenericDaoImpl<AflTeam, String> implements A
 		Predicate equals = criteriaBuilder.equal(entity.get(AflTeam_.name), name);
 		
 		criteriaQuery.where(criteriaBuilder.and(equals));
-		AflTeam entity = entityManager.createQuery(criteriaQuery).getSingleResult();
-		
-		return entity;
+		return entityManager.createQuery(criteriaQuery).getSingleResult();
 	}
 }
