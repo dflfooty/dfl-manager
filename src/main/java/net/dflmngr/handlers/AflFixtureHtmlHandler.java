@@ -142,7 +142,7 @@ public class AflFixtureHtmlHandler {
                     loggerUtils.log("info", "Fixutre start time TBC: round={}, game={}", fixture.getRound(), fixture.getGame());
                 } else {
                     System.out.println("#### Time: " + time + " ####");
-                    String dateTimeString = date + " " + time.split("\n")[0] + " " + currentYear;
+                    String dateTimeString = date + " " + time.split("\n")[0].toUpperCase() + " " + currentYear;
                     System.out.println("#### DateTime: " + dateTimeString + " ####");
                     try {
                         ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(defaultTimezone));
