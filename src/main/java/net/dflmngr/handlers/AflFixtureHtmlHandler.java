@@ -137,12 +137,14 @@ public class AflFixtureHtmlHandler {
                 fixture.setGround(groundData.get("ground"));
                 fixture.setTimezone(groundData.get("timezone"));
 
-                String time = fixtureRow.findElement(By.className("fixtures__status-label")).getText();
-                if(time.equalsIgnoreCase("TBC")) {
+                String timeWithTZ = fixtureRow.findElement(By.className("fixtures__status-label")).getText();
+                if(timeWithTZ.equalsIgnoreCase("TBC")) {
                     loggerUtils.log("info", "Fixutre start time TBC: round={}, game={}", fixture.getRound(), fixture.getGame());
                 } else {
+                    System.out.println("#### TimeWitTZ: " + timeWithTZ + " ####");
+                    String time = timeWithTZ.split("\n")[0].toUpperCase();
                     System.out.println("#### Time: " + time + " ####");
-                    String dateTimeString = date + " " + time.split("\n")[0].toUpperCase() + " " + currentYear;
+                    String dateTimeString = date + " " + time + " " + currentYear;
                     System.out.println("#### DateTime: " + dateTimeString + " ####");
                     try {
                         ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(defaultTimezone));
