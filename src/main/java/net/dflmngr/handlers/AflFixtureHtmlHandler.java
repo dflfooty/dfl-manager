@@ -151,9 +151,6 @@ public class AflFixtureHtmlHandler {
                     String time = timeWithTZ.split("\n")[0].toUpperCase();
                     String tz = timeWithTZ.split("\n")[1].toUpperCase();
                     String dateTimeString = date + " " + time + " " + currentYear;
-                    System.out.println("#### " + dateTimeString + " ####");
-                    System.out.println("#### " + timeWithTZ + " ####");
-                    System.out.println("#### " + tz + " ####");
                     try {
                         String scrappedTZ = tz.equalsIgnoreCase("GMT") ? "GMT" : defaultTimezone;
                         ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(scrappedTZ));
