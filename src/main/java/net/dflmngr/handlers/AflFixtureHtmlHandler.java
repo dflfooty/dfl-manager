@@ -150,6 +150,7 @@ public class AflFixtureHtmlHandler {
                 } else {
                     String time = timeWithTZ.split("\n")[0].toUpperCase();
                     String dateTimeString = date + " " + time + " " + currentYear;
+                    System.out.println("#### " + dateTimeString + " ####");
                     try {
                         ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(defaultTimezone));
                         fixture.setStartTime(localStart);
