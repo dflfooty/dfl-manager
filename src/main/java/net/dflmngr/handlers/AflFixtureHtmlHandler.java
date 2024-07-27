@@ -149,11 +149,14 @@ public class AflFixtureHtmlHandler {
                     loggerUtils.log("info", "Fixutre start time TBC: round={}, game={}", fixture.getRound(), fixture.getGame());
                 } else {
                     String time = timeWithTZ.split("\n")[0].toUpperCase();
+                    String tz = timeWithTZ.split("\n")[1].toUpperCase();
                     String dateTimeString = date + " " + time + " " + currentYear;
                     System.out.println("#### " + dateTimeString + " ####");
                     System.out.println("#### " + timeWithTZ + " ####");
+                    System.out.println("#### " + tz + " ####");
                     try {
-                        ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(defaultTimezone));
+                        String scrappedTZ = tz.equalsIgnoreCase("GMT") ? "GMT" : defaultTimezone;
+                        ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(scrappedTZ));
                         fixture.setStartTime(localStart);
                     } catch (Exception ex) {
                         throw new AflFixtureException(aflFixtureUrl, ex);
