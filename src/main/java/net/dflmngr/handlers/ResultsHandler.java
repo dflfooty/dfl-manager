@@ -98,13 +98,7 @@ public class ResultsHandler {
 			loggerUtils.log("info", "Inprogress AFL rounds {}", aflRounds);
 			
 			if(!isStatsRoundOnly(aflRounds)) {
-				for(DflRoundInfo roundInfo : dflRoundsInfo) {
-					for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
-						if(aflRounds.contains(roundMapping.getAflRound()) && !roundsToProcess.contains(roundMapping.getRound())) {
-							roundsToProcess.add(roundMapping.getRound());
-						}
-					}
-				}
+				roundsToProcess.addAll(getRoundsToProcess(aflRounds, dflRoundsInfo));
 			}
 		} else {
 			loggerUtils.log("info", "Using specfic round");
@@ -125,6 +119,20 @@ public class ResultsHandler {
 
 		loggerUtils.log("info", "Stats AFL round only: {} AFL rounds: {}", isStatsRound, aflRounds);
 		return isStatsRound;
+	}
+
+	private List<Integer> getRoundsToProcess(List<Integer> aflRounds, List<DflRoundInfo> dflRoundsInfo) {
+		List<Integer> roundsToProcess = new ArrayList<>();
+
+		for(DflRoundInfo roundInfo : dflRoundsInfo) {
+			for(DflRoundMapping roundMapping : roundInfo.getRoundMapping()) {
+				if(aflRounds.contains(roundMapping.getAflRound()) && !roundsToProcess.contains(roundMapping.getRound())) {
+					roundsToProcess.add(roundMapping.getRound());
+				}
+			}
+		}
+
+		return roundsToProcess;
 	}
 
 	private void comppleteAflGames(boolean isFinal) {

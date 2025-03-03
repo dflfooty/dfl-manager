@@ -2,7 +2,7 @@ package net.dflmngr.model.dao.impl;
 
 import java.util.List;
 
-import javax.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Predicate;
 
 import net.dflmngr.model.dao.DflPlayerScoresDao;
 import net.dflmngr.model.entity.DflPlayerScores;

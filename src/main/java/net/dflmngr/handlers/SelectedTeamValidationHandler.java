@@ -175,10 +175,12 @@ public class SelectedTeamValidationHandler {
 				selectedTeam = new ArrayList<>();
 
 				for(int in : ins) {
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, in);
+					DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
 					if(checkedIns.contains(in)) {
 						loggerUtils.log("info", "Duplicates ins, not included in={}.", in);
 						validationResult.duplicateIns = true;
-						DflPlayer player = dflPlayerService.get(in);
 						dupInPlayers.add(player);
 					} else {
 						if(in < 1 || in > 45) {
@@ -190,6 +192,7 @@ public class SelectedTeamValidationHandler {
 						} else {
 							DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
 
+							selectedPlayer.setPlayerId(player.getPlayerId());
 							selectedPlayer.setRound(round);
 							selectedPlayer.setTeamCode(teamCode);
 							selectedPlayer.setTeamPlayerId(in);
@@ -207,10 +210,12 @@ public class SelectedTeamValidationHandler {
 				for(Double emg : emergencies) {
 					int emergency = emg.intValue();
 
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, emergency);
+					DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
 					if(checkedEmgs.contains(emg) || checkedIns.contains(emergency)) {
 						loggerUtils.log("info", "Duplicate emgergency, not included in={}.", emergency);
 						validationResult.duplicateEmgs = true;
-						DflPlayer player = dflPlayerService.get(emergency);
 						dupEmgPlayers.add(player);
 					} else {
 						if(emergency < 1 || emergency > 45) {
@@ -222,6 +227,7 @@ public class SelectedTeamValidationHandler {
 						} else {
 							DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
 
+							selectedPlayer.setPlayerId(player.getPlayerId());
 							selectedPlayer.setRound(round);
 							selectedPlayer.setTeamCode(teamCode);
 							selectedPlayer.setTeamPlayerId(emergency);
@@ -260,10 +266,12 @@ public class SelectedTeamValidationHandler {
 				List<Integer> outs = insAndOuts.get("out");
 
 				for(int in : ins) {
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, in);
+					DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
 					if(checkedIns.contains(in)) {
 						loggerUtils.log("info", "Duplicates ins, not included in={}.", in);
 						validationResult.duplicateIns = true;
-						DflPlayer player = dflPlayerService.get(in);
 						dupInPlayers.add(player);
 					} else {
 						if(in < 1 || in > 45) {
@@ -285,6 +293,7 @@ public class SelectedTeamValidationHandler {
 							if(!found) {
 								DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
 
+								selectedPlayer.setPlayerId(player.getPlayerId());
 								selectedPlayer.setRound(round);
 								selectedPlayer.setTeamCode(teamCode);
 								selectedPlayer.setTeamPlayerId(in);
@@ -296,7 +305,6 @@ public class SelectedTeamValidationHandler {
 							} else {
 								if(!isEmg) {
 									loggerUtils.log("info", "Player already selected, teamPlayerId={}.", in);
-									DflPlayer player = dflPlayerService.get(in);
 									selectedWarnPlayers.add(player);
 									validationResult.selectedWarning = true;
 								}
@@ -308,10 +316,12 @@ public class SelectedTeamValidationHandler {
 				}
 
 				for(int out : outs) {
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, out);
+					DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
 					if(checkedOuts.contains(out)) {
 						loggerUtils.log("info", "Duplicates out, not included in={}.", out);
 						validationResult.duplicateOuts = true;
-						DflPlayer player = dflPlayerService.get(out);
 						dupOutPlayers.add(player);
 					} else {
 						if(out < 1 || out > 45) {
@@ -330,7 +340,6 @@ public class SelectedTeamValidationHandler {
 							}
 							if(!found) {
 								loggerUtils.log("info", "Dropped player not selected, teamPlayerId={}.", out);
-								DflPlayer player = dflPlayerService.get(out);
 								droppedWarnPlayers.add(player);
 								validationResult.droppedWarning = true;
 							}
@@ -343,10 +352,12 @@ public class SelectedTeamValidationHandler {
 				for(Double emg : emergencies) {
 					int emergency = emg.intValue();
 
+					DflTeamPlayer teamPlayer = dflTeamPlayerService.getTeamPlayerForTeam(teamCode, emergency);
+					DflPlayer player = dflPlayerService.get(teamPlayer.getPlayerId());
+
 					if(checkedEmgs.contains(emg) || checkedIns.contains(emergency)) {
 						loggerUtils.log("info", "Duplicate emgergency, not included emg={}.", emergency);
 						validationResult.duplicateEmgs = true;
-						DflPlayer player = dflPlayerService.get(emergency);
 						dupEmgPlayers.add(player);
 					} else {
 						if(emergency < 1 || emergency > 45) {
@@ -367,6 +378,7 @@ public class SelectedTeamValidationHandler {
 							} else {
 								DflSelectedPlayer selectedPlayer = new DflSelectedPlayer();
 
+								selectedPlayer.setPlayerId(player.getPlayerId());
 								selectedPlayer.setRound(round);
 								selectedPlayer.setTeamCode(teamCode);
 								selectedPlayer.setTeamPlayerId(emergency);

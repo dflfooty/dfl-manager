@@ -16,7 +16,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.mail.BodyPart;
-import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -28,6 +27,7 @@ import javax.mail.Store;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import com.sun.mail.imap.IMAPFolder;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -181,7 +181,6 @@ public class EmailSelectionsHandler {
 				Instant instant = message.getReceivedDate().toInstant();
 				ZonedDateTime receivedDate = ZonedDateTime.ofInstant(instant, ZoneId.of(DflmngrUtils.defaultTimezone));
 
-
 				if(message.isMimeType("multipart/*")) {
 					Multipart multipart = (Multipart) message.getContent();
 
@@ -248,13 +247,7 @@ public class EmailSelectionsHandler {
 
 		loggerUtils.log("info", "Moving messages to Processed folder");
 		Folder processedMessages = store.getFolder("Processed");
-		inbox.copyMessages(messages, processedMessages);
-
-		for (int i = 0; i < messages.length; i++) {
-			messages[i].setFlag(Flags.Flag.DELETED, true);
-		}
-
-		inbox.expunge();
+		((IMAPFolder)inbox).moveMessages(messages, processedMessages);
 
 		inbox.close(true);
 		store.close();
@@ -418,7 +411,7 @@ public class EmailSelectionsHandler {
 		List<Double> emgs = new ArrayList<>();
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
-		loggerUtils.log("info", "Moving messages to Processed folder");
+		loggerUtils.log("info", "Handling selections form file attachement");
 
 		while ((line = reader.readLine()) != null) {
 
@@ -526,7 +519,7 @@ public class EmailSelectionsHandler {
 		List<Integer> outs = new ArrayList<>();
 		List<Double> emgs = new ArrayList<>();
 
-		loggerUtils.log("info", "Moving messages to Processed folder");
+		loggerUtils.log("info", "Handling selections from email text.");
 
 		for (int i = 0; i < emailLines.length; i++) {
 

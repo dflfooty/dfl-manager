@@ -16,7 +16,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import io.github.bonigarcia.wdm.WebDriverManager;
 import net.dflmngr.exceptions.HtmlPageLoadException;
 import net.dflmngr.exceptions.UnexpectedHtmlException;
 import net.dflmngr.logging.LoggingUtils;
@@ -62,8 +61,6 @@ public class AflPlayerLoaderHtmlHandler {
 
 	private List<AflPlayer> officialPlayerLoad(String teamId, String url) {
 		List<AflPlayer> aflPlayers;
-
-		WebDriverManager.chromedriver().setup();
 
 		ChromeOptions chromeOptions = new ChromeOptions();
         chromeOptions.addArguments("--no-sandbox");

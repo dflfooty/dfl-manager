@@ -1,33 +1,27 @@
-FROM maven:3.9-eclipse-temurin-17-focal AS build_step
-RUN mkdir /build
-COPY . /build
-WORKDIR /build
-RUN mvn clean package -DskipTests
+FROM eclipse-temurin:17-jdk-jammy AS base
+WORKDIR /app
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+RUN ./mvnw -T 2 dependency:resolve dependency:resolve-plugins
+COPY src src
 
-FROM eclipse-temurin:17-jdk-focal
+FROM base AS build
+RUN ./mvnw -T 2 clean package -DskipTests
+
+FROM eclipse-temurin:17-jre-jammy
 
 # Install chrome
-RUN apt-get update; apt-get clean
-RUN apt-get install -y wget
-RUN apt-get install -y gnupg
+RUN apt-get update && apt-get install -y wget gnupg && apt-get clean
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
     && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
-RUN apt-get update && apt-get -y install google-chrome-stable
-
-RUN mkdir /app && \
-    mkdir /app/target && \
-    mkdir /app/target/dependency && \
-    mkdir /app/bin
-
-COPY --from=build_step /build/target/dflmngr.jar \
-                       /app/target/
-COPY --from=build_step /build/target/dependency/*.jar \
-                       /app/target/dependency/
-COPY --from=build_step /build/bin/*.sh \
-                       /app/bin/
-
-RUN mkdir $HOME/.ssh && chmod 700 $HOME/.ssh
+RUN apt-get update && apt-get -y install google-chrome-stable && apt-get clean
 
 WORKDIR /app
-CMD java -classpath /app/target/dflmngr.jar:/app/target/dependency/* net.dflmngr.scheduler.JobScheduler
 
+COPY --from=build /app/target/dflmngr.jar target/
+COPY --from=build /app/target/dependency/*.jar target/dependency/
+COPY bin/*.sh bin/
+
+RUN mkdir "$HOME"/.ssh && chmod 700 "$HOME"/.ssh
+
+CMD java -classpath /app/target/dflmngr.jar:/app/target/dependency/* net.dflmngr.scheduler.JobScheduler
