@@ -1102,7 +1102,7 @@ private String selectionSummary(int round, List<DflTeam> teams) {
 						if(line.length() == 0) {
 							line = emg1.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
 						} else {
-							line = line + ", " + emg2.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
+							line = line + ", " + emg1.getTeamPlayerId() + " " + player.getFirstName() + " " + player.getLastName() + " " + player.getAflClub() + " " + player.getPosition();
 						}
 					}
 					if(emg2 != null) {

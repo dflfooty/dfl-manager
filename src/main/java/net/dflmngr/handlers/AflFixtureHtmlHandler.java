@@ -7,6 +7,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.openqa.selenium.By;
@@ -124,48 +125,21 @@ public class AflFixtureHtmlHandler {
         String date = "";
 
 		for(WebElement fixtureRow : fixtureRows) {
-            if(fixtureRow.getAttribute(HTML_CLASS_STRING).contains("fixtures__date-header")) {
+            String rowData = fixtureRow.getAttribute(HTML_CLASS_STRING);
+
+            if(rowData == null) {
+                throw new AflFixtureException(aflFixtureUrl);
+            } else if(rowData.contains("fixtures__date-header")) {
                 date = fixtureRow.getText().trim();
-            } else if(fixtureRow.getAttribute(HTML_CLASS_STRING).contains("fixtures__item")) {
-                AflFixture fixture = new AflFixture();
-                fixture.setRound(aflRound);
-                fixture.setGame(gameNo);
-
-                List<WebElement> teams = fixtureRow.findElements(By.className("fixtures__match-team-name"));
-                
-                String homeTeam = teams.get(0).getAttribute("textContent");
-                String awayTeam = teams.get(1).getAttribute("textContent");
-                fixture.setHomeTeam(aflTeamService.getAflTeamByName(homeTeam).getTeamId());
-                fixture.setAwayTeam(aflTeamService.getAflTeamByName(awayTeam).getTeamId());
-                
-                String ground = fixtureRow.findElement(By.className("fixtures__match-venue")).getText()
-                                    .split(",")[0].replaceAll("[^a-zA-Z0-9]", "");
-                Map<String, String> groundData = globalsService.getGround(ground);
-                fixture.setGround(groundData.get("ground"));
-                fixture.setTimezone(groundData.get("timezone"));
-
-                String timeWithTZ = fixtureRow.findElement(By.className("fixtures__status-label")).getText();
-                if(timeWithTZ.equalsIgnoreCase("TBC")) {
-                    loggerUtils.log("info", "Fixutre start time TBC: round={}, game={}", fixture.getRound(), fixture.getGame());
-                } else {
-                    String time = timeWithTZ.split("\n")[0].toUpperCase();
-                    String tz = timeWithTZ.split("\n")[1].toUpperCase();
-                    String dateTimeString = date + " " + time + " " + currentYear;
-                    try {
-                        String scrappedTZ = tz.equalsIgnoreCase("GMT") ? "GMT" : defaultTimezone;
-                        ZonedDateTime localStart = LocalDateTime.parse((dateTimeString), formatter).atZone(ZoneId.of(scrappedTZ));
-                        fixture.setStartTime(localStart);
-                    } catch (Exception ex) {
-                        throw new AflFixtureException(aflFixtureUrl, ex);
-                    }
-                }
+            } else if(rowData.contains("fixtures__item")) {
+                AflFixture fixture = setAflFixture(aflRound, gameNo, fixtureRow, date, aflFixtureUrl);
 
                 loggerUtils.log("info", "Scraped fixture data: {}", fixture);
 
                 games.add(fixture);
 
                 gameNo++;
-            } else if(fixtureRow.getAttribute(HTML_CLASS_STRING).contains("fixtures__bye-fixtures")) {
+            } else if(rowData.contains("fixtures__bye-fixtures")) {
                 //ignore
             } else {
                 throw new AflFixtureException(aflFixtureUrl, fixtureRow.getAttribute(HTML_CLASS_STRING));
@@ -175,11 +149,51 @@ public class AflFixtureHtmlHandler {
         return games;
     }
 
+    AflFixture setAflFixture(int aflRound, int gameNo, WebElement fixtureRow, String date, String aflFixtureUrl) {
+        AflFixture fixture = new AflFixture();
+        fixture.setRound(aflRound);
+        fixture.setGame(gameNo);
+
+        List<WebElement> teams = fixtureRow.findElements(By.className("fixtures__match-team-name"));
+        
+        String homeTeam = teams.get(0).getAttribute("textContent");
+        String awayTeam = teams.get(1).getAttribute("textContent");
+        fixture.setHomeTeam(aflTeamService.getAflTeamByName(homeTeam).getTeamId());
+        fixture.setAwayTeam(aflTeamService.getAflTeamByName(awayTeam).getTeamId());
+        
+        String ground = fixtureRow.findElement(By.className("fixtures__match-venue")).getText()
+                            .split(",")[0].replaceAll("[^a-zA-Z0-9]", "");
+        Map<String, String> groundData = globalsService.getGround(ground);
+        fixture.setGround(groundData.get("ground"));
+        fixture.setTimezone(groundData.get("timezone"));
+
+        String timeWithTZ = fixtureRow.findElement(By.className("fixtures__status-label")).getText();
+        if(timeWithTZ.equalsIgnoreCase("TBC") || timeWithTZ.equalsIgnoreCase("Postponed")) {
+            loggerUtils.log("info", "Fixutre start time TBC: round={}, game={}", fixture.getRound(), fixture.getGame());
+        } else {
+            String time = timeWithTZ.split("\n")[0].toUpperCase();
+            String tz = timeWithTZ.split("\n")[1].toUpperCase();
+            String dateTimeString = date + " " + time + " " + currentYear;
+            try {
+                String scrappedTZ = tz.equalsIgnoreCase("GMT") ? "GMT" : defaultTimezone;
+                ZonedDateTime localStart = LocalDateTime.parse(dateTimeString, formatter.withLocale(Locale.US)).atZone(ZoneId.of(scrappedTZ));
+                fixture.setStartTime(localStart);
+            } catch (Exception ex) {
+                throw new AflFixtureException(aflFixtureUrl, ex);
+            }
+        }
+
+        return fixture;
+    }
+
     List<WebElement> getFixtureRows(WebElement fixtureContent, String aflFixtureUrl) {
         List<WebElement> contents = fixtureContent.findElements(By.className("wrapper"));
         List<WebElement> fixtureRows = null;
         for(WebElement content : contents) {
-            if(content.getAttribute(HTML_CLASS_STRING).equals("wrapper")) {
+            String contentData = content.getAttribute(HTML_CLASS_STRING);
+            if(contentData == null) {
+                throw new AflFixtureException(aflFixtureUrl);
+            } else if(contentData.equals("wrapper")) {
                 fixtureRows = content.findElements(By.xpath("./*"));
             }
             if(fixtureRows != null && !fixtureRows.isEmpty()) {
