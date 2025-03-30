@@ -239,6 +239,7 @@ public class ScoresCalculatorHandler {
 					aflRound = currentAflRound;
 				}
 			}
+			loggerUtils.log("info", "Played teams for AFL round={} teams={}", aflRound, playedTeams);
 		}
 
 		int ffCount = 0;
