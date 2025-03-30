@@ -459,6 +459,10 @@ public class ScoresCalculatorHandler {
 									break;
 								default: throw new UnknownPositionException(emgPosition);
 							}
+
+							if(replacement != null) {
+								break;
+							}
 						}
 
 						if(replacement != null) {
