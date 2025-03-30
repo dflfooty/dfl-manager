@@ -289,7 +289,7 @@ public class ScoresCalculatorHandler {
 				loggerUtils.log("info", "Selected player: team={} teamPlayerId={} playerId={} has no score recorded",
 								selectedPlayer.getTeamCode(), selectedPlayer.getTeamPlayerId(), selectedPlayer.getPlayerId());
 				if(playedTeams.contains(DflmngrUtils.dflAflTeamMap.get(player.getAflClub()))) {
-					loggerUtils.log("info", "AFL team as player marking as DNP");
+					loggerUtils.log("info", "AFL team has played, marking as DNP");
 					selectedPlayer.setDnp(true);
 					selectedPlayer.setScoreUsed(false);
 					selectedPlayer.setHasPlayed(true);
@@ -417,55 +417,46 @@ public class ScoresCalculatorHandler {
 				}
 				dnpPlayers.removeAll(replacedDnpPlayers);
 				if(!dnpPlayers.isEmpty()) {
-					loggerUtils.log("info", "Replacing DNPs by promoting bench players");
+					loggerUtils.log("info", "Replacing DNPs if position allows");
 
 					for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
 						DflSelectedPlayer replacement = null;
 
-						String dnpPosition = playerPositions.get(dnpPlayer.getPlayerId());
-
 						for(DflSelectedPlayer emergency : emergencies) {
-							if(benchPositions.size() == 4) {
-								if(benchPositions.contains(dnpPosition)) {
-									replacement = emergency;
-									break;
-								}
-							} else {
-								String emgPosition = playerPositions.get(emergency.getPlayerId());
+							String emgPosition = playerPositions.get(emergency.getPlayerId());
 
-								switch(emgPosition) {
-									case "ff":
-										if(ffCount < 2) {
-											replacement = emergency;
-										}
-										break;
-									case "fwd":
-										if(fwdCount < 6) {
-											replacement = emergency;
-										}
-										break;
-									case "rck":
-										if(rckCount < 2) {
-											replacement = emergency;
-										}
-										break;
-									case "mid":
-										if(midCount < 6) {
-											replacement = emergency;
-										}
-										break;
-									case "fb":
-										if(fbCount < 2) {
-											replacement = emergency;
-										}
-										break;
-									case "def":
-										if(defCount < 6) {
-											replacement = emergency;
-										}
-										break;
-									default: throw new UnknownPositionException(emgPosition);
-								}
+							switch(emgPosition) {
+								case "ff":
+									if(ffCount < 2) {
+										replacement = emergency;
+									}
+									break;
+								case "fwd":
+									if(fwdCount < 6) {
+										replacement = emergency;
+									}
+									break;
+								case "rck":
+									if(rckCount < 2) {
+										replacement = emergency;
+									}
+									break;
+								case "mid":
+									if(midCount < 6) {
+										replacement = emergency;
+									}
+									break;
+								case "fb":
+									if(fbCount < 2) {
+										replacement = emergency;
+									}
+									break;
+								case "def":
+									if(defCount < 6) {
+										replacement = emergency;
+									}
+									break;
+								default: throw new UnknownPositionException(emgPosition);
 							}
 						}
 
@@ -481,7 +472,7 @@ public class ScoresCalculatorHandler {
 							}
 							played22.add(replacement);
 							replacedDnpPlayers.add(dnpPlayer);
-							loggerUtils.log("info", "Bench can take the ground DNP={} with Emergency={}", dnpPlayer, replacement);
+							loggerUtils.log("info", "Emergency position can replace DNP={} with Emergency={}", dnpPlayer, replacement);
 						} else {
 							dnpPlayer.setScoreUsed(true);
 							played22.add(dnpPlayer);
