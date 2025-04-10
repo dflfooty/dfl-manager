@@ -300,6 +300,9 @@ public class ScoresCalculatorHandler {
 					try {
 						int round = globalsService.getUseAverage(player.getAflClub());
 
+						loggerUtils.log("info", "Is global set for teamCode={} round={} selectedRound={}",
+						   				player.getAflClub(), round, selectedPlayer.getRound());
+
 						if(round == selectedPlayer.getRound()) {
 							int score = predictedScores.get(selectedPlayer.getPlayerId()).getPredictedScore();
 							scores.put(selectedPlayer.getPlayerId(), score);
