@@ -450,7 +450,7 @@ public class GlobalsServiceImpl extends GenericServiceImpl<Globals, GlobalsPK> i
 
 		value = getValue(teamCode, groupCode);
 
-		if(value != null && value.isEmpty()) {
+		if(value != null && !value.isEmpty()) {
 			round = Integer.parseInt(value);
 		}
 
