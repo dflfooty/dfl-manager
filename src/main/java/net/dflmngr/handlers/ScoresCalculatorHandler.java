@@ -426,7 +426,7 @@ public class ScoresCalculatorHandler {
 					for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
 						DflSelectedPlayer replacement = null;
 
-						String dnpPosition = dflPlayerService.get(dnpPlayer.getPlayerId()).getPosition();
+						String dnpPosition = dflPlayerService.get(dnpPlayer.getPlayerId()).getPosition().toLowerCase();
 
 						switch(dnpPosition) {
 							case "ff" :
