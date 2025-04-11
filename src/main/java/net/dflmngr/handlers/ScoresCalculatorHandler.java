@@ -426,38 +426,68 @@ public class ScoresCalculatorHandler {
 					for(DflSelectedPlayer dnpPlayer : dnpPlayers) {
 						DflSelectedPlayer replacement = null;
 
+						String dnpPosition = dflPlayerService.get(dnpPlayer.getPlayerId()).getPosition();
+
+						switch(dnpPosition) {
+							case "ff" :
+								ffCount--;
+								break;
+							case "fwd" :
+								fwdCount--;
+								break;
+							case "rck" :
+								rckCount--;
+								break;
+							case "mid" :
+								midCount--;
+								break;
+							case "def" :
+								defCount--;
+								break;
+							case "fb" :
+								fbCount--;
+								break;
+							default: throw new UnknownPositionException(dnpPosition);
+						}
+
 						for(DflSelectedPlayer emergency : emergencies) {
 							String emgPosition = playerPositions.get(emergency.getPlayerId());
 
 							switch(emgPosition) {
 								case "ff":
-									if(ffCount < 2) {
+									if(ffCount < 2 && ffCount > 0) {
 										replacement = emergency;
+										ffCount++;
 									}
 									break;
 								case "fwd":
-									if(fwdCount < 6) {
+									if(fwdCount < 6 && fwdCount > 4) {
 										replacement = emergency;
+										fwdCount++;
 									}
 									break;
 								case "rck":
-									if(rckCount < 2) {
+									if(rckCount < 2 && rckCount > 0) {
 										replacement = emergency;
+										rckCount++;
 									}
 									break;
 								case "mid":
-									if(midCount < 6) {
+									if(midCount < 6 && midCount > 4) {
 										replacement = emergency;
+										midCount++;
 									}
 									break;
 								case "fb":
-									if(fbCount < 2) {
+									if(fbCount < 2 && rckCount > 0) {
 										replacement = emergency;
+										fbCount++;
 									}
 									break;
 								case "def":
-									if(defCount < 6) {
+									if(defCount < 6 && defCount > 4) {
 										replacement = emergency;
+										defCount++;
 									}
 									break;
 								default: throw new UnknownPositionException(emgPosition);
