@@ -479,7 +479,7 @@ public class ScoresCalculatorHandler {
 									}
 									break;
 								case "fb":
-									if(fbCount < 2 && rckCount > 0) {
+									if(fbCount < 2 && fbCount > 0) {
 										replacement = emergency;
 										fbCount++;
 									}
