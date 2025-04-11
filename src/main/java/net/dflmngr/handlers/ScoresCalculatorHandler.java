@@ -428,73 +428,95 @@ public class ScoresCalculatorHandler {
 
 						String dnpPosition = dflPlayerService.get(dnpPlayer.getPlayerId()).getPosition().toLowerCase();
 
+						boolean allowEmg = false;
+
 						switch(dnpPosition) {
 							case "ff" :
-								ffCount--;
+								if(ffCount > 1) {
+									ffCount--;
+									allowEmg = true;
+								}
 								break;
 							case "fwd" :
-								fwdCount--;
+								if(fwdCount > 1) {
+									fwdCount--;
+									allowEmg = true;
+								}
 								break;
 							case "rck" :
-								rckCount--;
+								if(rckCount > 1) {
+									rckCount--;
+									allowEmg = true;
+								}
 								break;
 							case "mid" :
-								midCount--;
+								if(midCount > 1) {
+									midCount--;
+									allowEmg = true;
+								}
 								break;
 							case "def" :
-								defCount--;
+								if(defCount > 1) {
+									ffCount--;
+									allowEmg = true;
+								}
 								break;
 							case "fb" :
-								fbCount--;
+								if(fbCount > 1) {
+									ffCount--;
+									allowEmg = true;
+								}
 								break;
 							default: throw new UnknownPositionException(dnpPosition);
 						}
 
-						for(DflSelectedPlayer emergency : emergencies) {
-							String emgPosition = playerPositions.get(emergency.getPlayerId());
+						if(allowEmg) {
+							for(DflSelectedPlayer emergency : emergencies) {
+								String emgPosition = playerPositions.get(emergency.getPlayerId());
 
-							switch(emgPosition) {
-								case "ff":
-									if(ffCount < 2 && ffCount > 0) {
-										replacement = emergency;
-										ffCount++;
-									}
-									break;
-								case "fwd":
-									if(fwdCount < 6 && fwdCount > 4) {
-										replacement = emergency;
-										fwdCount++;
-									}
-									break;
-								case "rck":
-									if(rckCount < 2 && rckCount > 0) {
-										replacement = emergency;
-										rckCount++;
-									}
-									break;
-								case "mid":
-									if(midCount < 6 && midCount > 4) {
-										replacement = emergency;
-										midCount++;
-									}
-									break;
-								case "fb":
-									if(fbCount < 2 && fbCount > 0) {
-										replacement = emergency;
-										fbCount++;
-									}
-									break;
-								case "def":
-									if(defCount < 6 && defCount > 4) {
-										replacement = emergency;
-										defCount++;
-									}
-									break;
-								default: throw new UnknownPositionException(emgPosition);
-							}
+								switch(emgPosition) {
+									case "ff":
+										if(ffCount < 2) {
+											replacement = emergency;
+											ffCount++;
+										}
+										break;
+									case "fwd":
+										if(fwdCount < 6) {
+											replacement = emergency;
+											fwdCount++;
+										}
+										break;
+									case "rck":
+										if(rckCount < 2) {
+											replacement = emergency;
+											rckCount++;
+										}
+										break;
+									case "mid":
+										if(midCount < 6) {
+											replacement = emergency;
+											midCount++;
+										}
+										break;
+									case "fb":
+										if(fbCount < 2) {
+											replacement = emergency;
+											fbCount++;
+										}
+										break;
+									case "def":
+										if(defCount < 6 && defCount > 4) {
+											replacement = emergency;
+											defCount++;
+										}
+										break;
+									default: throw new UnknownPositionException(emgPosition);
+								}
 
-							if(replacement != null) {
-								break;
+								if(replacement != null) {
+									break;
+								}
 							}
 						}
 
