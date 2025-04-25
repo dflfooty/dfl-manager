@@ -360,9 +360,9 @@ public class TeamInsOutsLoaderHandler {
 			DflSelectedPlayer currentSelectedPlayer = currentSelectedTeamMap.get(tmpSelectedPlayer.getPlayerId());
 
 			selectedPlayer.setHasPlayed(currentSelectedPlayer.hasPlayed());
-			selectedPlayer.setDnp(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.isDnp() : tmpSelectedPlayer.isDnp());
-			selectedPlayer.setScoreUsed(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.isScoreUsed() : tmpSelectedPlayer.isScoreUsed());
-			selectedPlayer.setReplacementInd(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.getReplacementInd() : tmpSelectedPlayer.getReplacementInd());
+			selectedPlayer.setDnp(currentSelectedPlayer.hasPlayed() && currentSelectedPlayer.isDnp());
+			selectedPlayer.setScoreUsed(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.isScoreUsed() : selectedPlayer.isEmergency() == 0);
+			selectedPlayer.setReplacementInd(currentSelectedPlayer.hasPlayed() ? currentSelectedPlayer.getReplacementInd() : null);
 		} else {
 			selectedPlayer.setDnp(false);
 			selectedPlayer.setScoreUsed(tmpSelectedPlayer.isEmergency() == 0);
