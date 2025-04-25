@@ -438,7 +438,7 @@ public class ScoresCalculatorHandler {
 								}
 								break;
 							case "fwd" :
-								if(fwdCount > 1) {
+								if(fwdCount > 5) {
 									fwdCount--;
 									allowEmg = true;
 								}
@@ -450,13 +450,13 @@ public class ScoresCalculatorHandler {
 								}
 								break;
 							case "mid" :
-								if(midCount > 1) {
+								if(midCount > 5) {
 									midCount--;
 									allowEmg = true;
 								}
 								break;
 							case "def" :
-								if(defCount > 1) {
+								if(defCount > 5) {
 									ffCount--;
 									allowEmg = true;
 								}
