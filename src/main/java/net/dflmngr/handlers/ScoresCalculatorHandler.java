@@ -457,13 +457,13 @@ public class ScoresCalculatorHandler {
 								break;
 							case "def" :
 								if(defCount > 5) {
-									ffCount--;
+									defCount--;
 									allowEmg = true;
 								}
 								break;
 							case "fb" :
 								if(fbCount > 1) {
-									ffCount--;
+									fbCount--;
 									allowEmg = true;
 								}
 								break;
